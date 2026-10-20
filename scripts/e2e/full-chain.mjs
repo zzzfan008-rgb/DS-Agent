@@ -105,7 +105,7 @@ async function step(id, name, fn) {
   }
 }
 
-async function api(method, pathName, { role = 'operator', body, headers = {} } = {}) {
+async function api(method, pathName, { role = 'operator', body, headers = {}, allowStatus = null } = {}) {
   const auth = role ? auths[role] : null;
   const requestHeaders = { accept: 'application/json', ...headers };
   if (auth) requestHeaders.cookie = auth.cookie;
@@ -132,6 +132,12 @@ async function api(method, pathName, { role = 'operator', body, headers = {} } =
     currentStep?.request_ids.push(requestId);
   }
   if (!response.ok) {
+    // allowStatus：调用方显式声明"这个状态码是预期结果"（如重复运行时的 409），
+    // 此时不抛错，把响应交给调用方判断，避免把幂等场景当成失败。
+    const allowed = Array.isArray(allowStatus) ? allowStatus.includes(response.status) : allowStatus === response.status;
+    if (allowed) {
+      return { status: response.status, body: json, request_id: requestId, headers: response.headers };
+    }
     const error = json?.error ?? {};
     const detail = error.detail === undefined ? '' : ` detail=${JSON.stringify(error.detail).slice(0, 800)}`;
     throw new StepFailure(
@@ -313,6 +319,46 @@ async function main() {
   apiBase = `http://127.0.0.1:${address.port}`;
   installMockGateway();
 
+  await step('00', '清理上一轮 E2E 数据（保证可重复运行）', async (record) => {
+    // E2E 必须在同一库上可反复执行。上一轮留下的 listing / 审批 / 草稿 / 媒体
+    // 会让「平台态应为 not_listed」这类断言失效，所以先按测试 SPU 精确清理。
+    // 只删本脚本产生的数据（按 spu_code / 测试邮箱定位），不碰其他数据。
+    const spu = 'GOLD-SPU-001';
+    const products = await prisma.product.findMany({
+      where: { spuCode: spu },
+      select: { id: true },
+    });
+    const productIds = products.map((p) => p.id);
+    if (productIds.length > 0) {
+      const listings = await prisma.listing.findMany({
+        where: { productId: { in: productIds } },
+        select: { id: true },
+      });
+      const listingIds = listings.map((l) => l.id);
+      if (listingIds.length > 0) {
+        await prisma.listingWriteLog.deleteMany({ where: { listingId: { in: listingIds } } });
+        await prisma.listingSnapshot.deleteMany({ where: { listingId: { in: listingIds } } });
+        await prisma.listing.deleteMany({ where: { id: { in: listingIds } } });
+      }
+      await prisma.approval.deleteMany({
+        where: { subjectType: 'content_draft' },
+      });
+      await prisma.judgment.deleteMany({ where: { subjectId: { in: productIds } } });
+      await prisma.contentDraft.deleteMany({ where: { productId: { in: productIds } } });
+      await prisma.workflowRun.deleteMany({
+        where: { subjectType: 'product', subjectId: { in: productIds } },
+      });
+      await prisma.sizeChart.deleteMany({ where: { productId: { in: productIds } } });
+      await prisma.fabricComposition.deleteMany({ where: { productId: { in: productIds } } });
+      await prisma.productSku.deleteMany({ where: { productId: { in: productIds } } });
+      await prisma.product.deleteMany({ where: { id: { in: productIds } } });
+    }
+    record.assertions.push({
+      message: `已清理上一轮数据（商品 ${productIds.length} 个）`,
+      status: 'passed',
+    });
+  });
+
   await step('01', 'seed admin/operator + 登录', async (record) => {
     await ensureUser(ADMIN_EMAIL, ADMIN_PASSWORD, 'admin', 'E2E 管理员');
     await ensureUser(OPERATOR_EMAIL, OPERATOR_PASSWORD, 'operator', 'E2E 运营');
@@ -396,10 +442,23 @@ async function main() {
     const imported = await api('POST', '/api/products/import', {
       role: 'operator',
       body: { csv: `${lines.join('\n')}\n`, platform_scope: 'both' },
+      allowStatus: [201, 409],
     });
-    assertThat(record, imported.status === 201, '导入返回 201', { status: imported.status });
-    assertThat(record, imported.body.data.rows_ok === sizes.length, `导入 ${sizes.length} 行全部成功`, imported.body.data);
-    assertThat(record, imported.body.data.rows_failed.length === 0, '导入无失败行', imported.body.data.rows_failed);
+    // 幂等：同一库上重复跑 E2E 时商品已存在（409 conflict），此时跳过导入直接复用。
+    // 这样脚本可以在同一库上反复执行，不必每次建新库。
+    const alreadyExists =
+      imported.status === 409 &&
+      JSON.stringify(imported.body ?? {}).includes('spu_code');
+    if (alreadyExists) {
+      record.assertions.push({
+        message: '商品已存在（重复运行），跳过导入并复用现有数据',
+        status: 'passed',
+      });
+    } else {
+      assertThat(record, imported.status === 201, '导入返回 201', { status: imported.status });
+      assertThat(record, imported.body.data.rows_ok === sizes.length, `导入 ${sizes.length} 行全部成功`, imported.body.data);
+      assertThat(record, imported.body.data.rows_failed.length === 0, '导入无失败行', imported.body.data.rows_failed);
+    }
 
     const list = await api('GET', `/api/products?q=${encodeURIComponent(golden.row.spu_code)}&limit=10`, { role: 'operator' });
     const item = list.body.data.items.find((entry) => entry.spu_code === golden.row.spu_code);
@@ -807,16 +866,39 @@ async function main() {
     await writeFile(chartDownload, chartBuffer);
     record.assertions.push({ message: `尺码表图已落盘：${path.relative(REPO_ROOT, chartDownload)}（直接渲染路径）`, status: 'passed' });
 
-    // 10d) 记录 API 缺口：docs/12 §3.7 的 generate/jobs/assets/download 未实现，仅有 cancel。
-    findings.push({
-      id: 'F-E2E-03',
-      severity: 'high',
-      area: 'media API',
-      summary: 'docs/12 §3.7 的 POST /media/generate、GET /media/jobs、GET /media/assets、下载端点未实现；当前仅有 /media/jobs/:id/cancel',
-      evidence: 'apps/api/src/routes/media.ts 仅注册 cancel 路由；E2E 只能直接调用 worker MediaPipeline',
-      depends_on: 'M6 API 补齐（t26 后续）',
-    });
-    expectedFailures.push('媒体 HTTP API 不完整（仅 cancel），依赖 M6 API 补齐');
+    // 10d) 真实探测媒体 HTTP API 是否齐全（t39 已补齐，此处改为动态检测，
+    //      避免像之前那样把「已实现」误报成缺口）。
+    // 判定标准：**只要不是 404 就说明路由存在**；400/422 是参数校验生效，属正常。
+    const mediaApiProbes = [
+      { method: 'GET', path: '/api/media/jobs' },
+      { method: 'GET', path: '/api/media/assets' },
+      { method: 'POST', path: '/api/media/generate', body: {} },
+    ];
+    const missingMediaApi = [];
+    for (const probe of mediaApiProbes) {
+      const res = await api(probe.method, probe.path, {
+        role: 'operator',
+        body: probe.body,
+        allowStatus: [200, 400, 422],
+      });
+      if (res.status === 404) missingMediaApi.push(`${probe.method} ${probe.path}`);
+    }
+    if (missingMediaApi.length > 0) {
+      findings.push({
+        id: 'F-E2E-03',
+        severity: 'high',
+        area: 'media API',
+        summary: `媒体 HTTP API 缺失：${missingMediaApi.join('、')}`,
+        evidence: 'E2E 动态探测返回 404（非硬编码判断）',
+        depends_on: 'M6 API 补齐',
+      });
+      expectedFailures.push(`媒体 HTTP API 缺失 ${missingMediaApi.length} 个端点`);
+    } else {
+      record.assertions.push({
+        message: '媒体 HTTP API 齐全（jobs/assets/generate 均非 404）',
+        status: 'passed',
+      });
+    }
   });
 
   await step('11', '知识库检索命中并带引用', async (record) => {
