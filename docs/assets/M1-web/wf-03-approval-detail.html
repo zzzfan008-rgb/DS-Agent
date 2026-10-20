@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>DSSAAS · 审批详情（窄屏）</title>
+<style>
+  :root{--bg:#F8FAFC;--card:#FFF;--line:#E2E8F0;--ink:#0F172A;--muted:#64748B;--c:#DC2626;--b:#D97706;--a:#16A34A;--brand:#2563EB}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,"Segoe UI","Microsoft YaHei",sans-serif;background:#E2E8F0;color:var(--ink);font-size:13px}
+  .phone{width:760px;height:900px;background:var(--bg);margin:0 auto;position:relative;overflow:hidden;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+  .bar{height:56px;background:#0F172A;color:#F8FAFC;display:flex;align-items:center;gap:10px;padding:0 16px;font-weight:600}
+  .bar .back{color:#94A3B8;font-weight:400;font-size:13px}
+  .body{padding:16px 18px 96px;height:844px;overflow:hidden}
+  .meta{color:var(--muted);font-size:12px;line-height:1.8;margin-bottom:12px}
+  .lv{font-size:11px;font-weight:700;border-radius:6px;padding:2px 7px;color:var(--c);background:#FEF2F2;border:1px solid #FECACA}
+  h1{font-size:18px;margin:8px 0 4px;display:flex;align-items:center;gap:8px}
+  .warn{border-left:4px solid var(--c);background:#FFF1F0;border-radius:0 8px 8px 0;padding:12px 14px;margin:12px 0;line-height:1.9}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:12px 0}
+  .sec{font-weight:600;color:#334155;margin:0 0 8px}
+  table{width:100%;border-collapse:collapse;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);font-size:12px}
+  th{background:#F8FAFC;color:var(--muted);font-weight:600}
+  tr:last-child td{border-bottom:0}
+  .h{color:var(--c);font-weight:600}.m{color:var(--b);font-weight:600}
+  .facts{display:flex;gap:8px;flex-wrap:wrap}
+  .tag{border:1px solid var(--line);background:#F8FAFC;border-radius:6px;padding:5px 9px;font-size:12px;color:#334155}
+  ul{margin:6px 0 0;padding-left:18px;line-height:1.9;color:#334155}
+  .sticky{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px 18px;display:flex;gap:10px;align-items:center}
+  .sticky .note{color:var(--muted);font-size:12px;flex:1}
+  .sticky button{border:1px solid var(--line);background:#F8FAFC;color:#94A3B8;border-radius:10px;padding:10px 18px;font-size:13px;cursor:not-allowed}
+  .demo{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;border-radius:6px;padding:2px 8px;font-size:11px;margin-left:8px}
+  .kbd{color:var(--muted);font-size:11px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="bar"><span class="back">← 返回审批列表</span><span style="margin-left:auto" class="demo">演示数据</span></div>
+  <div class="body">
+    <h1><span class="lv">⛔ C · 不可逆</span> 更换主图</h1>
+    <div class="meta">listing.replace_main_image · 拼多多<br>商品 SPU-A102 / listing 01J9Z… · 请求人 王运营<br>2026-10-20 10:02 · 审批有效期剩余 23h 14m</div>
+
+    <div class="warn">
+      提交后不可撤回；平台侧可能触发重新审核、搜索降权或活动中掉线，系统不提供回滚。<br>
+      建议执行窗口：命中 618 活动 → 建议预约至 02:00–05:00，或先下架再改。
+    </div>
+
+    <div class="card">
+      <div class="sec">影响面</div>
+      SKU 4 个 · 预估影响订单 12 单 · 价格变动 0% · 活动：命中 618（进行中）
+    </div>
+
+    <div class="card">
+      <div class="sec">平台现值 vs 变更</div>
+      <table>
+        <thead><tr><th>字段</th><th>现值</th><th>变更后</th><th>风险</th></tr></thead>
+        <tbody>
+          <tr><td>主图</td><td>IMG-8821</td><td>IMG-9310</td><td class="h">高</td></tr>
+          <tr><td>详情首图</td><td>IMG-8821</td><td>IMG-9310</td><td class="m">中</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="sec">事实来源</div>
+      <div class="facts"><span class="tag">主数据 v14</span><span class="tag">尺码表 v3</span><span class="tag">KB · 退换政策 2026-09-01</span><span class="tag">图片授权 AIGC-031</span></div>
+      <div class="kbd">来源不可点击即为缺陷（docs/13 D2）</div>
+    </div>
+
+    <div class="card">
+      <div class="sec">风险提示</div>
+      <ul>
+        <li>该商品近 7 天第 3 次改主图</li>
+        <li>活动期间换图可能触发搜索降权</li>
+        <li>审批人 ≠ 执行人（审批人 李 admin / 执行人 待定）</li>
+      </ul>
+    </div>
+
+    <div class="kbd">窄屏（&lt;1024）：列表全宽，点行进入本页；返回列表保留筛选与滚动位置。</div>
+  </div>
+
+  <div class="sticky">
+    <span class="note">只读模式：决策将在 M4 接入</span>
+    <button disabled>驳回</button>
+    <button disabled>批准并执行</button>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>DSSAAS · 登录</title>
+<style>
+  :root{
+    --bg:#F8FAFC; --card:#FFFFFF; --line:#E2E8F0; --ink:#0F172A; --muted:#64748B;
+    --brand:#2563EB; --side:#0F172A; --side2:#111C33;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink)}
+  .wrap{width:1440px;height:900px;display:grid;grid-template-columns:560px 1fr}
+  .left{background:linear-gradient(160deg,#0F172A,#131F38 60%,#0B1220);color:#E2E8F0;padding:72px 64px;display:flex;flex-direction:column;justify-content:space-between}
+  .logo{display:flex;align-items:center;gap:12px;font-weight:700;font-size:20px;letter-spacing:.2px}
+  .logo .dot{width:34px;height:34px;border-radius:9px;background:#2563EB;display:grid;place-items:center;font-size:16px}
+  .pitch h1{font-size:34px;line-height:1.35;margin:0 0 16px;font-weight:700}
+  .pitch p{color:#94A3B8;font-size:15px;line-height:1.9;margin:0}
+  .pitch ul{margin:26px 0 0;padding:0;list-style:none;color:#CBD5E1;font-size:14px}
+  .pitch li{margin:10px 0;display:flex;gap:10px;align-items:flex-start}
+  .pitch li i{width:6px;height:6px;border-radius:50%;background:#38BDF8;margin-top:8px;flex:none}
+  .foot{color:#64748B;font-size:12px}
+  .right{display:grid;place-items:center;padding:64px}
+  .card{width:420px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:40px;box-shadow:0 10px 30px rgba(15,23,42,.06)}
+  .card h2{margin:0 0 6px;font-size:24px}
+  .card .sub{color:var(--muted);font-size:13px;margin:0 0 28px}
+  label{display:block;font-size:13px;font-weight:600;margin:18px 0 8px}
+  input{width:100%;height:44px;border:1px solid var(--line);border-radius:10px;padding:0 14px;font-size:14px;background:#FFF}
+  input::placeholder{color:#94A3B8}
+  .row{display:flex;justify-content:space-between;align-items:center;margin:16px 0 24px;font-size:13px}
+  .row a{color:var(--brand);text-decoration:none}
+  button{width:100%;height:46px;border:0;border-radius:10px;background:var(--brand);color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+  .hint{margin-top:18px;padding:12px 14px;border:1px solid #DBEAFE;background:#EFF6FF;border-radius:10px;color:#1E40AF;font-size:12px;line-height:1.7}
+  .err{margin-top:14px;padding:10px 12px;border-left:3px solid #DC2626;background:#FEF2F2;color:#991B1B;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside class="left">
+    <div class="logo"><span class="dot">D</span> DSSAAS · 服装电商双平台运营台</div>
+    <div class="pitch">
+      <h1>一个人也能管好<br>拼多多 + 1688 的日常运营</h1>
+      <p>文案、上架、客服、素材、对账，全部走同一套审批与审计。<br>系统只生成与执行，放行权永远在人手上。</p>
+      <ul>
+        <li><i></i>写操作 100% 经审批与审计，可追溯到事实来源</li>
+        <li><i></i>价格、成分、尺码、政策只来自主数据，模型不得编造</li>
+        <li><i></i>A / B / C 三级风险，不可逆操作必须二次确认</li>
+      </ul>
+    </div>
+    <div class="foot">内部系统 · 单租户部署 · 版本 1.0</div>
+  </aside>
+  <main class="right">
+    <form class="card">
+      <h2>登录</h2>
+      <p class="sub">使用公司账号，登录后进入对应角色的工作台</p>
+      <label for="e">邮箱</label>
+      <input id="e" value="ops@dssaas.local" />
+      <label for="p">口令</label>
+      <input id="p" type="password" value="••••••••••••" />
+      <label for="t">动态验证码（TOTP）</label>
+      <input id="t" placeholder="6 位数字" style="letter-spacing:6px" />
+      <div class="row"><label style="margin:0;font-weight:400"><input type="checkbox" style="width:auto;height:auto"> 记住这台设备</label><a href="#">需要帮助？</a></div>
+      <button type="button">登录</button>
+      <div class="hint">连续 5 次失败将锁定 15 分钟。验证码 30 秒刷新，同一验证码不可重复使用。</div>
+      <div class="err" hidden>口令或验证码不正确，还可尝试 4 次</div>
+    </form>
+  </main>
+</div>
+</body>
+</html>

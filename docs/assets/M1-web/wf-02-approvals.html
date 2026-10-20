@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>DSSAAS · 审批中心</title>
+<style>
+  :root{
+    --bg:#F8FAFC;--card:#FFF;--line:#E2E8F0;--ink:#0F172A;--muted:#64748B;
+    --side:#0F172A;--brand:#2563EB;
+    --a:#16A34A;--b:#D97706;--c:#DC2626;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);font-size:13px}
+  .app{width:1440px;height:900px;display:grid;grid-template-columns:236px 1fr}
+  /* sidebar */
+  .side{background:var(--side);color:#CBD5E1;padding:20px 14px;display:flex;flex-direction:column;gap:18px}
+  .brand{display:flex;align-items:center;gap:10px;color:#F8FAFC;font-weight:700;font-size:15px;padding:4px 8px 14px}
+  .brand .dot{width:28px;height:28px;border-radius:8px;background:var(--brand);display:grid;place-items:center;font-size:13px}
+  .nav{display:flex;flex-direction:column;gap:2px}
+  .nav .grp{color:#64748B;font-size:11px;letter-spacing:.08em;margin:14px 8px 6px}
+  .nav a{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-radius:8px;color:#CBD5E1;text-decoration:none}
+  .nav a.on{background:#1E293B;color:#F8FAFC;font-weight:600}
+  .nav a .n{background:#DC2626;color:#fff;border-radius:999px;padding:1px 7px;font-size:11px}
+  .side .me{margin-top:auto;border-top:1px solid #1E293B;padding:14px 8px 0;color:#94A3B8}
+  /* main */
+  .main{padding:22px 28px;overflow:hidden}
+  .top{display:flex;align-items:baseline;justify-content:space-between}
+  .top h1{font-size:20px;margin:0}
+  .pill{background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:999px;padding:2px 10px;font-size:11px;margin-left:10px}
+  .top .right{display:flex;gap:10px;align-items:center;color:var(--muted)}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;font-size:12px;color:var(--ink)}
+  .kpis{display:flex;gap:22px;margin:14px 0 12px;color:var(--muted)}
+  .kpis b{color:var(--ink);font-size:15px;margin-right:6px}
+  .kpis .warn b{color:var(--c)}
+  .filters{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+  .frow{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  .frow .k{color:var(--muted);font-size:12px}
+  .chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px;background:#fff}
+  .chip.on{background:#0F172A;color:#fff;border-color:#0F172A}
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg span{padding:5px 12px;background:#fff}
+  .seg span.on{background:#F1F5F9;font-weight:600}
+  .search{margin-left:auto;border:1px solid var(--line);border-radius:8px;padding:6px 12px;color:#94A3B8;width:240px;background:#fff}
+  /* board */
+  .board{display:grid;grid-template-columns:392px 1fr;gap:14px;height:632px}
+  .queue{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px;overflow:hidden}
+  .q{display:grid;grid-template-columns:4px 1fr;gap:10px;border-bottom:1px solid #F1F5F9;padding:12px 10px 12px 0}
+  .q:last-child{border-bottom:0}
+  .bar{border-radius:2px}
+  .q .h{display:flex;align-items:center;gap:8px;font-weight:600}
+  .lv{font-size:11px;font-weight:700;border-radius:6px;padding:2px 7px}
+  .lvA{color:var(--a);background:#F0FDF4;border:1px solid #BBF7D0}
+  .lvB{color:var(--b);background:#FFFBEB;border:1px solid #FDE68A}
+  .lvC{color:var(--c);background:#FEF2F2;border:1px solid #FECACA}
+  .q .m{color:var(--muted);font-size:12px;margin-top:4px;line-height:1.7}
+  .q .hint{margin-top:7px;font-size:11px;color:#92400E;background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;padding:4px 8px;display:inline-block}
+  .detail{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;overflow:hidden}
+  .dh{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700}
+  .dmeta{color:var(--muted);margin:8px 0 16px;font-size:12px}
+  .warn{border-left:4px solid var(--c);background:#FFF1F0;border-radius:0 8px 8px 0;padding:12px 14px;margin-bottom:14px;line-height:1.9}
+  .warn b{color:#991B1B}
+  .sec{margin:16px 0 8px;font-weight:600;font-size:13px;color:#334155}
+  table{width:100%;border-collapse:collapse;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);font-size:12px}
+  th{background:#F8FAFC;color:var(--muted);font-weight:600}
+  tr:last-child td{border-bottom:0}
+  .risk-h{color:var(--c);font-weight:600}
+  .risk-m{color:var(--b);font-weight:600}
+  .facts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .tag{border:1px solid var(--line);background:#F8FAFC;border-radius:6px;padding:5px 9px;font-size:12px;color:#334155}
+  .notice{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+  .btns{display:flex;gap:8px}
+  .btns button{border:1px solid var(--line);background:#F8FAFC;color:#94A3B8;border-radius:8px;padding:7px 14px;font-size:12px;cursor:not-allowed}
+  .demo{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;border-radius:6px;padding:2px 8px;font-size:11px;margin-left:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="dot">D</span> DSSAAS</div>
+    <nav class="nav">
+      <div class="grp">运营</div>
+      <a class="on">审批中心 <span class="n">6</span></a>
+      <a>商品库</a>
+      <a>文案工作台</a>
+      <a>素材库</a>
+      <div class="grp">客服</div>
+      <a>客服工作台</a>
+      <a>询盘工作台</a>
+      <div class="grp">配置</div>
+      <a>模型与供应商</a>
+      <a>平台连接</a>
+      <div class="grp">系统</div>
+      <a>审计与设置</a>
+    </nav>
+    <div class="me">王运营 · operator<br><span style="font-size:11px">切换账号 · 退出</span></div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <div><h1>审批中心</h1><span class="pill">M1 只读</span></div>
+      <div class="right"><span>自动刷新 30s</span><span class="btn">⟳ 刷新</span><span class="demo">演示数据</span></div>
+    </div>
+
+    <div class="kpis">
+      <span><b>6</b>待处理</span>
+      <span><b>38 分</b>最老等待</span>
+      <span class="warn"><b>2</b>已超时</span>
+      <span><b>0</b>今日未审批写</span>
+    </div>
+
+    <div class="filters">
+      <div class="frow">
+        <span class="k">级别</span>
+        <span class="chip on">全部</span><span class="chip">A 可逆</span><span class="chip">B 不可撤回</span><span class="chip">C 不可逆</span>
+        <span class="k" style="margin-left:8px">平台</span>
+        <span class="chip on">全部</span><span class="chip">拼多多</span><span class="chip">1688</span>
+      </div>
+      <div class="frow">
+        <span class="k">状态</span>
+        <div class="seg"><span class="on">待处理</span><span>已批准</span><span>已驳回</span></div>
+        <span class="chip">仅超时</span><span class="chip">只看我的</span>
+        <span class="search">搜索动作 / 对象 / 申请人</span>
+      </div>
+    </div>
+
+    <div class="board">
+      <section class="queue">
+        <article class="q" style="grid-template-columns:4px 1fr">
+          <span class="bar" style="background:var(--c)"></span>
+          <div>
+            <div class="h"><span class="lv lvC">⛔ C · 不可逆</span> 更换主图</div>
+            <div class="m">listing.replace_main_image · 拼多多<br>SPU-A102 · 请求人 王运营 · 已等 38 分</div>
+            <div class="hint">命中 618 活动，建议 02:00–05:00 执行</div>
+          </div>
+        </article>
+        <article class="q">
+          <span class="bar" style="background:var(--b)"></span>
+          <div>
+            <div class="h"><span class="lv lvB">⚠ B · 不可撤回</span> 调整售价</div>
+            <div class="m">listing.update_price · 1688<br>SKU-3 × 4 · 请求人 李 admin · 已等 1 小时 12 分</div>
+          </div>
+        </article>
+        <article class="q">
+          <span class="bar" style="background:var(--a)"></span>
+          <div>
+            <div class="h"><span class="lv lvA">↺ A · 可逆</span> 更新库存</div>
+            <div class="m">listing.update_stock · 拼多多<br>SPU-B207 · 请求人 赵客服 · 已等 8 分</div>
+          </div>
+        </article>
+        <article class="q">
+          <span class="bar" style="background:var(--b)"></span>
+          <div>
+            <div class="h"><span class="lv lvB">⚠ B · 不可撤回</span> 发送客服消息</div>
+            <div class="m">reply.send · 拼多多<br>会话 01J9Z… · 请求人 赵客服 · 已等 22 分</div>
+          </div>
+        </article>
+        <article class="q">
+          <span class="bar" style="background:var(--a)"></span>
+          <div>
+            <div class="h"><span class="lv lvA">↺ A · 可逆</span> 更新商品标题</div>
+            <div class="m">listing.update_title · 1688<br>SPU-C311 · 请求人 王运营 · 已等 3 分</div>
+          </div>
+        </article>
+      </section>
+
+      <section class="detail">
+        <div class="dh"><span class="lv lvC">⛔ C · 不可逆</span> 更换主图</div>
+        <div class="dmeta">listing.replace_main_image · 拼多多 · 商品 SPU-A102 / listing 01J9Z… · 请求人 王运营 · 2026-10-20 10:02</div>
+
+        <div class="warn">
+          <b>提交后不可撤回</b>；平台侧可能触发重新审核、搜索降权或活动中掉线，系统不提供回滚。<br>
+          建议执行窗口：命中 618 活动 → 建议预约至 02:00–05:00，或先下架再改。<br>
+          审批有效期剩余 <b>23h 14m</b>（不足 2h 转橙，不足 30min 转红）。
+        </div>
+
+        <div class="sec">影响面</div>
+        <div style="color:#334155">SKU 4 个 · 预估影响订单 12 单 · 价格变动 0% · 活动：命中 618（进行中）</div>
+
+        <div class="sec">平台现值 vs 变更</div>
+        <table>
+          <thead><tr><th style="width:28%">字段</th><th>平台现值</th><th>变更后</th><th style="width:14%">风险</th></tr></thead>
+          <tbody>
+            <tr><td>主图</td><td>IMG-8821</td><td>IMG-9310</td><td class="risk-h">高</td></tr>
+            <tr><td>详情首图</td><td>IMG-8821</td><td>IMG-9310</td><td class="risk-m">中</td></tr>
+          </tbody>
+        </table>
+
+        <div class="sec">事实来源</div>
+        <div class="facts">
+          <span class="tag">主数据 v14</span><span class="tag">尺码表 v3</span>
+          <span class="tag">知识库 · 退换政策 2026-09-01</span><span class="tag">图片授权 AIGC-031</span>
+        </div>
+
+        <div class="sec">风险提示</div>
+        <ul style="margin:4px 0 0;padding-left:18px;color:#334155;line-height:1.9">
+          <li>该商品近 7 天第 3 次改主图</li>
+          <li>活动期间换图可能触发搜索降权</li>
+          <li>审批人 ≠ 执行人（双人信息：审批人 李 admin / 执行人 待定）</li>
+        </ul>
+
+        <div class="notice">
+          <span>只读模式：决策将在 M4 接入 · target_hash ab12c3…</span>
+          <span class="btns"><button disabled>批准并执行</button><button disabled>驳回</button></span>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>
