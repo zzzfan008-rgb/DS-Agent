@@ -40,6 +40,17 @@
 - **t9** 写入门与工作流（A/B/C 分级、幂等、止损、禁止伪回滚）。
 - **t17** 尺码表生效版本约束（已改 EXCLUDE，待收尾确认）。
 - **t18** 真实 DSH Host 联调（替换协议桩验证）。
+- **t19** 数据建模修正（SKU `fabric_code`、PAM/message/listing/kb 唯一键）。
+
+## 本轮发现并修复的真问题
+
+| 问题 | 影响 | 处理 |
+|---|---|---|
+| 两份 `canonicalJson`（一份剥 volatile 字段、一份不剥） | 同一负载在 `facts_hash` 与 `idempotency_key` 可能算出不同哈希 | 统一到 `idempotency/canonical.ts`，`facts.ts` 改为 import |
+| `uq_size_chart_effective` 建在 `product_id` 上 | 一个商品只能一行生效尺码，多码商品无法创建 | 改 `EXCLUDE USING gist (product_id WITH =, version_no WITH <>)` |
+| `fabric_id` 指向版本化面料行 | 面料升版 = SKU 身份变化，历史映射断裂 | 改稳定编码 `fabric_code`（t19） |
+| 迁移与代码错位（`fabric_code` 先落库、代码后改） | `POST /products` 500，t8 七条用例红 | 已要求 db-infra 破坏性改动先报队长；backend-api 优先改代码 |
+| 测试依赖一次性容器 | 换机即红 | `with-db.mjs` 自包含 + CI service |
 
 ## 测试现状
 
