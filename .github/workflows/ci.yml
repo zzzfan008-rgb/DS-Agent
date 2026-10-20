@@ -83,6 +83,11 @@ jobs:
       - name: Golden set（结构/硬事实/版本锁）
         run: pnpm test:golden
 
+      # 端到端链路（13 步）：跨模块契约只有它能验（例如 dry-run 后 listing 仍 draft、
+      # 演练发送必须 delivery_mode=dry_run 且 status!=sent）。约 2s，值得进 CI。
+      - name: E2E 全链路（跨模块契约）
+        run: pnpm --filter @dssaas/api exec tsx ../../scripts/e2e/full-chain.mjs
+
       - name: Prisma validate
         run: pnpm db:validate
 
