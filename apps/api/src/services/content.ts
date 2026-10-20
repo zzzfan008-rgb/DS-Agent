@@ -218,19 +218,7 @@ export async function updateContentDraft(
         riskFlags: [],
       },
     });
-    // 保留旧审批供追查，但关闭 pending 占用；其实效由 target_hash 在 decide 时强制校验。
-    await tx.approval.updateMany({
-      where: {
-        subjectType: 'content_draft',
-        subjectId: draft.id,
-        status: 'pending',
-      },
-      data: {
-        status: 'invalidated',
-        invalidatedAt: new Date(),
-        invalidReason: 'content_changed',
-      },
-    });
+    // 旧 pending 审批保留，不在此处改写状态；内容 hash 变更由 decide 的 target_hash 校验拦截。
     return row;
   });
   const targetHash = contentDraftTargetHash({

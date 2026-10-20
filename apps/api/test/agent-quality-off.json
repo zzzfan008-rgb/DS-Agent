@@ -1,0 +1,481 @@
+{
+  "mode": "off",
+  "model": "deepseek-flash",
+  "scenario_file": "D:/DSSAAS/data/golden/customer-scenarios.json",
+  "generated_at": "2026-10-20T09:02:14.010Z",
+  "samples": [
+    {
+      "id": "S01",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-001",
+      "question": "我身高 175cm、体重 72kg，这款 T 恤选哪个码？",
+      "expected": {
+        "size": "XL",
+        "note": "XL 建议 170–180cm / 64–78kg"
+      },
+      "forbidden": [
+        "L 码最合适",
+        "XXL",
+        "M 码"
+      ],
+      "status": "succeeded",
+      "output": "**结论：建议选 XL（175cm/72kg 落在 XL 的身高、体重区间内，L 的体重上限 70kg 已超出）。**\n\n依据（尺码表 effective 版本，商品 GOLD-SPU-001 男装纯棉圆领短袖T恤 26",
+      "total_ms": 4116,
+      "first_delta_ms": 1100,
+      "tokens_in": 3853,
+      "tokens_out": 565,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "S02",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-002",
+      "question": "身高 158、体重 48，衬衫穿 S 还是 M？",
+      "expected": {
+        "size": "S",
+        "note": "S 建议 150–160cm / 42–52kg"
+      },
+      "forbidden": [
+        "M 码最合适",
+        "L 码"
+      ],
+      "status": "succeeded",
+      "output": "**结论：建议先试 S 码，但这款衬衫的围量偏大，需要根据你自己的胸围复测；如果胸围在 90cm 以上，或者你偏好宽松，可以选 M 码。**\n\n**依据（GOLD-SPU-002 尺码表）**",
+      "total_ms": 3885,
+      "first_delta_ms": 762,
+      "tokens_in": 3820,
+      "tokens_out": 624,
+      "cost_cents": 6,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "S03",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-003",
+      "question": "178cm、75kg，POLO 选什么尺码？",
+      "expected": {
+        "size": "XL",
+        "note": "XL 建议 170–180cm / 64–78kg"
+      },
+      "forbidden": [
+        "L 码最合适",
+        "XXL"
+      ],
+      "status": "succeeded",
+      "output": "**结论：建议 XL 码（170–180cm / 64–78kg 区间），178cm、75kg 落在该区间偏上位置，M 和 L 的身高上限均已超出。**",
+      "total_ms": 3790,
+      "first_delta_ms": 932,
+      "tokens_in": 3805,
+      "tokens_out": 571,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "S04",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-004",
+      "question": "155cm、45kg，牛仔裤选 26 还是 27？",
+      "expected": {
+        "size": "26",
+        "note": "26 建议 150–160cm / 42–50kg"
+      },
+      "forbidden": [
+        "27 码最合适",
+        "28 码"
+      ],
+      "status": "succeeded",
+      "output": "**结论：建议选 26 码。** 建议身高 150–160cm、体重 42–50kg 正好覆盖 155cm 和 45kg；27 码的建议体重从 46kg 起，按体重看更适合 46kg 以上的人。",
+      "total_ms": 3709,
+      "first_delta_ms": 737,
+      "tokens_in": 3880,
+      "tokens_out": 600,
+      "cost_cents": 6,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "S05",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-005",
+      "question": "170cm、62kg，半身裙选 28 还是 29？",
+      "expected": {
+        "size": "29",
+        "note": "29 建议 162–172cm / 54–65kg"
+      },
+      "forbidden": [
+        "28 码最合适",
+        "27 码"
+      ],
+      "status": "succeeded",
+      "output": "**结论：客户 170cm / 62kg 应选 29 码。** 需先说明一处事实不一致：客户问的是“半身裙”，但本次关联的商品是长裤。\n\n**选码依据（尺码表）**",
+      "total_ms": 1579,
+      "first_delta_ms": 1088,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "F01",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-001",
+      "question": "这件 T 恤什么成分？怎么洗？",
+      "expected": {
+        "composition": "棉 100%",
+        "care": "棉可机洗 30℃ 以下，避免高温烘干"
+      },
+      "forbidden": [
+        "聚酯纤维",
+        "氨纶",
+        "真丝"
+      ],
+      "status": "succeeded",
+      "output": "**结论**：这件 T 恤是 100% 棉，260g 重磅纯棉短袖（商品编码 GOLD-SPU-001）；棉含量 ≥95%，推荐在 30℃ 以下用中性洗涤剂机洗，首次清洗建议单独用冷水，不可漂白，不可高温烘干。",
+      "total_ms": 4393,
+      "first_delta_ms": 1015,
+      "tokens_in": 3844,
+      "tokens_out": 577,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "F02",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-002",
+      "question": "衬衫的成分比例是多少？会缩水吗？",
+      "expected": {
+        "composition": "棉 60% / 聚酯纤维 40%"
+      },
+      "forbidden": [
+        "棉 100%",
+        "棉 80%",
+        "聚酯 60%"
+      ],
+      "status": "succeeded",
+      "output": "**结论**\n\n- **成分**：棉 60% + 聚酯纤维 40%，合计 100%。\n- **缩水**：棉占 60%，不属于「棉≥95%」的高缩水风险品类，但棉纤维本身首次水洗仍可能有轻微收缩；",
+      "total_ms": 1376,
+      "first_delta_ms": 946,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "F03",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-003",
+      "question": "POLO 的氨纶含量多少？有弹性吗？",
+      "expected": {
+        "composition": "棉 95% / 氨纶 5%"
+      },
+      "forbidden": [
+        "氨纶 10%",
+        "氨纶 20%",
+        "棉 100%"
+      ],
+      "status": "succeeded",
+      "output": "**结论：这款 POLO 衫含氨纶 5%，棉 95%；因此有一定弹性，属于微弹，整体穿感偏棉质合身版型，并不是高弹运动面料。**\n\n**依据（事实快照 · GOLD-SPU-003 男装POLO衫商务翻领 短袖）**",
+      "total_ms": 3673,
+      "first_delta_ms": 771,
+      "tokens_in": 3801,
+      "tokens_out": 510,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "F04",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-004",
+      "question": "牛仔裤含棉多少？能不能机洗？",
+      "expected": {
+        "composition": "棉 98% / 氨纶 2%"
+      },
+      "forbidden": [
+        "棉 100%",
+        "聚酯纤维 50%"
+      ],
+      "status": "succeeded",
+      "output": "**结论**：本商品为棉 98% / 氨纶 2% 的高腰直筒牛仔长裤（SPU GOLD-SPU-004），因此可以机洗，但需低温、翻面并避免高温烘干，以防靛蓝牛仔褪色，也避免氨纶受热失去弹性。",
+      "total_ms": 3280,
+      "first_delta_ms": 809,
+      "tokens_in": 3872,
+      "tokens_out": 391,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "F05",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-007",
+      "question": "连衣裙是什么面料？洗护要注意什么？",
+      "expected": {
+        "composition": "粘纤 100%",
+        "care": "粘纤建议手洗/低温，不拧干"
+      },
+      "forbidden": [
+        "聚酯纤维 100%",
+        "棉 100%",
+        "可高温烘干"
+      ],
+      "status": "succeeded",
+      "output": "**结论**：这款连衣裙的面料成分是**粘纤 100%**。粘纤吸湿、垂感好，但湿水后强度低，也不耐高温。洗护以冷水手洗、不拧干、平铺阴干为准。\n\n**可直接发送的客服回复（约 160 字，已控制在 180 字内）**",
+      "total_ms": 4189,
+      "first_delta_ms": 1329,
+      "tokens_in": 3793,
+      "tokens_out": 447,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "A01",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-001",
+      "question": "收到衣服发现破洞，签收 2 天，能退吗？运费谁出？",
+      "expected": {
+        "eligible": "质量问题可退换",
+        "freight": "卖家承担",
+        "window": "7 天内"
+      },
+      "forbidden": [
+        "运费买家承担",
+        "不能退",
+        "15 天"
+      ],
+      "status": "succeeded",
+      "output": "**结论：可以按质量问题申请退换，运费由卖家承担。** 签收 2 天，仍在 7 天窗口内，破洞属于质量问题。\n\n**依据**\n- 退货窗口：签收次日起 7 天内（客户签收 2 天，未超期）。",
+      "total_ms": 3420,
+      "first_delta_ms": 778,
+      "tokens_in": 3855,
+      "tokens_out": 428,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "A02",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-002",
+      "question": "尺码买小了想换大一码，运费谁承担？",
+      "expected": {
+        "eligible": "可换码",
+        "freight": "买家承担"
+      },
+      "forbidden": [
+        "运费卖家承担",
+        "不能换",
+        "免费换码"
+      ],
+      "status": "succeeded",
+      "output": "**结论：换大一码本身可以换，但换码产生的运费按现行政策由买家承担。**\n\n依据是客服政策摘要 v1（知识库 policy/return-policy）中的「尺码不合适可换码，换码运费由买家承担」。",
+      "total_ms": 968,
+      "first_delta_ms": 531,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "A03",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-003",
+      "question": "签收 10 天了，不喜欢还能七天无理由退吗？",
+      "expected": {
+        "eligible": "超过 7 天不能直接无理由",
+        "action": "建议联系平台/人工复核"
+      },
+      "forbidden": [
+        "可以无理由退",
+        "15 天内可退",
+        "一定可以退"
+      ],
+      "status": "succeeded",
+      "output": "**结论：已超出七天无理由的退回期限，按通常政策不能以「不喜欢」为理由办理无理由退货。**\n\n依据：客服政策摘要 v1（知识库 policy/return-policy）规定，无理由退货须在「签收次日起 7 天内」提出，",
+      "total_ms": 3660,
+      "first_delta_ms": 1181,
+      "tokens_in": 3806,
+      "tokens_out": 368,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "A04",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-004",
+      "question": "吊牌剪了还能退吗？",
+      "expected": {
+        "eligible": "影响二次销售/吊牌缺失通常不支持无理由",
+        "action": "转人工/按平台规则"
+      },
+      "forbidden": [
+        "一定可以退",
+        "无条件是退",
+        "7 天内都能退"
+      ],
+      "status": "succeeded",
+      "output": "**结论：如果吊牌已经剪掉，就无法按「七天无理由」退货了，因为政策要求吊牌、包装完整，并且不影响二次销售。要退还，只能先看是否存在质量问题。**",
+      "total_ms": 3854,
+      "first_delta_ms": 1168,
+      "tokens_in": 3870,
+      "tokens_out": 414,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "A05",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-005",
+      "question": "1688 批发的裙子能按七天无理由退吗？",
+      "expected": {
+        "eligible": "1688 批发按平台/协议，不直接套用零售七天无理由",
+        "action": "转人工确认"
+      },
+      "forbidden": [
+        "一定可以退",
+        "七天无理由",
+        "卖家承担运费"
+      ],
+      "status": "succeeded",
+      "output": "**结论：不能直接按“七天无理由”答复，需先确认两件事：一是本单是 1688 批发采购单还是零售单；二是对应的合同或混批约定是否存在。** 当前政策摘要只覆盖零售口径的 7 天规则，未覆盖 1688 批发场景；",
+      "total_ms": 1970,
+      "first_delta_ms": 1454,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "L01",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-001",
+      "question": "下单后多久发货？能当天发吗？",
+      "expected": {
+        "dispatch_hours": 48,
+        "avoid": "不承诺当天/24 小时"
+      },
+      "forbidden": [
+        "当天发货",
+        "24 小时内发货",
+        "保证次日达"
+      ],
+      "status": "succeeded",
+      "output": "**结论：不能承诺当天发货。** 事实快照里没有发货时效数据，需人工确认。\n\n**关于客户问题的回答（可直接发送）**\n> 亲，您的问题我这边收到了。商品页面的发货时效和仓库当日截单时间，我需要先跟仓库确认后再回复您。",
+      "total_ms": 1402,
+      "first_delta_ms": 854,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "L02",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-002",
+      "question": "发到新疆偏远地区包邮吗？",
+      "expected": {
+        "remote": "偏远地区可能补运费，需按地址确认",
+        "avoid": "不直接报包邮/具体金额"
+      },
+      "forbidden": [
+        "一定包邮",
+        "补 20 元",
+        "全国包邮"
+      ],
+      "status": "succeeded",
+      "output": "**结论：新疆是否包邮还不能确定，需先按具体收货地址确认。** 快照中只说明偏远地区可能需补运费，没有「新疆包邮」政策，不能直接答「包邮」。\n\n**建议回复（客服可直接发，98 字）**",
+      "total_ms": 3516,
+      "first_delta_ms": 1076,
+      "tokens_in": 3814,
+      "tokens_out": 394,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "L03",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-003",
+      "question": "快递到了我不想要了，能拦截退款吗？",
+      "expected": {
+        "intercept": "拦截/拒收按平台规则，不承诺全额退款"
+      },
+      "forbidden": [
+        "一定全额退款",
+        "直接退款",
+        "保证拦截成功"
+      ],
+      "status": "succeeded",
+      "output": "**结论：可以。但能不能拦截成功，取决于包裹当前处在哪个物流节点，也取决于平台是否允许拦截，我这边无法保证。**拦截失败时，还可以拒收；签收之后也可以在 7 天内申请退货退款。",
+      "total_ms": 1204,
+      "first_delta_ms": 762,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "L04",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-010",
+      "question": "1688 拿 10 件能便宜多少？直接给我最低价",
+      "expected": {
+        "moq": 2,
+        "discount": "10 件以上可申请 3% 折扣，需运营审批",
+        "avoid": "不直接承诺折扣/最低价"
+      },
+      "forbidden": [
+        "直接 3%",
+        "给你最低价",
+        "保证最便宜"
+      ],
+      "status": "succeeded",
+      "output": "**结论：10 件按页面价结算，可申请 3% 折扣，但这需要运营审批，客服不能直接承诺；因此没有“最低价”可直接给，页面价 469 元就是最低可售价。**\n\n## 可直接发送的回复草稿（79 字）",
+      "total_ms": 4120,
+      "first_delta_ms": 990,
+      "tokens_in": 3815,
+      "tokens_out": 564,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "L05",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-002",
+      "question": "标题写全网最低价，别家更便宜你们退差价吗？",
+      "expected": {
+        "avoid": "不承诺全网最低价/退差价",
+        "action": "以页面价为准，差价/议价转运营"
+      },
+      "forbidden": [
+        "保证最低价",
+        "退差价",
+        "绝对最便宜"
+      ],
+      "status": "succeeded",
+      "output": "**结论：不做「全网最低价」的定价承诺，也不做差价补偿。** 客服可以正面回答买家疑虑，但只能按事实快照里写明的政策来说。\n\n需要修正的一点：SPU GOLD-SPU-002 现在的标题里有「全网最低价」，页面上也标了",
+      "total_ms": 1353,
+      "first_delta_ms": 882,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": null
+    }
+  ]
+}
