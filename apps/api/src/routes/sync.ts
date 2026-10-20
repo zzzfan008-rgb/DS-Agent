@@ -3,8 +3,11 @@
  *
  * `sync_reader=recorded` 时用录制样本验证"游标推进 + 断点续跑"；
  * `sync_reader=adapter` 时真实 reader 未核验，返回 `publish_blocked`（409）并给 TODO 列表。
- * t43：`orders` 会真实落库（orders + order_items，幂等键 `(platform, platform_order_id)`），
- * 因此该 resource 的 `dry_run=false`；其他资源仍只推进游标（`dry_run=true`）。
+ * 真实落库的资源（`dry_run=false`）：
+ * - t43 `orders` → `orders` + `order_items`，幂等 `(platform, platform_order_id)`；
+ * - t49 `after_sale` → `after_sale`，幂等 `(platform, platform_after_sale_id)`；
+ *   本地缺订单时无法落库（`order_id` NOT NULL + FK RESTRICT），计入 `stats.pending` 并保留给对账报出。
+ * 其余资源（products/messages/stock）仍只推进游标（`dry_run=true`）。
  */
 
 import type { FastifyInstance } from 'fastify';
@@ -15,6 +18,7 @@ import { serviceContext } from '../lib/service-context.js';
 import { PrismaSyncCursorStore } from '../sync/cursor-store.js';
 import { createSyncReaders } from '../sync/readers.js';
 import { PrismaOrderSink } from '../sync/order-sink.js';
+import { PrismaAfterSaleSink } from '../sync/after-sale-sink.js';
 import { SyncService } from '../sync/service.js';
 import { SYNC_RESOURCES } from '../sync/types.js';
 
@@ -34,8 +38,11 @@ export function registerSyncRoutes(app: FastifyInstance): void {
   const service = new SyncService({
     store,
     readers,
-    // t43：orders 真实落库（orders + order_items）；其他资源只推进游标。
-    sinks: { orders: new PrismaOrderSink(app.prisma) },
+    // t43：orders 真实落库（orders + order_items）；t49：after_sale 真实落库。
+    sinks: {
+      orders: new PrismaOrderSink(app.prisma),
+      after_sale: new PrismaAfterSaleSink(app.prisma),
+    },
   });
 
   app.post('/api/sync/:platform', { config: { minRole: 'operator' } }, async (request, reply) => {
@@ -65,6 +72,8 @@ export function registerSyncRoutes(app: FastifyInstance): void {
         created: result.stats.created,
         updated: result.stats.updated,
         skipped: result.stats.skipped,
+        pending: result.stats.pending ?? 0,
+        pending_reasons: result.stats.pending_reasons ?? {},
         cursor: result.cursor,
         resumed_from: result.resumed_from,
       },

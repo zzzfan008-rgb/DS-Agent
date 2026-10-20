@@ -166,6 +166,7 @@ const RECORDED_PAGES: Record<SyncResource, RecordedPage[]> = {
           kind: 'refund_only',
           status: 'open',
           amount_cents: 5000,
+          reason: '尺码不合适，仅退款',
           opened_at: '2026-10-19T06:00:00.000Z',
         },
         {
@@ -174,7 +175,20 @@ const RECORDED_PAGES: Record<SyncResource, RecordedPage[]> = {
           kind: 'return_refund',
           status: 'closed',
           amount_cents: 15800,
+          reason: '面料与描述不符，退货退款',
           opened_at: '2026-10-19T07:00:00.000Z',
+          closed_at: '2026-10-19T09:30:00.000Z',
+        },
+        {
+          // 挂在一笔本地不存在的订单上：sink 无法落库（order_id NOT NULL + FK RESTRICT），
+          // 必须计入 pending 而不是静默丢弃；对账侧 after_sale_platform_only 仍会报出来。
+          after_sale_id: 'ALI-AS-9004',
+          order_id: 'ALI-ORDER-9999',
+          kind: 'refund_only',
+          status: 'refunding',
+          amount_cents: 8000,
+          reason: '本地缺订单的售后（验证 pending 语义）',
+          opened_at: '2026-10-19T08:00:00.000Z',
         },
       ],
     },

@@ -17,7 +17,7 @@ import path from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import { prisma, buildTestApp, createUser, login, cookiesFrom, csrfFrom, sessionHeaders } from './helpers.js';
 import { collectDailyMetrics } from '../src/daily/metrics.js';
-import { evaluateAlerts, parseAlertThresholds } from '../src/daily/thresholds.js';
+import { evaluateAlerts, parseAlertThresholds, criticalThresholdStatus, REQUIRED_ALERT_KINDS } from '../src/daily/thresholds.js';
 import { buildDailyReport } from '../src/daily/report.js';
 import { persistAlerts, listAlerts } from '../src/daily/alerts.js';
 import {
@@ -39,6 +39,7 @@ import { RecordedPlatformReader, AdapterPlatformReader } from '../src/reconcile/
 import { MemorySyncCursorStore, PrismaSyncCursorStore, MAX_CONSECUTIVE_FAILURES } from '../src/sync/cursor-store.js';
 import { createSyncReaders, AdapterSyncReader } from '../src/sync/readers.js';
 import { MemoryOrderSink } from '../src/sync/order-sink.js';
+import { MemoryAfterSaleSink } from '../src/sync/after-sale-sink.js';
 import { SyncService } from '../src/sync/service.js';
 import { todayBusinessDay, addDays } from '../src/lib/day.js';
 import { uuidv7 } from '../src/lib/ids.js';
@@ -604,6 +605,72 @@ test('阈值：未配置不告警；非法 JSON / 未知键报错；严格大于
   );
 });
 
+test('t49 告警：drift_by_kind 的 key 必须是已知差异类型（拼错 = 配了等于没配）', () => {
+  // 拼错 kind：必须 fail fast，不能静默忽略
+  const typo = parseAlertThresholds('{"drift_by_kind":{"after_sale_platform_onyl":0}}');
+  assert.equal(typo.thresholds, null);
+  assert.ok(typo.issues.length > 0);
+  assert.match(typo.issues[0]!, /未知差异类型/);
+  assert.match(typo.issues[0]!, /after_sale_platform_only/, '错误信息要列出合法值，便于纠正');
+
+  // 正确 kind 通过
+  const ok = parseAlertThresholds('{"drift_by_kind":{"after_sale_platform_only":0}}');
+  assert.deepEqual(ok.issues, []);
+  assert.equal(ok.thresholds?.drift_by_kind?.after_sale_platform_only, 0);
+
+  // 未知顶层键仍然报错（原有行为不变）
+  assert.ok(parseAlertThresholds('{"drift_by_kindd":{}}').issues.length > 0);
+});
+
+test('t49 告警：after_sale_platform_only 阈值 0 = 出现即告警；未配置则不告警', () => {
+  const metrics = {
+    date: DAY,
+    platform: '1688' as const,
+    listed: 1,
+    rejected: 0,
+    approvals_pending: 0,
+    approvals_oldest_minutes: null,
+    messages: 0,
+    media_cost_cents: 0,
+    media_cost_scope: 'global' as const,
+    drift_total: 14,
+    drift_by_kind: { after_sale_platform_only: 1 },
+  };
+  // 出现 1 条 → 阈值 0 触发
+  const alerts = evaluateAlerts(metrics, { drift_by_kind: { after_sale_platform_only: 0 } });
+  assert.deepEqual(alerts.map((alert) => alert.metric), ['drift_by_kind.after_sale_platform_only']);
+  assert.equal(alerts[0]!.value, 1);
+  assert.equal(alerts[0]!.threshold, 0);
+  assert.equal(alerts[0]!.level, 'P2');
+  assert.match(alerts[0]!.message, /after_sale_platform_only/);
+
+  // 未配置 → 只报事实、不告警
+  assert.deepEqual(evaluateAlerts(metrics, null), []);
+  assert.deepEqual(evaluateAlerts(metrics, { drift_total: 20 }), []);
+
+  // 0 条 → 不触发（value <= threshold）
+  assert.deepEqual(
+    evaluateAlerts({ ...metrics, drift_by_kind: {} }, { drift_by_kind: { after_sale_platform_only: 0 } }),
+    [],
+  );
+});
+
+test('t49 告警：criticalThresholdStatus 显式回报关键类型是否已配', () => {
+  assert.deepEqual(criticalThresholdStatus(null), [
+    {
+      kind: 'after_sale_platform_only',
+      configured: false,
+      threshold: null,
+      recommended: 0,
+      reason: '平台有退款、本地零记录：可能是同步失败或绕过系统退款，必须出现即告警',
+    },
+  ]);
+  const configured = criticalThresholdStatus({ drift_by_kind: { after_sale_platform_only: 0 } });
+  assert.equal(configured[0]!.configured, true);
+  assert.equal(configured[0]!.threshold, 0);
+  assert.deepEqual(REQUIRED_ALERT_KINDS, ['after_sale_platform_only']);
+});
+
 // ---------------------------------------------------------------- 单测：同步
 
 test('同步游标：分页推进、断点续跑、状态查询', async () => {
@@ -658,6 +725,77 @@ test('同步失败：连续失败 5 次置 error；真实 reader 硬拒绝带 TO
       assert.ok((detail.todo_ids ?? []).some((id) => id.startsWith('TODO-1688-')));
       return true;
     },
+  );
+});
+
+test('售后落库（内存 sink）：按 (platform, platform_after_sale_id) 幂等；缺订单计入 pending 不丢', async () => {
+  const sink = new MemoryAfterSaleSink();
+  // 只认识 1004/1005 两笔订单；9004 挂的 9999 不存在。
+  sink.knownOrders.add('ALI-ORDER-1004');
+  sink.knownOrders.add('ALI-ORDER-1005');
+  const reader = createSyncReaders('recorded').after_sale;
+  const page = await reader.read({
+    platform: '1688',
+    resource: 'after_sale',
+    cursor: null,
+    since: null,
+    pageSize: 100,
+    pageIndex: 0,
+  });
+  const now = new Date('2026-10-20T02:00:00.000Z');
+
+  const first = await sink.apply(page.items, { platform: '1688', now });
+  assert.deepEqual(
+    { created: first.created, updated: first.updated, skipped: first.skipped },
+    { created: 2, updated: 0, skipped: 0 },
+  );
+  assert.equal(first.pending, 1, '缺订单的售后必须计入 pending');
+  assert.deepEqual(first.pending_reasons, { order_missing: 1 });
+
+  const second = await sink.apply(page.items, { platform: '1688', now });
+  assert.deepEqual(
+    { created: second.created, updated: second.updated, skipped: second.skipped },
+    { created: 0, updated: 0, skipped: 2 },
+  );
+  assert.equal(sink.rows.size, 2, '缺订单的那条不得写入');
+});
+
+test('售后 sink 数据校验：未知 kind / 负金额被拒（DB CHECK 对齐）', async () => {
+  const sink = new MemoryAfterSaleSink();
+  sink.knownOrders.add('ALI-ORDER-1004');
+  await assert.rejects(
+    () =>
+      sink.apply(
+        [
+          {
+            after_sale_id: 'ALI-AS-BAD',
+            order_id: 'ALI-ORDER-1004',
+            kind: 'chargeback',
+            status: 'open',
+            amount_cents: 100,
+            opened_at: '2026-10-19T06:00:00.000Z',
+          },
+        ],
+        { platform: '1688', now: new Date() },
+      ),
+    (error: unknown) => error instanceof ApiError && error.code === 'validation_failed',
+  );
+  await assert.rejects(
+    () =>
+      sink.apply(
+        [
+          {
+            after_sale_id: 'ALI-AS-BAD2',
+            order_id: 'ALI-ORDER-1004',
+            kind: 'refund_only',
+            status: 'open',
+            amount_cents: -1,
+            opened_at: '2026-10-19T06:00:00.000Z',
+          },
+        ],
+        { platform: '1688', now: new Date() },
+      ),
+    (error: unknown) => error instanceof ApiError && error.code === 'validation_failed',
   );
 });
 
@@ -1154,6 +1292,151 @@ test('POST /api/sync/pdd orders：真实落库 orders+order_items，幂等（第
   assert.equal(statusBody.items.find((item) => item.resource === 'orders')?.cursor, 'ck-orders-2');
 });
 
+test('POST /api/sync/pdd after_sale：真实落库 after_sale，幂等；缺订单的售后计入 pending 不丢', async () => {
+  // 先同步 orders（after_sale 需要本地有订单才能落库）。
+  const ordersSync = await fixture.app.inject({
+    method: 'POST',
+    url: '/api/sync/pdd',
+    headers: { ...fixture.operator, ...IDEM('sync-as-orders'), 'content-type': 'application/json' },
+    payload: { resource: 'orders' },
+  });
+  assert.equal(ordersSync.statusCode, 202, ordersSync.body);
+
+  const first = await fixture.app.inject({
+    method: 'POST',
+    url: '/api/sync/pdd',
+    headers: { ...fixture.operator, ...IDEM('sync-as-1'), 'content-type': 'application/json' },
+    payload: { resource: 'after_sale' },
+  });
+  assert.equal(first.statusCode, 202, first.body);
+  const body = JSON.parse(first.body).data as {
+    dry_run: boolean;
+    pages: number;
+    stats: {
+      pulled: number;
+      created: number;
+      updated: number;
+      skipped: number;
+      pending: number;
+      pending_reasons: Record<string, number>;
+    };
+    cursor: string;
+  };
+  assert.equal(body.dry_run, false, 'after_sale 已有 sink，不得再标 dry_run');
+  assert.equal(body.pages, 1);
+  assert.equal(body.stats.pulled, 3);
+  assert.equal(body.stats.created, 2, '两笔有订单的售后落库');
+  assert.equal(body.stats.pending, 1, '缺订单的售后计入 pending');
+  assert.deepEqual(body.stats.pending_reasons, { order_missing: 1 });
+  assert.equal(body.cursor, 'ck-aftersale-1');
+
+  const rows = await prisma.afterSale.findMany({
+    where: { platform: 'pdd' },
+    select: { platformAfterSaleId: true, orderId: true, kind: true, status: true, amountCents: true, reason: true, closedAt: true },
+  });
+  assert.equal(rows.length, 2, '缺订单的售后不得落库');
+  const byId = new Map(rows.map((row) => [row.platformAfterSaleId, row]));
+  const closed = byId.get('ALI-AS-9002');
+  assert.equal(closed?.status, 'closed');
+  assert.equal(closed?.amountCents, 15800);
+  assert.equal(closed?.kind, 'return_refund');
+  assert.ok(closed?.closedAt, 'closed 状态必须带 closed_at');
+  assert.equal(closed?.reason, '面料与描述不符，退货退款');
+  const open = byId.get('ALI-AS-9001');
+  assert.equal(open?.status, 'open');
+  assert.equal(open?.closedAt, null, 'open 状态不得有 closed_at');
+
+  // 幂等：第二次全 skipped，pending 仍为 1（缺订单那条还在 pending）。
+  const second = await fixture.app.inject({
+    method: 'POST',
+    url: '/api/sync/pdd',
+    headers: { ...fixture.operator, ...IDEM('sync-as-2'), 'content-type': 'application/json' },
+    payload: { resource: 'after_sale' },
+  });
+  assert.equal(second.statusCode, 202, second.body);
+  const secondBody = JSON.parse(second.body).data as {
+    resumed_from: string;
+    stats: { pulled: number; created: number; skipped: number; pending: number };
+  };
+  assert.equal(secondBody.resumed_from, 'ck-aftersale-1');
+  assert.equal(secondBody.stats.pulled, 0);
+  assert.equal(secondBody.stats.created, 0);
+  assert.equal(await prisma.afterSale.count({ where: { platform: 'pdd' } }), 2, '不得重复插入售后');
+});
+
+test('同步落库后 after_sale_platform_only 不再误报：本地有记录 → 只比字段，不报「本地无」', async () => {
+  // 同步 pdd 的售后（9001/9002 有订单 → 落库；9004 缺订单 → pending）
+  await fixture.app.inject({
+    method: 'POST',
+    url: '/api/sync/pdd',
+    headers: { ...fixture.operator, ...IDEM('sync-as-noresp-orders'), 'content-type': 'application/json' },
+    payload: { resource: 'orders' },
+  });
+  await fixture.app.inject({
+    method: 'POST',
+    url: '/api/sync/pdd',
+    headers: { ...fixture.operator, ...IDEM('sync-as-noresp'), 'content-type': 'application/json' },
+    payload: { resource: 'after_sale' },
+  });
+
+  // 从真实表读回本地售后快照（与 ReconcileService.loadLocalAfterSales 同口径）
+  const rows = await prisma.afterSale.findMany({
+    where: { platform: 'pdd', archivedAt: null },
+    select: { id: true, platformAfterSaleId: true, orderId: true, status: true, amountCents: true },
+  });
+  const orderIds = [...new Set(rows.map((row) => row.orderId))];
+  const orders = await prisma.order.findMany({
+    where: { id: { in: orderIds } },
+    select: { id: true, platformOrderId: true },
+  });
+  const platformOrderByLocalId = new Map(orders.map((order) => [order.id, order.platformOrderId]));
+  const localAfterSales: LocalAfterSaleSnapshot[] = rows
+    .map((row) => {
+      const platformOrderId = platformOrderByLocalId.get(row.orderId);
+      if (!platformOrderId) return null;
+      return {
+        afterSaleId: row.id,
+        platformAfterSaleId: row.platformAfterSaleId,
+        platformOrderId,
+        status: row.status,
+        amountCents: row.amountCents,
+      } satisfies LocalAfterSaleSnapshot;
+    })
+    .filter((row): row is LocalAfterSaleSnapshot => row !== null);
+
+  // 平台快照：9001/9002 与本地一致（金额/状态同），9004 本地没有。
+  const snapshot: PlatformSnapshot = {
+    platform: 'pdd',
+    capturedAt: '2026-10-20T02:00:00.000Z',
+    source: 'recorded',
+    verified: false,
+    complete: false,
+    ordersComplete: false,
+    afterSalesComplete: false,
+    note: '同步后回归：验证已落库的售后不再被报「本地无」',
+    items: [],
+    orders: [],
+    afterSales: [
+      { platformAfterSaleId: 'ALI-AS-9001', platformOrderId: 'ALI-ORDER-1004', kind: 'refund_only', status: 'open', amountCents: 5000 },
+      { platformAfterSaleId: 'ALI-AS-9002', platformOrderId: 'ALI-ORDER-1005', kind: 'return_refund', status: 'closed', amountCents: 15800 },
+      { platformAfterSaleId: 'ALI-AS-9004', platformOrderId: 'ALI-ORDER-9999', kind: 'refund_only', status: 'refunding', amountCents: 8000 },
+    ],
+  };
+  const drifts = diffAfterSales(localAfterSales, snapshot, {
+    platform: 'pdd',
+    day: DAY,
+    now: '2026-10-20T02:30:00.000Z',
+  });
+
+  // 已同步的两条：字段一致 → 零差异（不再误报"本地无"）。
+  const reportedIds = drifts.map((drift) => drift.subject.platform_after_sale_id).sort();
+  assert.deepEqual(reportedIds, ['ALI-AS-9004'], '只有真正缺本地记录的 9004 该报');
+  const only = drifts[0]!;
+  assert.equal(only.kind, 'after_sale_platform_only');
+  assert.equal(only.severity, 'high');
+  assert.equal(only.local, null);
+});
+
 test('POST /api/sync/pdd stock：无 sink → 只推进游标，dry_run=true', async () => {
   const response = await fixture.app.inject({
     method: 'POST',
@@ -1232,6 +1515,76 @@ test('日报组装 + 告警落库幂等：同日同指标只写一条 event_log'
 
   const alerts = await listAlerts(prisma, DAY);
   assert.ok(alerts.some((alert) => alert.metric === 'drift_total' && alert.level === 'P2'));
+});
+
+test('t49 告警落库：配置 after_sale_platform_only=0 → 出现即写 event_log；未配置不写', async () => {
+  // 用 pdd 平台承载本用例的差异：与 1688 的 14 条集成数据完全隔离，不干扰后续计数断言。
+  // day 必须是当前业务日 —— persistAlerts/listAlerts 按 event_log.createdAt（DB now()）落在 day 窗口内。
+  const store = new PgDriftStore(prisma);
+  const day = DAY;
+  const platform = 'pdd' as const;
+
+  const before = await store.countByKind(day, platform);
+  const baseline = before.after_sale_platform_only ?? 0;
+
+  // 本地零售后 → 平台 3 条全部报「本地无」（纯函数，不读库）
+  const snapshot = await recordedSnapshot();
+  const detected = diffAfterSales([], snapshot, { platform, day, now: '2026-10-25T02:30:00.000Z' }).filter(
+    (drift) => drift.kind === 'after_sale_platform_only',
+  );
+  assert.equal(detected.length, 3, '本地零售后时，平台 3 条售后都该报');
+  await store.upsert(platform, day, detected);
+  const expected = baseline + 3;
+
+  try {
+    const report = await buildDailyReport({
+      prisma,
+      driftStore: store,
+      driftStoreNote: 'postgres',
+      day,
+      platform,
+      thresholds: { drift_by_kind: { after_sale_platform_only: 0 } },
+    });
+    assert.equal(report.metrics.drift_by_kind.after_sale_platform_only, expected);
+    assert.deepEqual(
+      report.alerts.map((alert) => alert.metric),
+      ['drift_by_kind.after_sale_platform_only'],
+    );
+    assert.equal(report.critical_thresholds[0]!.configured, true);
+
+    // 落库：真实写 event_log
+    const persisted = await persistAlerts({ prisma, day, platform, alerts: report.alerts });
+    assert.equal(persisted.inserted, 1);
+    const rows = await listAlerts(prisma, day);
+    const alert = rows.find(
+      (row) => row.metric === 'drift_by_kind.after_sale_platform_only' && row.platform === platform,
+    );
+    assert.ok(alert, '必须写 event_log');
+    assert.equal(alert!.level, 'P2');
+    assert.equal(alert!.value, expected);
+    assert.equal(alert!.threshold, 0);
+
+    // 未配置阈值 → 同一份数据不产生告警（也不写 event_log）
+    const noThreshold = await buildDailyReport({
+      prisma,
+      driftStore: store,
+      driftStoreNote: 'postgres',
+      day,
+      platform,
+      thresholds: null,
+    });
+    assert.deepEqual(noThreshold.alerts, []);
+    assert.equal(noThreshold.critical_thresholds_missing, true, '未配置时必须显式标记');
+    const persistedNoThreshold = await persistAlerts({
+      prisma,
+      day,
+      platform,
+      alerts: noThreshold.alerts,
+    });
+    assert.deepEqual(persistedNoThreshold, { inserted: 0, skipped: 0 });
+  } finally {
+    await prisma.$executeRawUnsafe(`DELETE FROM drift_log WHERE day = $1::date AND platform = 'pdd'`, day);
+  }
 });
 
 test('未配置阈值：日报只报事实、alerts 为空', async () => {

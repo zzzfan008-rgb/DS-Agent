@@ -4,17 +4,25 @@
  * 规则：
  * - 阈值来自环境变量 `DAILY_ALERT_THRESHOLDS`（JSON）；不配置时**不告警**，日报只报事实；
  * - 非法配置在启动/脚本入口即失败（zod strict，拼错键名不会被静默忽略）；
+ * - **`drift_by_kind` 的 key 必须是已知差异类型**（t49）：拼错一个字母就等于这条差异没配告警，
+ *   比配置报错更危险 —— 所以这里显式校验，未知 kind 直接 fail fast；
  * - 本模块不内置任何默认数字；级别（P2/P3）是策略常量，不是阈值。
  */
 
 import { z } from 'zod';
+import { DRIFT_KINDS, type DriftKind } from '../reconcile/types.js';
 
 const nonNegativeInt = z.number().int().min(0);
+
+const DRIFT_KIND_SET = new Set<string>(DRIFT_KINDS);
+
+/** `drift_by_kind` 的键必须是已知差异类型（防拼错导致"配了等于没配"）。 */
+const driftKindThresholds = z.record(z.string(), nonNegativeInt).optional();
 
 export const ALERT_THRESHOLD_SCHEMA = z
   .object({
     drift_total: nonNegativeInt.optional(),
-    drift_by_kind: z.record(z.string(), nonNegativeInt).optional(),
+    drift_by_kind: driftKindThresholds,
     approvals_pending: nonNegativeInt.optional(),
     rejected_listings: nonNegativeInt.optional(),
     messages: nonNegativeInt.optional(),
@@ -32,6 +40,41 @@ export const THRESHOLD_KEYS = [
   'messages',
   'media_cost_cents',
 ] as const;
+
+/**
+ * 必须配告警的差异类型（t49）。
+ *
+ * `after_sale_platform_only` = 平台有退款、本地零记录 —— 可能意味着同步失败或有人绕过系统退款。
+ * 漏报这条等于风险敞口没人看着，因此单独列出，日报会显式回报"配了没有"。
+ * 推荐阈值 `0`（出现即告警）。
+ */
+export const REQUIRED_ALERT_KINDS: readonly DriftKind[] = ['after_sale_platform_only'];
+
+/** 关键差异类型的告警配置状态（供日报/验收显式展示，不配置也不算错，但会被点名）。 */
+export interface CriticalThresholdStatus {
+  kind: DriftKind;
+  configured: boolean;
+  threshold: number | null;
+  /** 推荐阈值（0 = 出现即告警）。 */
+  recommended: number;
+  reason: string;
+}
+
+export function criticalThresholdStatus(thresholds: AlertThresholds | null): CriticalThresholdStatus[] {
+  return REQUIRED_ALERT_KINDS.map((kind) => {
+    const threshold = thresholds?.drift_by_kind?.[kind];
+    return {
+      kind,
+      configured: threshold !== undefined,
+      threshold: threshold ?? null,
+      recommended: 0,
+      reason:
+        kind === 'after_sale_platform_only'
+          ? '平台有退款、本地零记录：可能是同步失败或绕过系统退款，必须出现即告警'
+          : '关键差异类型',
+    };
+  });
+}
 
 export interface ParsedThresholds {
   thresholds: AlertThresholds | null;
@@ -52,6 +95,17 @@ export function parseAlertThresholds(raw: string | null | undefined): ParsedThre
     return {
       thresholds: null,
       issues: parsed.error.issues.map((issue) => `DAILY_ALERT_THRESHOLDS.${issue.path.join('.') || '(root)'}: ${issue.message}`),
+    };
+  }
+  // drift_by_kind 的键必须是已知差异类型：拼错一个字母 = 那条差异永远不告警，比报错危险得多。
+  const unknownKinds = Object.keys(parsed.data.drift_by_kind ?? {}).filter((kind) => !DRIFT_KIND_SET.has(kind));
+  if (unknownKinds.length > 0) {
+    return {
+      thresholds: null,
+      issues: unknownKinds.map(
+        (kind) =>
+          `DAILY_ALERT_THRESHOLDS.drift_by_kind.${kind}: 未知差异类型（合法值：${DRIFT_KINDS.join(' | ')}）`,
+      ),
     };
   }
   return { thresholds: parsed.data, issues: [] };

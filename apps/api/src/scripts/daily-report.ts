@@ -25,6 +25,7 @@ import { ReconcileService } from '../reconcile/service.js';
 import type { Platform } from '../reconcile/types.js';
 import { buildDailyReport, type DailyReport } from '../daily/report.js';
 import { persistAlerts } from '../daily/alerts.js';
+import { criticalThresholdStatus } from '../daily/thresholds.js';
 
 interface CliOptions {
   day: string;
@@ -73,6 +74,23 @@ async function main(): Promise<void> {
     console.log(`[daily] day=${options.day} platforms=${options.platforms.join(',')} reconcile=${options.reconcile} mode=${options.mode}`);
     console.log(`[daily] drift store = ${bundle.store.name}（${bundle.note}）`);
     console.log(`[daily] thresholds = ${config.dailyAlertThresholds ? JSON.stringify(config.dailyAlertThresholds) : '未配置（只报事实，不告警）'}`);
+    // t49：关键差异告警未配置时显式点名 —— 不配置不算错，但必须让人看见风险敞口。
+    {
+      const critical = criticalThresholdStatus(config.dailyAlertThresholds);
+      for (const item of critical) {
+        console.log(
+          `[daily] critical alert ${item.kind}: ${item.configured ? `已配置阈值 ${item.threshold}` : `未配置（推荐 ${item.recommended}）`}`,
+        );
+      }
+      const missing = critical.filter((item) => !item.configured);
+      if (missing.length > 0) {
+        console.warn(
+          `[daily] WARNING: ${missing.map((item) => item.kind).join(', ')} 未配置告警阈值 —— ` +
+            '这类差异出现时不会产生 event_log 告警，风险敞口无人看着。' +
+            `建议在 DAILY_ALERT_THRESHOLDS 里加 "drift_by_kind":{"${missing[0]!.kind}":0}`,
+        );
+      }
+    }
 
     const perPlatform: DailyReport[] = [];
     const reconcileSummaries: Array<{ platform: Platform; total: number; by_kind: Record<string, number>; store: string; persisted: { inserted: number; updated: number; unchanged: number } }> = [];

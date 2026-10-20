@@ -80,7 +80,7 @@ export class SyncService {
     let cursor = resumedFrom;
     let pages = 0;
     let pulled = 0;
-    const totals: SyncSinkResult = { created: 0, updated: 0, skipped: 0 };
+    const totals: SyncSinkResult = { created: 0, updated: 0, skipped: 0, pending: 0, pending_reasons: {} };
     let watermarkAt = cursorRow.watermarkAt;
     const maxPages = input.maxPages ?? this.maxPages;
     const sink = this.sinks[resource];
@@ -90,6 +90,7 @@ export class SyncService {
       created: (cursorRow.stats.created ?? 0) + totals.created,
       updated: (cursorRow.stats.updated ?? 0) + totals.updated,
       skipped: (cursorRow.stats.skipped ?? 0) + totals.skipped,
+      pending: (cursorRow.stats.pending ?? 0) + (totals.pending ?? 0),
     });
 
     try {
@@ -111,6 +112,14 @@ export class SyncService {
           totals.created += result.created;
           totals.updated += result.updated;
           totals.skipped += result.skipped;
+          if (result.pending) {
+            totals.pending = (totals.pending ?? 0) + result.pending;
+            const merged = { ...(totals.pending_reasons ?? {}) };
+            for (const [reason, count] of Object.entries(result.pending_reasons ?? {})) {
+              merged[reason] = (merged[reason] ?? 0) + count;
+            }
+            totals.pending_reasons = merged;
+          }
         }
 
         if (page.nextCursor !== null && page.nextCursor !== undefined) cursor = page.nextCursor;
@@ -133,7 +142,7 @@ export class SyncService {
         platform,
         resource,
         status: 'succeeded',
-        // 有 sink = 真实写业务表（orders/order_items）；无 sink = 只推进游标（干跑）。
+        // 有 sink = 真实写业务表（orders/order_items、after_sale）；无 sink = 只推进游标（干跑）。
         dry_run: sink === undefined,
         source: reader.source,
         started_at: startedAt.toISOString(),

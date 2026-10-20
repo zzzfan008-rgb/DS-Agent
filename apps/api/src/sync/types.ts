@@ -2,7 +2,7 @@
  * 同步领域类型 —— docs/12 §3.9、docs/06 §4.5.2 `sync_cursor`。
  *
  * 骨架能力：cursor 推进、租约、失败计数、状态查询；
- * t43 起 `orders` 有真实 sink（写 `orders` + `order_items`），其余 resource 仍只推进游标。
+ * t43 起 `orders` 有真实 sink（写 `orders` + `order_items`），t49 起 `after_sale` 也有真实 sink。
  * 真实平台 reader 依赖 adapter 契约（未核验 → 硬拒绝），录制 reader 用于验证续跑语义。
  */
 
@@ -53,11 +53,21 @@ export interface SyncReader {
   read(input: SyncReadInput): Promise<SyncPage>;
 }
 
-/** 同步落库端口（orders 真实落库；其他资源的 reader 暂时只推进游标）。 */
+/**
+ * 同步落库端口（`orders` / `after_sale` 真实落库；其他资源的 reader 暂时只推进游标）。
+ *
+ * `pending` 用于"拿到数据但当前无法落库"的情形（如 `after_sale.order_id` 是 NOT NULL + FK RESTRICT，
+ * 本地缺订单时无法写入）。这类数据**不静默丢弃**：计入 `pending` 并给原因，
+ * 对账侧的 `after_sale_platform_only` 仍会把它报出来（风险保持可见）。
+ */
 export interface SyncSinkResult {
   created: number;
   updated: number;
   skipped: number;
+  /** 未能落库但已识别的条数（可选；不填视为 0）。 */
+  pending?: number;
+  /** pending 原因分布，如 `{ order_missing: 2 }`。 */
+  pending_reasons?: Record<string, number>;
 }
 
 export interface SyncSinkContext {
@@ -78,7 +88,7 @@ export interface SyncRunResult {
   platform: Platform;
   resource: SyncResource;
   status: 'succeeded';
-  /** `true` = 只推进游标（未写业务表）；`false` = 已真实落库（orders/order_items）。 */
+  /** `true` = 只推进游标（未写业务表）；`false` = 已真实落库（orders/order_items、after_sale）。 */
   dry_run: boolean;
   source: SyncReader['source'];
   started_at: string;

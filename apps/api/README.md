@@ -18,10 +18,10 @@ pnpm --filter @dssaas/api typecheck
 
 | 方法 | 路径 | 角色 | 说明 |
 |---|---|---|---|
-| POST | `/api/sync/:platform` | operator | 同步（`{resource, since?, cursor?}`）；`orders` 真实落库 `orders`+`order_items`（`dry_run:false`），其余资源只推进游标（`dry_run:true`）；返回 202、`sync_id/cursor/pages/stats` |
+| POST | `/api/sync/:platform` | operator | 同步（`{resource, since?, cursor?}`）；`orders` 落 `orders`+`order_items`、`after_sale` 落 `after_sale`（均 `dry_run:false`），`products/messages/stock` 只推进游标（`dry_run:true`）；返回 202、`sync_id/cursor/pages/stats` |
 | GET | `/api/sync/status` | viewer | `items[{platform,resource,status,last_success_at,cursor,lag_seconds,errors}]` + `stale` |
 | POST | `/api/reconcile/:platform` | admin | 平台快照 vs 本地 listing/订单/售后 → 差异清单（商品 6 + 订单 5 + 售后 3 类）；`{day?, mode?:"recorded"\|"adapter"}` |
-| GET | `/api/dashboard/daily` | viewer | `?date=YYYY-MM-DD&platform=pdd\|1688`：上架/驳回/审批积压/消息/媒体成本/差异数 + 告警 |
+| GET | `/api/dashboard/daily` | viewer | `?date=YYYY-MM-DD&platform=pdd\|1688`：上架/驳回/审批积压/消息/媒体成本/差异数 + 告警 + `critical_thresholds` |
 
 `POST /api/reconcile/:platform` 响应同时给两种视图（同源，不重复计算）：
 
@@ -29,6 +29,10 @@ pnpm --filter @dssaas/api typecheck
 - `diffs[...]` —— 完整差异（含 `local/platform_value/detail/suggestion.actions`），供人工核对与归档；
 - `drift{inserted,updated,unchanged}` 是 `persisted` 的契约别名；
 - `key_version` —— 当前 `drift_key` 规则版本；统计只取该版本的行（旧版本行保留不删、不参与统计）。
+
+`POST /api/sync/:platform` 的 `stats` 里，`pending` / `pending_reasons` 表示"拿到但暂时写不进去"的条数：
+`after_sale` 在本地缺对应订单时无法落库（`order_id` NOT NULL + FK RESTRICT），计入 `{order_missing:N}` 而非丢弃，
+对账的 `after_sale_platform_only` 会继续把它报出来。
 
 ### 每日任务
 
@@ -53,7 +57,26 @@ pnpm --filter @dssaas/api daily:report -- --date=2026-10-20
 | `SYNC_READER` | `recorded` | 同步 reader 来源 |
 | `SYNC_STALE_SECONDS` | `3600` | `/sync/status` 的 stale 提示阈值（非告警阈值） |
 | `DAILY_SNAPSHOT_DIR` | `<repo>/artifacts/daily` | 日报快照目录 |
-| `DAILY_ALERT_THRESHOLDS` | 未配置 | JSON，如 `{"drift_total":5,"drift_by_kind":{"price_mismatch":1},"approvals_pending":20}`；配置后 `value > threshold` 触发 |
+| `DAILY_ALERT_THRESHOLDS` | 未配置 | JSON；`value > threshold` 触发，`0` = 出现即告警。`drift_by_kind` 的 key 必须是已知差异类型（拼错会启动失败）。**`after_sale_platform_only` 必须配 `0`** —— 见下方告警建议 |
+
+### 告警配置建议（`after_sale_platform_only` 必须配）
+
+```bash
+DAILY_ALERT_THRESHOLDS='{
+  "drift_by_kind": {
+    "after_sale_platform_only": 0,
+    "price_mismatch": 1,
+    "state_mismatch": 1,
+    "order_amount_mismatch": 1
+  },
+  "drift_total": 50,
+  "approvals_pending": 20
+}'
+```
+
+`after_sale_platform_only` = **平台有退款、本地零记录**，意味着同步失败或有人绕过系统退款。
+不配这条，风险敞口没有任何人看着 —— 日报仍会打 WARNING 点名，但只有配了才会真正写 `event_log` 告警。
+规则 `value > threshold`，所以阈值 `0` = 出现即告警。
 
 ### 真实接通的硬条件（未满足时不会"假装成功"）
 
@@ -62,6 +85,8 @@ pnpm --filter @dssaas/api daily:report -- --date=2026-10-20
 3. **`drift_log` 表**：t37 已建（迁移 `20261020250000_orders_drift_after_sale`），默认 `RECONCILE_STORE=postgres`；
    旧库缺表时 `auto` 落文件并返回 `store:"file"` + 原因，`postgres` 显式模式会带 DDL 硬失败（不静默降级）；
 4. **`orders` / `order_items` / `after_sale` 表**：t37 已建；订单/售后维度差异已接入（`checked.orders/after_sale` 为真实计数）；
+   `syncOrders` / `syncAfterSale` 均真实落库。**`after_sale.order_id` 是 NOT NULL + FK RESTRICT**：
+   本地缺订单的售后写不进去 → 走 `stats.pending`（`order_missing`），不丢、仍由对账报出；
 5. 真实对账需平台账号 + 测试店/沙箱 + IP 白名单（`docs/02 §1.1`），否则只跑 `recorded` 样本。
 6. **生产禁止 `recorded`**：`NODE_ENV=production` 且 `mode=recorded` 时对账端点/每日脚本返回
    `422 validation_failed`（`reason=recorded_samples_forbidden_in_production`）——样本不完整会在生产造成全量误报。
@@ -70,4 +95,5 @@ pnpm --filter @dssaas/api daily:report -- --date=2026-10-20
 
 - **不自动修正**：差异只出清单与修复建议（`suggestion.auto_fixable=false`），写动作走写入门 + A/B/C 分级与审批；
 - **不调用平台写接口**：对账/同步只读；
-- **不删订单/售后**：`syncOrders` 只 upsert（`after_sale.order_id` 是 RESTRICT），订单/明细都不删除。
+- **不删订单/售后**：`syncOrders` / `syncAfterSale` 只 upsert（`after_sale.order_id` 是 RESTRICT），订单/明细/售后都不删除；
+- **不伪造订单**：缺订单的售后不会先造一笔假订单来"接住"，只记 `pending`。
