@@ -1,5 +1,8 @@
 /**
- * @dssaas/core —— 领域模型与规则（M1 空壳）。
+ * @dssaas/core —— 领域模型与规则（M1）。
+ *
+ * 当前承载：
+ * - 角色与权限矩阵（authz/matrix.ts，docs/14 §2）。
  *
  * 后续承载：
  * - 服装强类型校验：尺码表 measurements、面料成分合计 100、平台属性映射；
@@ -9,3 +12,15 @@
  * 约定：这里不出现 Prisma 类型，也不直接读写数据库。
  */
 export const CORE_PACKAGE = '@dssaas/core';
+
+export {
+  ROLES,
+  ROLE_RANK,
+  ROLE_PERMISSIONS,
+  isRole,
+  highestRole,
+  permissionsForRole,
+  hasRole,
+  can,
+} from './authz/matrix.js';
+export type { Role } from './authz/matrix.js';

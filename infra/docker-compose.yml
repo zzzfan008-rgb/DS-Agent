@@ -28,7 +28,8 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pg-data:/var/lib/postgresql/data
+      - pg-wal:/wal
     command:
       - postgres
       - -c
@@ -75,7 +76,7 @@ services:
       - "${MINIO_API_PORT:-9000}:9000"
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
-      - miniodata:/data
+      - minio-data:/data
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/live || exit 1"]
       interval: 15s
@@ -169,11 +170,28 @@ services:
       redis:
         condition: service_healthy
 
+  # -------------------------------------------------------------
+  # 备份任务容器（profile=ops）：只挂备份卷 + 只读源卷（docs/20 §3.1）
+  # 宿主脚本 scripts/ops/*.ps1 使用相同的挂载做 pg_dump / tar / mc mirror
+  # -------------------------------------------------------------
+  backup:
+    image: alpine:3.20
+    container_name: dssaas-backup
+    profiles: ["ops"]
+    command: ["sleep", "infinity"]
+    volumes:
+      - backup:/backup
+      - dsh-data:/dsh:ro
+      - pg-wal:/wal:ro
+
 volumes:
-  pgdata:
+  pg-data:
+  pg-wal:
+  minio-data:
   redisdata:
-  miniodata:
   caddy_data:
   caddy_config:
   # DSH 工作目录（配置 + 会话黑匣子 + 凭据引用）；随卷备份，凭据另做加密导出。
   dsh-data:
+  # 备份产物卷（仅备份任务容器写；docs/20 §3.1）
+  backup:

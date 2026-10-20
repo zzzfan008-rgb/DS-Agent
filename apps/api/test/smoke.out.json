@@ -1,0 +1,124 @@
+{
+  "base": "http://127.0.0.1:50639",
+  "health": {
+    "status": 200,
+    "body": {
+      "request_id": "req_01M5C03ZRV535Z4VY34V0FPTRT",
+      "data": {
+        "status": "ok",
+        "checks": {
+          "db": "ok",
+          "redis": "not_configured",
+          "minio": "not_configured",
+          "dsh_host": "not_configured",
+          "platforms": []
+        },
+        "version": "0.1.0",
+        "build": null,
+        "uptime_s": 1
+      }
+    }
+  },
+  "login": {
+    "status": 200,
+    "request_id": "req_01M5C03ZSQWYAJF1FB5CWVC0DP",
+    "role": "admin",
+    "cookie_names": [
+      "dssaas_sid",
+      "dssaas_csrf"
+    ]
+  },
+  "me": {
+    "status": 200,
+    "body": {
+      "request_id": "req_01M5C03ZWX4EB1906NZ9CTG8PV",
+      "data": {
+        "id": "01a15801-fc8d-7e73-83ac-fef8d06fdeca",
+        "name": "种子管理员",
+        "role": "admin",
+        "org_id": 1,
+        "permissions": [
+          "product.read",
+          "size_chart.read",
+          "fabric.read",
+          "attribute.read",
+          "content.read",
+          "judgment.read",
+          "approval.read",
+          "listing.read",
+          "conversation.read",
+          "reply.read",
+          "inquiry.read",
+          "media.read",
+          "kb.read",
+          "kill_switch.read",
+          "dashboard.read",
+          "product.write",
+          "product.import",
+          "size_chart.write",
+          "fabric.write",
+          "attribute.write",
+          "content.write",
+          "approval.decide",
+          "listing.write",
+          "listing.stop_loss",
+          "reply.write",
+          "reply.send",
+          "inquiry.write",
+          "media.write",
+          "kb.write",
+          "sync.trigger",
+          "kill_switch.trigger",
+          "agent.run",
+          "product.delete",
+          "size_chart.delete",
+          "attribute.delete",
+          "content.delete",
+          "media.delete",
+          "kb.delete",
+          "kb.reindex",
+          "provider.read",
+          "provider.write",
+          "model.read",
+          "model.write",
+          "route.read",
+          "route.write",
+          "users.read",
+          "users.write",
+          "audit.read",
+          "metrics.read",
+          "kill_switch.release",
+          "backup.restore",
+          "agent.run_all"
+        ],
+        "delegations": [],
+        "quotas": {}
+      }
+    }
+  },
+  "audit": {
+    "status": 200,
+    "actions": [
+      "auth.login",
+      "auth.login",
+      "auth.login"
+    ],
+    "request_ids": [
+      "req_01M5C03ZSQWYAJF1FB5CWVC0DP",
+      "req_01M5C03TQFJA7FDWZW6MZPH09Q",
+      "req_01M5C03TMJ68KESKZNCBBW6VX8"
+    ]
+  },
+  "logout": {
+    "status": 200,
+    "body": {
+      "request_id": "req_01M5C03ZXPQT5KHA5XM1DEN4S9",
+      "data": {
+        "ok": true
+      }
+    }
+  },
+  "me_after_logout": {
+    "status": 401
+  }
+}
