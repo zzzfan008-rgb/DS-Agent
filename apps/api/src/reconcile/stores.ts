@@ -18,7 +18,14 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { PrismaClient } from '@dssaas/db';
 import { uuidv7 } from '../lib/ids.js';
-import { DRIFT_KINDS, type DetectedDrift, type DriftKind, type DriftRecord, type Platform } from './types.js';
+import {
+  DRIFT_KINDS,
+  primaryAction,
+  type DetectedDrift,
+  type DriftKind,
+  type DriftRecord,
+  type Platform,
+} from './types.js';
 
 export class DriftStoreUnavailableError extends Error {
   readonly ddl: string;
@@ -67,6 +74,12 @@ CREATE TABLE drift_log (
 );
 CREATE UNIQUE INDEX uq_drift_day ON drift_log (platform, day, drift_key) WHERE archived_at IS NULL;
 CREATE INDEX ix_drift_open ON drift_log (day, severity) WHERE fixed_at IS NULL;`;
+
+/** 老文件/老行可能缺 `suggested_action`：读取时按 suggestion 派生，保证响应契约字段始终存在。 */
+function withSuggestedAction(record: DriftRecord): DriftRecord {
+  if (record.suggested_action) return record;
+  return { ...record, suggested_action: primaryAction(record.suggestion) };
+}
 
 function mergeSeen(
   existing: DriftRecord | undefined,
@@ -135,7 +148,8 @@ export class MemoryDriftStore implements DriftStore {
   async list(day: string, platform?: Platform): Promise<DriftRecord[]> {
     return [...this.rows.values()]
       .filter((row) => row.day === day && (platform === undefined || row.platform === platform))
-      .sort((a, b) => a.drift_key.localeCompare(b.drift_key));
+      .sort((a, b) => a.drift_key.localeCompare(b.drift_key))
+      .map(withSuggestedAction);
   }
 
   async count(day: string, platform?: Platform, kind?: DriftKind): Promise<number> {
@@ -211,7 +225,7 @@ export class FileDriftStore implements DriftStore {
     const rows: DriftRecord[] = [];
     for (const candidate of platforms) {
       const payload = await this.read(candidate, day);
-      rows.push(...payload.items);
+      rows.push(...payload.items.map(withSuggestedAction));
     }
     return rows.sort((a, b) => a.drift_key.localeCompare(b.drift_key));
   }
@@ -288,6 +302,8 @@ export class PgDriftStore implements DriftStore {
       local: drift.local,
       platform_value: drift.platform_value,
       suggestion: drift.suggestion,
+      // 冗余存一份，便于直接查 drift_log 看"该走什么级别"；读取时仍以 suggestion 派生为准。
+      suggested_action: drift.suggested_action,
       status: 'open',
       first_detected_at: drift.detected_at,
       last_detected_at: drift.detected_at,
@@ -313,6 +329,7 @@ export class PgDriftStore implements DriftStore {
                  'local', EXCLUDED.detail->'local',
                  'platform_value', EXCLUDED.detail->'platform_value',
                  'suggestion', EXCLUDED.detail->'suggestion',
+                 'suggested_action', EXCLUDED.detail->'suggested_action',
                  'status', COALESCE(drift_log.detail->>'status', 'open'),
                  'first_detected_at', COALESCE(drift_log.detail->>'first_detected_at', EXCLUDED.detail->>'first_detected_at'),
                  'last_detected_at', EXCLUDED.detail->>'last_detected_at',
@@ -353,7 +370,8 @@ export class PgDriftStore implements DriftStore {
       value instanceof Date ? value.toISOString() : String(value ?? '');
     const detail = (typeof row.detail === 'object' && row.detail !== null ? row.detail : {}) as Record<string, unknown>;
     const detectedAt = iso(row.detected_at);
-    return {
+    const suggestion = (detail.suggestion ?? {}) as DriftRecord['suggestion'];
+    return withSuggestedAction({
       drift_key: String(row.drift_key),
       platform: row.platform as Platform,
       day: String(row.day),
@@ -363,13 +381,14 @@ export class PgDriftStore implements DriftStore {
       local: (detail.local ?? null) as DriftRecord['local'],
       platform_value: (detail.platform_value ?? null) as DriftRecord['platform_value'],
       detail: String(detail.text ?? ''),
-      suggestion: (detail.suggestion ?? {}) as DriftRecord['suggestion'],
+      suggestion,
+      suggested_action: primaryAction(suggestion),
       status: (detail.status ?? 'open') as DriftRecord['status'],
       detected_at: detectedAt,
       first_detected_at: String(detail.first_detected_at ?? detectedAt),
       last_detected_at: String(detail.last_detected_at ?? detectedAt),
       seen_count: Number(detail.seen_count ?? 1),
-    };
+    });
   }
 
   async count(day: string, platform?: Platform, kind?: DriftKind): Promise<number> {

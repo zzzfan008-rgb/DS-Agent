@@ -3,8 +3,8 @@
  *
  * `sync_reader=recorded` 时用录制样本验证"游标推进 + 断点续跑"；
  * `sync_reader=adapter` 时真实 reader 未核验，返回 `publish_blocked`（409）并给 TODO 列表。
- * t43：`orders` 会真实落库（orders + order_items，幂等键 `(platform, platform_order_id)`）；
- * 其他资源仍只推进游标。
+ * t43：`orders` 会真实落库（orders + order_items，幂等键 `(platform, platform_order_id)`），
+ * 因此该 resource 的 `dry_run=false`；其他资源仍只推进游标（`dry_run=true`）。
  */
 
 import type { FastifyInstance } from 'fastify';
@@ -62,10 +62,13 @@ export function registerSyncRoutes(app: FastifyInstance): void {
         source: result.source,
         pages: result.pages,
         pulled: result.stats.pulled,
+        created: result.stats.created,
+        updated: result.stats.updated,
+        skipped: result.stats.skipped,
         cursor: result.cursor,
         resumed_from: result.resumed_from,
       },
-      meta: { platform, resource: body.resource, reader: app.config.syncReader, dry_run: true },
+      meta: { platform, resource: body.resource, reader: app.config.syncReader, dry_run: result.dry_run },
     });
     request.auditLogged = true;
     reply.code(202);

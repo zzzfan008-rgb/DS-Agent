@@ -133,7 +133,8 @@ export class SyncService {
         platform,
         resource,
         status: 'succeeded',
-        dry_run: true,
+        // 有 sink = 真实写业务表（orders/order_items）；无 sink = 只推进游标（干跑）。
+        dry_run: sink === undefined,
         source: reader.source,
         started_at: startedAt.toISOString(),
         finished_at: this.now().toISOString(),

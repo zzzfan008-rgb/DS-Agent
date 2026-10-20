@@ -1,7 +1,8 @@
 /**
  * 同步领域类型 —— docs/12 §3.9、docs/06 §4.5.2 `sync_cursor`。
  *
- * 本轮只做"只读同步的任务骨架"：cursor 推进、租约、失败计数、状态查询；
+ * 骨架能力：cursor 推进、租约、失败计数、状态查询；
+ * t43 起 `orders` 有真实 sink（写 `orders` + `order_items`），其余 resource 仍只推进游标。
  * 真实平台 reader 依赖 adapter 契约（未核验 → 硬拒绝），录制 reader 用于验证续跑语义。
  */
 
@@ -77,6 +78,7 @@ export interface SyncRunResult {
   platform: Platform;
   resource: SyncResource;
   status: 'succeeded';
+  /** `true` = 只推进游标（未写业务表）；`false` = 已真实落库（orders/order_items）。 */
   dry_run: boolean;
   source: SyncReader['source'];
   started_at: string;

@@ -18,10 +18,16 @@ pnpm --filter @dssaas/api typecheck
 
 | 方法 | 路径 | 角色 | 说明 |
 |---|---|---|---|
-| POST | `/api/sync/:platform` | operator | 只读同步骨架（`{resource, since?, cursor?}`）；返回 202、`sync_id/cursor/pages/stats` |
+| POST | `/api/sync/:platform` | operator | 同步（`{resource, since?, cursor?}`）；`orders` 真实落库 `orders`+`order_items`（`dry_run:false`），其余资源只推进游标（`dry_run:true`）；返回 202、`sync_id/cursor/pages/stats` |
 | GET | `/api/sync/status` | viewer | `items[{platform,resource,status,last_success_at,cursor,lag_seconds,errors}]` + `stale` |
-| POST | `/api/reconcile/:platform` | admin | 平台快照 vs 本地 listing → 差异清单；`{day?, mode?:"recorded"\|"adapter"}` |
+| POST | `/api/reconcile/:platform` | admin | 平台快照 vs 本地 listing/订单/售后 → 差异清单（商品 6 + 订单 5 + 售后 2 类）；`{day?, mode?:"recorded"\|"adapter"}` |
 | GET | `/api/dashboard/daily` | viewer | `?date=YYYY-MM-DD&platform=pdd\|1688`：上架/驳回/审批积压/消息/媒体成本/差异数 + 告警 |
+
+`POST /api/reconcile/:platform` 响应同时给两种视图（同源，不重复计算）：
+
+- `items[{drift_key,kind,severity,subject_ref,suggested_action{level,kind},auto_fixable:false}]` —— docs/12 §3.11 契约视图；
+- `diffs[...]` —— 完整差异（含 `local/platform_value/detail/suggestion.actions`），供人工核对与归档；
+- `drift{inserted,updated,unchanged}` 是 `persisted` 的契约别名。
 
 ### 每日任务
 
@@ -40,7 +46,7 @@ pnpm --filter @dssaas/api daily:report -- --date=2026-10-20
 
 | 变量 | 默认 | 说明 |
 |---|---|---|
-| `RECONCILE_STORE` | `auto` | `auto` = 有 `drift_log` 用 PG，否则文件；`file`/`postgres` 显式选择 |
+| `RECONCILE_STORE` | `postgres` | `postgres` = 落 `drift_log`（t37 已建表）；`auto` = 探测有表则 PG、否则文件；`file` 仅本地/测试 |
 | `RECONCILE_DIR` | `<repo>/artifacts/reconcile` | 文件存储目录（`<day>/<platform>.json`） |
 | `RECONCILE_READER` | `recorded` | 平台快照来源：录制样本 / 真实 adapter |
 | `SYNC_READER` | `recorded` | 同步 reader 来源 |
@@ -52,9 +58,9 @@ pnpm --filter @dssaas/api daily:report -- --date=2026-10-20
 
 1. **平台只读接口核验**：1688 需 `TODO-1688-001/002/003/004/009/012` 关闭（method/协议/签名/限流/类目字典/沙箱），PDD 需 `TODO-PDD-CONTRACT-VERIFY`；
 2. 真实 reader 未核验时一律返回 **409 `publish_blocked`**，`detail.reason="adapter_contract_unverified"` + TODO 列表（不是空数据、不是 500）；
-3. **`drift_log` 表**：由 t37 补建；在此之前 `RECONCILE_STORE=auto` 落文件并返回 `store:"file"` + 原因；
-4. **`orders` / `order_items` / `after_sale` 表**：由 t37 补建；在此之前对账响应显式
-   `checked.orders={checked:false,reason:"local order table missing"}`、`checked.after_sale` 同理；
+3. **`drift_log` 表**：t37 已建（迁移 `20261020250000_orders_drift_after_sale`），默认 `RECONCILE_STORE=postgres`；
+   旧库缺表时 `auto` 落文件并返回 `store:"file"` + 原因，`postgres` 显式模式会带 DDL 硬失败（不静默降级）；
+4. **`orders` / `order_items` / `after_sale` 表**：t37 已建；订单/售后维度差异已接入（`checked.orders/after_sale` 为真实计数）；
 5. 真实对账需平台账号 + 测试店/沙箱 + IP 白名单（`docs/02 §1.1`），否则只跑 `recorded` 样本。
 6. **生产禁止 `recorded`**：`NODE_ENV=production` 且 `mode=recorded` 时对账端点/每日脚本返回
    `422 validation_failed`（`reason=recorded_samples_forbidden_in_production`）——样本不完整会在生产造成全量误报。
@@ -63,4 +69,4 @@ pnpm --filter @dssaas/api daily:report -- --date=2026-10-20
 
 - **不自动修正**：差异只出清单与修复建议（`suggestion.auto_fixable=false`），写动作走写入门 + A/B/C 分级与审批；
 - **不调用平台写接口**：对账/同步只读；
-- **不写业务数据**：同步骨架只推进 `sync_cursor`（订单/售后表就绪后再接写入）。
+- **不删订单/售后**：`syncOrders` 只 upsert（`after_sale.order_id` 是 RESTRICT），订单/明细都不删除。

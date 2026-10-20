@@ -77,7 +77,24 @@ export interface ReconcileRunResult {
     by_severity: Record<string, number>;
   };
   persisted: UpsertResult;
+  /** docs/12 §3.11 契约别名：`drift{inserted,updated}`（与 `persisted` 同源，不重复计算）。 */
+  drift: { inserted: number; updated: number; unchanged: number };
+  /** 内部完整差异（含 local/platform_value/suggestion/detail）。 */
   diffs: DetectedDrift[];
+  /**
+   * docs/12 §3.11 契约视图：`items[{drift_key,kind,severity,subject_ref,
+   * suggested_action{level,kind},auto_fixable}]`。
+   *
+   * 与 `diffs` 同源；`subject_ref` 即 `subject`（同一对象，字段见验收记录 §4.5）。
+   */
+  items: Array<{
+    drift_key: string;
+    kind: DriftKind;
+    severity: DetectedDrift['severity'];
+    subject_ref: DetectedDrift['subject'];
+    suggested_action: DetectedDrift['suggested_action'];
+    auto_fixable: false;
+  }>;
 }
 
 export interface ReconcileServiceOptions {
@@ -335,7 +352,16 @@ export class ReconcileService {
         by_severity: bySeverity,
       },
       persisted,
+      drift: { inserted: persisted.inserted, updated: persisted.updated, unchanged: persisted.unchanged },
       diffs: detected,
+      items: detected.map((drift) => ({
+        drift_key: drift.drift_key,
+        kind: drift.kind,
+        severity: drift.severity,
+        subject_ref: drift.subject,
+        suggested_action: drift.suggested_action,
+        auto_fixable: false as const,
+      })),
     };
 
     if (this.audit) {

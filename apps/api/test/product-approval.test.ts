@@ -312,3 +312,69 @@ test('publish_content 定级：B 级，区别于 listing.create', () => {
   assert.equal(computeLevel('content.publish', {}).level, 'B');
   assert.equal(computeLevel('listing.create', {}).level, 'B');
 });
+
+test('publish_content 创建审批：201、level=B、subject_type=content_draft，admin 可批', async () => {
+  const product = await createProduct({ suffix: 'PUBLISH-CONTENT', listing: 'pdd' });
+  const draft = await prisma.contentDraft.create({
+    data: {
+      orgId: 1n,
+      productId: product.id,
+      platform: 'pdd',
+      contentType: 'selling_points',
+      body: '纯棉面料，透气亲肤，适合春秋日常通勤。',
+      structured: {},
+      facts: createFactEnvelope([
+        {
+          key: 'name',
+          value: product.name,
+          unit: 'text',
+          source: 'manual',
+          source_table: 'product',
+          source_id: product.id,
+          source_version: 1,
+        },
+      ]) as never,
+      factCheck: {},
+      status: 'generated',
+      createdBy: operator.id,
+    },
+  });
+
+  const created = await post('/api/approvals', {
+    subject_type: 'content_draft',
+    subject_id: draft.id,
+    action: 'publish_content',
+    platform: 'pdd',
+    target_payload: contentDraftTargetPayload(draft),
+    context: { listingStatus: 'draft' },
+  });
+  assert.equal(created.statusCode, 201, created.body);
+  const body = created.json() as {
+    data: {
+      id: string;
+      status: string;
+      level: string;
+      target_hash: string;
+      level_reasons: string[];
+      sla_due_at: string | null;
+    };
+  };
+  assert.equal(body.data.status, 'pending');
+  assert.equal(body.data.level, 'B', 'publish_content 必须是 B 级');
+  assert.match(body.data.target_hash, /^[0-9a-f]{64}$/);
+  assert.ok(body.data.level_reasons.includes('base=B'));
+  assert.ok(body.data.sla_due_at, 'B 级必须有 SLA 到期时间');
+
+  // 落库校验：动作、级别、主体类型与请求一致（DB CHECK 已含 publish_content）。
+  const row = await prisma.approval.findUniqueOrThrow({ where: { id: body.data.id } });
+  assert.equal(row.action, 'publish_content');
+  assert.equal(row.operationLevel, 'B');
+  assert.equal(row.subjectType, 'content_draft');
+  assert.equal(row.subjectId, draft.id);
+  assert.equal(row.targetHash, body.data.target_hash);
+
+  const approved = await post(`/api/approvals/${body.data.id}/decide`, { decision: 'approve' }, adminHeaders);
+  assert.equal(approved.statusCode, 200, approved.body);
+  const decided = await prisma.approval.findUniqueOrThrow({ where: { id: body.data.id } });
+  assert.equal(decided.status, 'approved');
+});

@@ -297,8 +297,56 @@ test('drift_key 规则：商品/订单/售后分别由对象 id 定位；空值�
   );
 });
 
-test('不完整快照：跳过“本地有平台无”的推断（商品/订单/售后），避免样本不全误报', async () => {
-  const incomplete: PlatformSnapshot = {
+test('suggested_action：13 类差异都带 {level,kind}，级别取最重的写/人工动作', async () => {
+  const snapshot = await recordedSnapshot();
+  const drifts = diffAll(
+    {
+      listings: LOCAL_LISTINGS,
+      orders: withRefundStatus(LOCAL_ORDERS, LOCAL_AFTER_SALES),
+      afterSales: LOCAL_AFTER_SALES,
+    },
+    snapshot,
+    { platform: '1688', day: DAY, now: '2026-10-20T02:30:00.000Z' },
+  );
+  const expected: Record<string, { level: 'A' | 'B' | 'C' | null; kind: string }> = {
+    // 商品维度：只有库存是 A 级可逆写，其余是 B/C 级或纯人工
+    stock_mismatch: { level: 'A', kind: 'write' },
+    price_mismatch: { level: 'C', kind: 'write' },
+    state_mismatch: { level: 'B', kind: 'write' },
+    local_published_platform_offline: { level: 'B', kind: 'write' },
+    local_published_missing_platform: { level: 'B', kind: 'write' },
+    platform_only_listing: { level: null, kind: 'manual' },
+    // 订单维度
+    order_platform_only: { level: null, kind: 'manual' },
+    order_local_only: { level: 'B', kind: 'manual' },
+    order_amount_mismatch: { level: 'B', kind: 'manual' },
+    order_status_mismatch: { level: 'B', kind: 'manual' },
+    order_item_mismatch: { level: 'B', kind: 'manual' },
+    // 售后维度：退款金额涉及资金 → C 级人工；状态 B 级人工
+    after_sale_amount_mismatch: { level: 'C', kind: 'manual' },
+    after_sale_status_mismatch: { level: 'B', kind: 'manual' },
+  };
+  assert.equal(drifts.length, Object.keys(expected).length);
+  for (const drift of drifts) {
+    assert.deepEqual(drift.suggested_action, expected[drift.kind], `${drift.kind} 的主修复动作不符`);
+    // 主动作必须是 suggestion.actions 里真实存在的一条（派生，不是新造）。
+    assert.ok(
+      drift.suggestion.actions.some(
+        (action) => action.level === drift.suggested_action.level && action.kind === drift.suggested_action.kind,
+      ),
+      `${drift.kind} 的 suggested_action 不在 actions 里`,
+    );
+    assert.equal(drift.suggestion.auto_fixable, false);
+  }
+  // 派生是纯函数：同输入同输出（用于断言"不因重复对账漂移"）。
+  assert.deepEqual(drifts[0]!.suggested_action, diffAll(
+    { listings: LOCAL_LISTINGS, orders: withRefundStatus(LOCAL_ORDERS, LOCAL_AFTER_SALES), afterSales: LOCAL_AFTER_SALES },
+    snapshot,
+    { platform: '1688', day: DAY, now: '2026-10-20T09:00:00.000Z' },
+  )[0]!.suggested_action);
+});
+
+test('不完整快照：跳过“本地有平台无”的推断（商品/订单/售后），避免样本不全误报', async () => {  const incomplete: PlatformSnapshot = {
     platform: 'pdd',
     capturedAt: '2026-10-20T02:00:00.000Z',
     source: 'recorded',
@@ -752,6 +800,7 @@ test('POST /api/reconcile/1688（postgres）：13 条差异（商品6+订单5+�
   const body = JSON.parse(first.body).data as {
     summary: { total: number; by_kind: Record<string, number> };
     persisted: { inserted: number; updated: number };
+    drift: { inserted: number; updated: number; unchanged: number };
     store: string;
     store_note: string;
     snapshot: { source: string; verified: boolean; complete: boolean; orders_complete: boolean };
@@ -760,6 +809,14 @@ test('POST /api/reconcile/1688（postgres）：13 条差异（商品6+订单5+�
       after_sale: { checked: boolean; local_after_sales: number; platform_after_sales: number };
     };
     diffs: Array<{ kind: string; suggestion: { actions: unknown[] }; drift_key: string }>;
+    items: Array<{
+      drift_key: string;
+      kind: string;
+      severity: string;
+      subject_ref: { type: string; platform_order_id: string | null };
+      suggested_action: { level: string | null; kind: string };
+      auto_fixable: boolean;
+    }>;
   };
   assert.equal(body.store, 'postgres');
   assert.equal(body.store_note, 'RECONCILE_STORE=postgres（drift_log）');
@@ -782,6 +839,20 @@ test('POST /api/reconcile/1688（postgres）：13 条差异（商品6+订单5+�
   assert.equal(body.persisted.inserted, 13);
   assert.ok(body.diffs.every((drift) => Array.isArray(drift.suggestion.actions)));
   assert.equal(new Set(body.diffs.map((drift) => drift.drift_key)).size, 13);
+
+  // docs/12 §3.11 契约视图：items[{drift_key,kind,severity,subject_ref,suggested_action,auto_fixable}]
+  assert.equal(body.items.length, 13);
+  assert.deepEqual(
+    body.items.map((item) => item.drift_key).sort(),
+    body.diffs.map((drift) => drift.drift_key).sort(),
+  );
+  assert.ok(body.items.every((item) => item.auto_fixable === false));
+  assert.ok(body.items.every((item) => item.subject_ref && typeof item.subject_ref.type === 'string'));
+  const orderOnlyItem = body.items.find((item) => item.kind === 'order_platform_only');
+  assert.equal(orderOnlyItem?.subject_ref.type, 'order');
+  assert.equal(orderOnlyItem?.subject_ref.platform_order_id, 'ALI-ORDER-1003');
+  assert.deepEqual(orderOnlyItem?.suggested_action, { level: null, kind: 'manual' });
+  assert.deepEqual(body.drift, { inserted: 13, updated: 0, unchanged: 0 });
 
   const dbRows = await prisma.$queryRawUnsafe<Array<{ kind: string; n: number }>>(
     `SELECT kind, count(*)::int AS n FROM drift_log WHERE platform = '1688' AND day = $1::date AND archived_at IS NULL GROUP BY kind`,
@@ -906,11 +977,13 @@ test('POST /api/sync/pdd orders：真实落库 orders+order_items，幂等（第
     pages: number;
     stats: { pulled: number; created: number; updated: number; skipped: number };
     cursor: string;
+    dry_run: boolean;
   };
   assert.equal(body.pages, 2);
   assert.equal(body.stats.pulled, 5);
   assert.equal(body.stats.created, 5);
   assert.equal(body.cursor, 'ck-orders-2');
+  assert.equal(body.dry_run, false, 'orders 有真实 sink，不得再标 dry_run=true');
 
   const orders = await prisma.order.findMany({
     where: { platform: 'pdd' },
@@ -946,6 +1019,28 @@ test('POST /api/sync/pdd orders：真实落库 orders+order_items，幂等（第
   };
   assert.equal(statusBody.store, 'postgres');
   assert.equal(statusBody.items.find((item) => item.resource === 'orders')?.cursor, 'ck-orders-2');
+});
+
+test('POST /api/sync/pdd stock：无 sink → 只推进游标，dry_run=true', async () => {
+  const response = await fixture.app.inject({
+    method: 'POST',
+    url: '/api/sync/pdd',
+    headers: { ...fixture.operator, ...IDEM('sync-stock'), 'content-type': 'application/json' },
+    payload: { resource: 'stock' },
+  });
+  assert.equal(response.statusCode, 202, response.body);
+  const body = JSON.parse(response.body).data as {
+    dry_run: boolean;
+    stats: { pulled: number; created: number; updated: number; skipped: number };
+    cursor: string;
+  };
+  assert.equal(body.dry_run, true, '未接 sink 的资源仍是干跑');
+  assert.equal(body.stats.pulled, 2);
+  assert.deepEqual(
+    { created: body.stats.created, updated: body.stats.updated, skipped: body.stats.skipped },
+    { created: 0, updated: 0, skipped: 0 },
+  );
+  assert.equal(body.cursor, 'ck-stock-1');
 });
 
 // ---------------------------------------------------------------- 集成：日报

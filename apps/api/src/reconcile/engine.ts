@@ -30,6 +30,7 @@ import {
   DRIFT_KINDS,
   isLocallyLive,
   normalizePlatformState,
+  primaryAction,
 } from './types.js';
 
 const KIND_ORDER = new Map<DriftKind, number>(DRIFT_KINDS.map((kind, index) => [kind, index]));
@@ -423,6 +424,7 @@ function baseRecord(
           : input.listingId
             ? 'listing'
             : 'platform_item';
+  const suggestion = suggestionFor(input.kind);
   return {
     drift_key,
     platform: options.platform,
@@ -445,7 +447,8 @@ function baseRecord(
     local: input.local,
     platform_value: input.platformValue,
     detail: input.detail,
-    suggestion: suggestionFor(input.kind),
+    suggestion,
+    suggested_action: primaryAction(suggestion),
     status: 'open',
     detected_at: options.now,
   };

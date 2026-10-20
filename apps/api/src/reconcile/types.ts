@@ -175,6 +175,38 @@ export interface FixSuggestion {
   auto_fixable: false;
 }
 
+/**
+ * 主修复动作 —— docs/12 §3.11 响应契约 `items[].suggested_action{level,kind}`。
+ *
+ * 从 `suggestion.actions` 里挑"最重"的一条（C>B>A；同级取靠后的写/人工动作），
+ * 让调用方不必自己遍历 actions 就能知道"该走什么级别、是写还是人工"。
+ */
+export interface SuggestedAction {
+  /** 写操作级别；纯只读/纯人工（无级别）为 null。 */
+  level: 'A' | 'B' | 'C' | null;
+  kind: FixAction['kind'];
+}
+
+const LEVEL_RANK: Record<'A' | 'B' | 'C', number> = { A: 1, B: 2, C: 3 };
+
+/**
+ * 派生主修复动作（不单独存库，避免与 `suggestion.actions` 漂移）。
+ *
+ * 规则：取级别最高的一条（`null` 视为 0 级）；同级取**靠后**的一条 —— 建议表约定
+ * "先只读核对、后写/人工处置"，后者才是真正要执行的动作。
+ */
+export function primaryAction(suggestion: FixSuggestion): SuggestedAction {
+  let best: SuggestedAction = { level: null, kind: 'manual' };
+  let bestRank = -1;
+  for (const action of suggestion.actions) {
+    const rank = action.level === null ? 0 : LEVEL_RANK[action.level];
+    if (rank < bestRank) continue;
+    bestRank = rank;
+    best = { level: action.level, kind: action.kind };
+  }
+  return best;
+}
+
 export interface DriftSubject {
   type: 'listing' | 'platform_item' | 'sku' | 'order' | 'order_item' | 'after_sale';
   listing_id: string | null;
@@ -201,6 +233,8 @@ export interface DriftRecord {
   platform_value: Record<string, unknown> | null;
   detail: string;
   suggestion: FixSuggestion;
+  /** docs/12 §3.11 契约字段：主修复动作（由 suggestion.actions 派生，不单独存库）。 */
+  suggested_action: SuggestedAction;
   status: 'open';
   detected_at: string;
   first_detected_at: string;
