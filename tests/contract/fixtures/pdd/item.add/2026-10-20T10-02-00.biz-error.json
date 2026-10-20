@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "platform": "pdd",
+    "endpoint": "item.add.business_reject",
+    "recorded_at": "2026-10-20T02:02:00.000Z",
+    "doc_version": "synthetic（docs/01 未取得接口文档；仅验证错误映射）",
+    "recorder": "qa",
+    "synthetic": true,
+    "schema": "schemas/pdd/error.schema.json"
+  },
+  "request": {
+    "method": "POST",
+    "path": "/openapi/router",
+    "query": {
+      "type": "pdd.item.add",
+      "timestamp": "<redacted:timestamp>",
+      "sign": "<redacted:sign>",
+      "access_token": "<redacted:access_token>"
+    },
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "goods_name": "纯棉圆领短袖T恤",
+      "price": 8900,
+      "quantity": 120,
+      "outer_id": "SPU-TSHIRT-M-001"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {},
+    "body": {
+      "success": false,
+      "error_code": "BIZ_REJECT",
+      "error_msg": "商品类目属性缺失",
+      "request_id": "pdd-req-0002"
+    }
+  },
+  "expected_error": {
+    "internal": "platform_reject",
+    "external": "platform_reject"
+  }
+}

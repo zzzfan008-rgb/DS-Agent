@@ -1,0 +1,53 @@
+{
+  "sku_id": "GOLDEN-002",
+  "platform": "1688",
+  "version_no": 1,
+  "unit": "cm",
+  "rows": [
+    {
+      "size_code": "S",
+      "size_order": 20,
+      "measurements": {
+        "胸围": 92,
+        "衣长": 62,
+        "肩宽": 38,
+        "袖长": 56,
+        "领围": 36
+      },
+      "recommend_height_min": 155,
+      "recommend_height_max": 165,
+      "recommend_weight_min": 45,
+      "recommend_weight_max": 55
+    },
+    {
+      "size_code": "M",
+      "size_order": 30,
+      "measurements": {
+        "胸围": 96,
+        "衣长": 64,
+        "肩宽": 40,
+        "袖长": 57,
+        "领围": 38
+      },
+      "recommend_height_min": 160,
+      "recommend_height_max": 170,
+      "recommend_weight_min": 50,
+      "recommend_weight_max": 62
+    },
+    {
+      "size_code": "L",
+      "size_order": 40,
+      "measurements": {
+        "胸围": 100,
+        "衣长": 66,
+        "肩宽": 42,
+        "袖长": 58,
+        "领围": 40
+      },
+      "recommend_height_min": 165,
+      "recommend_height_max": 175,
+      "recommend_weight_min": 58,
+      "recommend_weight_max": 70
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "sku_id": "GOLDEN-001",
+  "platform": "1688",
+  "content_type": "title",
+  "title": "男装纯棉圆领短袖T恤 示例品牌",
+  "selling_points": [
+    "棉100%",
+    "尺码 M/L/XL",
+    "48小时内发货"
+  ],
+  "facts": {
+    "price_cents": 8500,
+    "stock_qty": 120,
+    "composition_text": "棉100%",
+    "size_codes": [
+      "M",
+      "L",
+      "XL"
+    ],
+    "category_code": "A0101"
+  },
+  "forbidden_words": []
+}

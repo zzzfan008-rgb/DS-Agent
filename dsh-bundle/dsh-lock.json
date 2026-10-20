@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "lockedAt": "2026-10-20T14:40:00+08:00",
+  "lockedBy": "agent-host (t3 seed)",
+  "channel": "rc",
+  "node": ">=22",
+  "dsh": {
+    "version": "0.2.1-rc.2",
+    "integrity": null,
+    "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-0.2.1-rc.2.tgz",
+    "note": "integrity 在首次正式锁定时从 pnpm-lock.yaml 回填（docs/04 §3.3）；本文件是 M1 seed。"
+  },
+  "packages": {
+    "@deepseek-ai/dsh-typert-protocol": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-api-gateway": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-api-remote-access": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-agent-preset": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-skill-filesystem": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-mcp-client": "0.2.1-rc.2"
+  },
+  "bundle": {
+    "path": "dsh-bundle",
+    "sha256": "PENDING-FIRST-LOCK"
+  },
+  "skills": [
+    { "name": "brand-tone", "path": "dsh-bundle/skills/brand-tone/2.1.0", "sha256": "PENDING-FIRST-LOCK" },
+    { "name": "size-guide", "path": "dsh-bundle/skills/size-guide/3.0.1", "sha256": "PENDING-FIRST-LOCK" },
+    { "name": "care", "path": "dsh-bundle/skills/care/1.1.0", "sha256": "PENDING-FIRST-LOCK" },
+    { "name": "return-policy", "path": "dsh-bundle/skills/return-policy/1.3.0", "sha256": "PENDING-FIRST-LOCK" }
+  ],
+  "mcp": [
+    {
+      "name": "erp",
+      "version": "0.1.0-placeholder",
+      "transport": "stdio",
+      "toolsHash": "PENDING-MCP-IMPLEMENTATION"
+    },
+    {
+      "name": "knowledge",
+      "version": "0.1.0-placeholder",
+      "transport": "stdio",
+      "toolsHash": "PENDING-MCP-IMPLEMENTATION"
+    }
+  ]
+}

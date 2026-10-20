@@ -1,0 +1,17 @@
+{
+  "sku_id": "GOLDEN-004",
+  "platform": "1688",
+  "content_type": "quote",
+  "min_order_qty": 2,
+  "price_tiers": [
+    {
+      "min_qty": 2,
+      "price_cents": 19900
+    },
+    {
+      "min_qty": 20,
+      "price_cents": 18500
+    }
+  ],
+  "stock_qty": 60
+}

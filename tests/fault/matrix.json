@@ -1,0 +1,169 @@
+{
+  "version": 1,
+  "note": "docs/15 §5.2 故障注入矩阵。status=implemented 的行由 tests/fault/fault-injection.test.mjs 覆盖；todo 行需 adapter/状态机落地后补用例。external 必须是 docs/12 §4 词表内的对外 code；internal 是 docs/15 §5.2 的内部失败分类。",
+  "rows": [
+    {
+      "id": "FI-01",
+      "inject": "连接超时",
+      "mode": "connect_timeout",
+      "internal": "retryable",
+      "external": "upstream_5xx",
+      "http": 502,
+      "retry": "retry_once_then_dead_letter",
+      "user_hint": "平台不稳定，已自动重试；失败将转人工",
+      "status": "implemented"
+    },
+    {
+      "id": "FI-02",
+      "inject": "读超时（已发出）",
+      "mode": "read_timeout",
+      "internal": "upstream_unknown",
+      "external": "conflict",
+      "http": 409,
+      "detail_sub": "unknown",
+      "retry": "none_manual_reconcile",
+      "user_hint": "结果未知，请先对账再重试",
+      "status": "implemented"
+    },
+    {
+      "id": "FI-03",
+      "inject": "5xx",
+      "mode": "http_5xx",
+      "internal": "retryable",
+      "external": "upstream_5xx",
+      "http": 502,
+      "retry": "backoff_3_then_dead_letter",
+      "user_hint": "平台不稳定，已自动重试",
+      "status": "implemented"
+    },
+    {
+      "id": "FI-04",
+      "inject": "429 限流",
+      "mode": "rate_limit",
+      "internal": "quota",
+      "external": "quota",
+      "http": 429,
+      "retry": "retry_after",
+      "user_hint": "平台限流，{seconds} 秒后自动重试",
+      "status": "implemented"
+    },
+    {
+      "id": "FI-05",
+      "inject": "401 token 过期",
+      "mode": "auth_expired",
+      "internal": "auth_expired",
+      "external": "unauthorized",
+      "http": 401,
+      "retry": "refresh_once",
+      "user_hint": "登录已过期，正在重新授权",
+      "status": "todo",
+      "reason": "需要 adapter token 刷新器（t4/t5）"
+    },
+    {
+      "id": "FI-06",
+      "inject": "部分成功",
+      "mode": "partial_success",
+      "internal": "partial_success",
+      "external": null,
+      "http": 200,
+      "retry": "failed_items_only",
+      "user_hint": "部分成功：失败 {n} 条可单独重试",
+      "status": "implemented"
+    },
+    {
+      "id": "FI-07",
+      "inject": "重复回调",
+      "mode": "duplicate_callback",
+      "internal": "idempotent_hit",
+      "external": null,
+      "http": 200,
+      "retry": "none",
+      "user_hint": "已处理，无需重复操作",
+      "status": "implemented"
+    },
+    {
+      "id": "FI-08",
+      "inject": "回调乱序",
+      "mode": "out_of_order",
+      "internal": "conflict",
+      "external": "conflict",
+      "http": 409,
+      "retry": "none",
+      "user_hint": "状态已变化，请刷新",
+      "status": "todo",
+      "reason": "需要订单状态机（t9）"
+    },
+    {
+      "id": "FI-09",
+      "inject": "平台新增字段",
+      "mode": "extra_field",
+      "internal": "ignored",
+      "external": null,
+      "http": 200,
+      "retry": "none",
+      "user_hint": "",
+      "status": "todo",
+      "reason": "解析器落地后接入（t4/t5），当前 Schema additionalProperties=true 已允许"
+    },
+    {
+      "id": "FI-10",
+      "inject": "平台删/改必填字段",
+      "mode": "contract_drift_missing",
+      "internal": "contract_drift",
+      "external": "upstream_5xx",
+      "http": 502,
+      "detail_sub": "contract_drift",
+      "retry": "none_alert",
+      "user_hint": "平台契约变化，已告警并暂停该接口",
+      "status": "implemented"
+    },
+    {
+      "id": "FI-11",
+      "inject": "类型变化",
+      "mode": "contract_drift_type",
+      "internal": "contract_drift",
+      "external": "upstream_5xx",
+      "http": 502,
+      "detail_sub": "contract_drift",
+      "retry": "none_alert",
+      "user_hint": "平台契约变化，已告警并暂停该接口",
+      "status": "implemented"
+    },
+    {
+      "id": "FI-12",
+      "inject": "空响应/HTML 错误页",
+      "mode": "html_error",
+      "internal": "upstream_invalid",
+      "external": "upstream_5xx",
+      "http": 502,
+      "detail_sub": "invalid_response",
+      "retry": "none_alert",
+      "user_hint": "平台返回异常，已告警",
+      "status": "implemented"
+    },
+    {
+      "id": "FI-13",
+      "inject": "签名失败/时间戳过期",
+      "mode": "signature_invalid",
+      "internal": "signature_invalid",
+      "external": "unauthorized",
+      "http": 401,
+      "retry": "none",
+      "user_hint": "平台鉴权失败，请联系管理员",
+      "status": "implemented"
+    },
+    {
+      "id": "FI-14",
+      "inject": "大响应/慢流",
+      "mode": "response_too_large",
+      "internal": "response_too_large",
+      "external": "upstream_5xx",
+      "http": 502,
+      "detail_sub": "response_too_large",
+      "retry": "none",
+      "user_hint": "平台返回数据过大，已阻断",
+      "status": "todo",
+      "reason": "需要 adapter 响应体上限配置（t4/t5）"
+    }
+  ]
+}

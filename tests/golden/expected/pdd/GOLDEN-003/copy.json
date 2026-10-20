@@ -1,0 +1,23 @@
+{
+  "sku_id": "GOLDEN-003",
+  "platform": "pdd",
+  "content_type": "title",
+  "title": "女装高腰直筒牛仔长裤 示例品牌",
+  "selling_points": [
+    "棉98%+氨纶2%",
+    "尺码 26/27/28",
+    "48小时内发货"
+  ],
+  "facts": {
+    "price_cents": 18900,
+    "stock_qty": 150,
+    "composition_text": "棉98%+氨纶2%",
+    "size_codes": [
+      "26",
+      "27",
+      "28"
+    ],
+    "category_code": "B0211"
+  },
+  "forbidden_words": []
+}

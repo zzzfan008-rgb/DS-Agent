@@ -1,0 +1,22 @@
+{
+  "sku_id": "GOLDEN-009",
+  "platform": "1688",
+  "content_type": "title",
+  "title": "女装缎面翻领衬衫（小码） 示例品牌",
+  "selling_points": [
+    "聚酯纤维100%",
+    "尺码 XS/S",
+    "48小时内发货"
+  ],
+  "facts": {
+    "price_cents": 11500,
+    "stock_qty": 55,
+    "composition_text": "聚酯纤维100%",
+    "size_codes": [
+      "XS",
+      "S"
+    ],
+    "category_code": "A0202"
+  },
+  "forbidden_words": []
+}

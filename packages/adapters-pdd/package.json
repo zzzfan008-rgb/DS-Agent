@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "description": "拼多多适配（中心侧）：接口注册表、签名与防重放、限流与重试、请求留档、录制回放、上架包兜底导出",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -12,6 +13,12 @@
     }
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "tsx --test test/config.test.ts test/registry.test.ts test/signer.test.ts test/rate-limiter.test.ts test/transport.test.ts test/client.test.ts test/replay.test.ts test/listing-package.test.ts",
+    "sample:listing": "tsx src/cli/export-listing-package.ts",
+    "registry:report": "tsx src/cli/registry-report.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.0"
   }
 }

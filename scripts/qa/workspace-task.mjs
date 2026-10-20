@@ -90,9 +90,12 @@ function runScript(relDir, script) {
 }
 
 async function main() {
-  const task = process.argv[2];
+  const args = process.argv.slice(2);
+  const task = args[0];
+  const filterIndex = args.indexOf('--filter');
+  const filter = filterIndex >= 0 ? args[filterIndex + 1] : null;
   if (!task || !/^[a-z][\w:-]*$/i.test(task)) {
-    console.error('用法：node scripts/qa/workspace-task.mjs <task>');
+    console.error('用法：node scripts/qa/workspace-task.mjs <task> [--filter <package-name>]');
     return 2;
   }
 
@@ -101,7 +104,13 @@ async function main() {
   for (const dir of dirs) {
     const pkg = await readPackage(dir);
     const script = pkg?.scripts?.[task];
-    if (script) targets.push({ dir, name: pkg.name ?? dir, script });
+    if (!script) continue;
+    if (filter && pkg.name !== filter) continue;
+    targets.push({ dir, name: pkg.name ?? dir, script });
+  }
+  if (filter && targets.length === 0) {
+    console.error(`[workspace-task] 没有包匹配 --filter ${filter} 且定义 "${task}" 脚本。`);
+    return 2;
   }
 
   if (targets.length === 0) {
@@ -125,7 +134,7 @@ async function main() {
   const failed = results.filter((r) => r.code !== 0);
   console.log('');
   for (const r of results) console.log(`${r.code === 0 ? '✔' : '✖'} ${r.name}  ${task}`);
-  if (failed.length > 0) return 1;
+  if (failed.length > 0) return failed[0].code;
   console.log(`[workspace-task] 全部 ${targets.length} 个包通过。`);
   return 0;
 }

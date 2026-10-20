@@ -29,6 +29,25 @@ function ConvertTo-DockerContext {
     }
 }
 
+<#
+.SYNOPSIS
+  把 Windows 路径转换为 Docker（在 WSL 内运行时）可识别的宿主路径。
+  例：D:\DSSAAS\backups\a.dump -> /mnt/d/DSSAAS/backups/a.dump
+  仅当 DockerCommand 以 wsl 开头时转换；本机 Docker Desktop 路径原样返回。
+#>
+function ConvertTo-DockerHostPath {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        $DockerContext
+    )
+    if ($null -eq $DockerContext -or $DockerContext.Exe -notmatch 'wsl') { return $Path }
+    $p = $Path -replace '\\', '/'
+    if ($p -match '^([A-Za-z]):/(.*)$') {
+        return '/mnt/' + $Matches[1].ToLowerInvariant() + '/' + $Matches[2]
+    }
+    return $p
+}
+
 function Invoke-Process {
     param(
         [Parameter(Mandatory = $true)][string]$Exe,

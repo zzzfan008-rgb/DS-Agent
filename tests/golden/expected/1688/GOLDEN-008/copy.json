@@ -1,0 +1,23 @@
+{
+  "sku_id": "GOLDEN-008",
+  "platform": "1688",
+  "content_type": "title",
+  "title": "男装重磅纯棉T恤（大码） 示例品牌",
+  "selling_points": [
+    "棉95%+氨纶5%",
+    "尺码 2XL/3XL/4XL",
+    "48小时内发货"
+  ],
+  "facts": {
+    "price_cents": 9900,
+    "stock_qty": 90,
+    "composition_text": "棉95%+氨纶5%",
+    "size_codes": [
+      "2XL",
+      "3XL",
+      "4XL"
+    ],
+    "category_code": "A0101"
+  },
+  "forbidden_words": []
+}

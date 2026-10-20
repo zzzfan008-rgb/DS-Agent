@@ -1,7 +1,7 @@
 name: ci
 
 # PR 必过门禁（docs/15 §9.1 / docs/21 §11.3）。
-# 1) quality-gate：lint（契约 + 边界静态检查）、typecheck、test、prisma validate
+# 1) quality-gate：lint、typecheck、单测/集成（含 API）、契约回放、故障注入、黄金集结构校验、prisma validate
 # 2) migration-repeatable：pgvector 空库上连续跑两次 migrate deploy
 #
 # 任何一步红即禁止合并。迁移文件只增不改（docs/15 §9.4）。
@@ -16,15 +16,28 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  # prisma validate / generate 需要 datasource url 存在；不建立实际连接。
-  DATABASE_URL: postgresql://dssaas:dssaas_dev_pw@localhost:5432/dssaas?schema=public
-
 jobs:
   quality-gate:
-    name: lint / typecheck / test / prisma validate
+    name: lint / typecheck / test / contract / fault / golden / prisma validate
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dssaas_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d dssaas_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dssaas_test?schema=public
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dssaas_test?schema=public
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,14 +57,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Apply migrations（测试库）
+        run: pnpm db:deploy
+
       - name: Lint（契约 + 边界静态检查）
         run: pnpm lint
 
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Test（QA 规则单测 + 各包单测）
+      - name: Test（QA 规则 + 各包单测/集成）
         run: pnpm test
+
+      - name: Contract replay（平台契约回放，零外网）
+        run: pnpm test:contract
+
+      - name: Fault injection（故障矩阵四维断言）
+        run: pnpm test:fault
+
+      - name: Golden set（结构/硬事实/版本锁）
+        run: pnpm test:golden
 
       - name: Prisma validate
         run: pnpm db:validate
@@ -76,6 +101,8 @@ jobs:
           --health-retries 12
     env:
       MIGRATE_CHECK_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dssaas_ci?schema=public
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dssaas_ci?schema=public
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dssaas_ci?schema=public
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -94,6 +121,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: API tests（复用 service postgres，自包含落库）
+        run: |
+          pnpm db:deploy
+          pnpm --filter @dssaas/api test
 
       - name: 迁移可重复（空库连续两次 migrate deploy）
         run: pnpm check:migrations

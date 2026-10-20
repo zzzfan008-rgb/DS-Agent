@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "platform": "pdd",
+    "endpoint": "test.rate_limited",
+    "recorded_at": "2026-10-20T10:02:00.000Z",
+    "doc_version": "synthetic（docs/01 未取得接口文档；仅验证 t4 限流分类链路）",
+    "recorder": "adapter-pdd",
+    "synthetic": true
+  },
+  "request": {
+    "method": "POST",
+    "path": "/synthetic/test/rate_limited",
+    "query": {},
+    "headers": {},
+    "body": {
+      "burst": true
+    }
+  },
+  "response": {
+    "status": 429,
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "retry-after": "1"
+    },
+    "body": {
+      "success": false,
+      "error_code": "RATE_LIMIT",
+      "error_msg": "请求过于频繁"
+    }
+  },
+  "expected_error": {
+    "internal": "rate_limited",
+    "external": "rate_limited"
+  }
+}

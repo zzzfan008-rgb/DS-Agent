@@ -7,6 +7,7 @@
  */
 import Fastify, { type FastifyInstance } from 'fastify';
 import cookie from '@fastify/cookie';
+import multipart from '@fastify/multipart';
 import { getPrisma, disconnectPrisma, type PrismaClient } from '@dssaas/db';
 import type { AppConfig } from './config.js';
 import { normalizeRequestId } from './lib/ids.js';
@@ -17,12 +18,23 @@ import { AuditService } from './services/audit.js';
 import { AuthService } from './services/identity.js';
 import { LoginRateLimiter } from './services/login-rate-limit.js';
 import { MetricsRegistry } from './services/metrics.js';
+import { createRegistryService } from './services/registry.js';
 import { MemorySessionStore } from './services/sessions.js';
 import { MapTotpSecretResolver, TotpService, parseTotpSecrets } from './lib/totp.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerAuditRoutes } from './routes/audit.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerMetricsRoutes } from './routes/metrics.js';
+import { registerAgentRoutes } from './agent/routes.js';
+import { TypertBridgeClient } from './agent/bridge-client.js';
+import { AgentRunManager } from './agent/run-manager.js';
+import { registerProviderRoutes } from './routes/providers.js';
+import { registerModelRoutes } from './routes/models.js';
+import { registerRouteConfigRoutes } from './routes/route-config.js';
+import { registerUsageRoutes } from './routes/usage.js';
+import { registerProductRoutes } from './routes/products.js';
+import { registerContentRoutes } from './routes/content.js';
+import { registerJudgmentRoutes } from './routes/judgments.js';
 import './types.js';
 
 export interface BuildAppOptions {
@@ -54,6 +66,23 @@ export async function buildApp(config: AppConfig, options: BuildAppOptions = {})
     now,
   );
   const audit = new AuditService(prisma, metricsRegistry);
+  const registry = createRegistryService({ prisma, audit, config });
+  const bridgeLog: { warn: (obj: unknown, msg?: string) => void } = {
+    warn: (obj: unknown, msg?: string): void => {
+      app.log.warn(obj, msg);
+    },
+  };
+  const agentBridge = new TypertBridgeClient(config, { log: bridgeLog });
+  const agentRuns = new AgentRunManager({
+    config,
+    bridge: agentBridge,
+    audit,
+    metrics: metricsRegistry,
+    log: {
+      warn: (obj, msg) => app.log.warn(obj, msg),
+      error: (obj, msg) => app.log.error(obj, msg),
+    },
+  });
   const limiter = new LoginRateLimiter(
     config.loginRateMax,
     config.loginRateWindowMs,
@@ -83,6 +112,9 @@ export async function buildApp(config: AppConfig, options: BuildAppOptions = {})
   app.decorate('metricsRegistry', metricsRegistry);
   app.decorate('idempotencyStore', idempotencyStore);
   app.decorate('audit', audit);
+  app.decorate('registry', registry);
+  app.decorate('agentBridge', agentBridge);
+  app.decorate('agentRuns', agentRuns);
   app.decorate(
     'authService',
     new AuthService({
@@ -98,6 +130,7 @@ export async function buildApp(config: AppConfig, options: BuildAppOptions = {})
   );
 
   await app.register(cookie);
+  await app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
 
   // 1) 请求上下文：request_id、时间、安全头。
   app.addHook('onRequest', async (request, reply) => {
@@ -178,8 +211,17 @@ export async function buildApp(config: AppConfig, options: BuildAppOptions = {})
   registerMetricsRoutes(app);
   registerAuthRoutes(app);
   registerAuditRoutes(app);
+  registerProviderRoutes(app);
+  registerModelRoutes(app);
+  registerRouteConfigRoutes(app);
+  registerUsageRoutes(app);
+  registerProductRoutes(app);
+  registerContentRoutes(app);
+  registerJudgmentRoutes(app);
+  registerAgentRoutes(app);
 
   app.addHook('onClose', async () => {
+    agentRuns.close();
     sessions.clear();
     idempotencyStore.clear();
     if (options.disconnectOnClose !== false) {

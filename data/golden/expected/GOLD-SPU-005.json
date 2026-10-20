@@ -1,0 +1,25 @@
+{
+  "spu_code": "GOLD-SPU-005",
+  "platform": "pdd",
+  "expected_verdict": "reject",
+  "expected_l1": [
+    {
+      "rule_id": "L1-LEX-001",
+      "severity": "blocker",
+      "field": "title",
+      "matched": "第一"
+    }
+  ],
+  "facts": {
+    "price_cents": 16900,
+    "stock_qty": 80,
+    "category_code": "B0211",
+    "composition_text": "棉100%",
+    "size_codes": [
+      "27",
+      "28",
+      "29"
+    ]
+  },
+  "notes": "期望 L1 拦截：标题含极限词，按 docs/08 L1-LEX-001 判 reject"
+}

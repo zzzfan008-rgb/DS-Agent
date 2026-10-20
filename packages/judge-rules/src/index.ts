@@ -1,8 +1,16 @@
 /**
- * @dssaas/judge-rules —— 判断层规则集与提示词版本库（M1 空壳）。
+ * @dssaas/judge-rules —— 判断层规则集、L2 Schema 与合并逻辑（M3）。
  *
- * L1 确定性规则（禁限词、字段完整性、价格一致性、类目资质必填）落在这里；
- * L2 LLM 裁决的固定 JSON Schema（verdict / severity / reason / evidence_refs / repair_hint）
- * 与提示词版本也在这里维护，保证可复现、可回溯。
+ * - L1：确定性规则（禁限词、价格/库存/成分/尺码/政策硬事实、标题结构），
+ *   每条命中带 rule_id + span（原文偏移）+ matched + suggestion；
+ * - L2：JudgmentV1 JSON Schema + 后置校验（证据白名单、引用逐字、无引用升级、置信度）；
+ * - 合并：L1 blocker 短路 reject；L1 high/medium 不得被 L2 降为 pass；escalate 优先。
  */
 export const JUDGE_RULES_PACKAGE = '@dssaas/judge-rules';
+
+export * from './types.js';
+export * from './normalize.js';
+export * from './l1.js';
+export * from './l2.js';
+export * from './merge.js';
+export * from './prompt.js';

@@ -1,0 +1,38 @@
+{
+  "sku_id": "GOLDEN-010",
+  "platform": "pdd",
+  "version_no": 1,
+  "unit": "cm",
+  "rows": [
+    {
+      "size_code": "29",
+      "size_order": 40,
+      "measurements": {
+        "腰围": 74,
+        "裤长": 96,
+        "臀围": 98,
+        "大腿围": 56,
+        "脚口": 36
+      },
+      "recommend_height_min": 162,
+      "recommend_height_max": 172,
+      "recommend_weight_min": 55,
+      "recommend_weight_max": 65
+    },
+    {
+      "size_code": "30",
+      "size_order": 50,
+      "measurements": {
+        "腰围": 77,
+        "裤长": 97,
+        "臀围": 101,
+        "大腿围": 58,
+        "脚口": 37
+      },
+      "recommend_height_min": 165,
+      "recommend_height_max": 175,
+      "recommend_weight_min": 60,
+      "recommend_weight_max": 72
+    }
+  ]
+}

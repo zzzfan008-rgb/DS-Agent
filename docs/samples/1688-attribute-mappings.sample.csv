@@ -1,0 +1,15 @@
+﻿platform,platform_category_id,attr_path,attr_type,internal_field,internal_value,platform_value_id,platform_value_name,extra,status,source
+1688,0192f0a0-0000-7000-8000-0000000000c1,color,enum,product_sku.color_id,BL-0102,,,"{""label"":""牛仔蓝"",""order"":0}",draft,manual
+1688,0192f0a0-0000-7000-8000-0000000000c1,color,enum,product_sku.color_id,WH-0001,,,"{""label"":""本白"",""order"":1}",draft,manual
+1688,0192f0a0-0000-7000-8000-0000000000c1,size,enum,product_sku.size_code,S,,,"{""label"":""S"",""order"":40,""size_order"":40}",draft,manual
+1688,0192f0a0-0000-7000-8000-0000000000c1,size,enum,product_sku.size_code,M,,,"{""label"":""M"",""order"":50,""size_order"":50}",draft,manual
+1688,0192f0a0-0000-7000-8000-0000000000c1,size,enum,product_sku.size_code,L,,,"{""label"":""L"",""order"":60,""size_order"":60}",draft,manual
+1688,0192f0a0-0000-7000-8000-0000000000c1,material,text,fabric_composition.materials,棉62%、聚酯纤维33%、氨纶5%,,棉62%、聚酯纤维33%、氨纶5%,"{""display_divisor"":1}",draft,manual
+1688,0192f0a0-0000-7000-8000-0000000000c1,min_order_qty,number,product_sku.min_order_qty,2,,,"{""unit"":""件"",""sku_code"":""SHIRT-W-WHT-S""}",draft,manual
+1688,0192f0a0-0000-7000-8000-0000000000c1,min_order_qty,number,product_sku.min_order_qty,2,,,"{""unit"":""件"",""sku_code"":""SHIRT-W-WHT-M""}",draft,manual
+1688,0192f0a0-0000-7000-8000-0000000000c1,min_order_qty,number,product_sku.min_order_qty,2,,,"{""unit"":""件"",""sku_code"":""SHIRT-W-WHT-L""}",draft,manual
+1688,0192f0a0-0000-7000-8000-0000000000c1,min_order_qty,number,product_sku.min_order_qty,2,,,"{""unit"":""件"",""sku_code"":""SHIRT-W-BLU-S""}",draft,manual
+1688,0192f0a0-0000-7000-8000-0000000000c1,min_order_qty,number,product_sku.min_order_qty,2,,,"{""unit"":""件"",""sku_code"":""SHIRT-W-BLU-M""}",draft,manual
+1688,0192f0a0-0000-7000-8000-0000000000c1,min_order_qty,number,product_sku.min_order_qty,2,,,"{""unit"":""件"",""sku_code"":""SHIRT-W-BLU-L""}",draft,manual
+1688,0192f0a0-0000-7000-8000-0000000000c1,mix_batch,bool,,true,,,"{""pending_column"":""mix_batch_allowed""}",draft,manual
+1688,0192f0a0-0000-7000-8000-0000000000c1,spu_code,text,product.spu_code,SHIRT-W-2026-001,,,{},draft,import

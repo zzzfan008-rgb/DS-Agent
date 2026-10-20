@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "platform": "1688",
+    "endpoint": "product.get",
+    "recorded_at": "2026-10-20T02:03:00.000Z",
+    "doc_version": "synthetic（docs/02 未取得接口文档；仅验证回放链路）",
+    "recorder": "qa",
+    "synthetic": true,
+    "schema": "schemas/1688/product.get.schema.json"
+  },
+  "request": {
+    "method": "POST",
+    "path": "/openapi/param2/1/com.alibaba.product/alibaba.product.get/1234567",
+    "query": {
+      "access_token": "<redacted:access_token>",
+      "_aop_timestamp": "<redacted:timestamp>",
+      "_aop_signature": "<redacted:sign>"
+    },
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "productID": 123456789
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {},
+    "body": {
+      "success": true,
+      "result": {
+        "productID": 123456789,
+        "productName": "示例针织开衫",
+        "status": "published",
+        "skuInfos": [
+          {
+            "skuId": "SIT-SKU-0001",
+            "amountOnSale": 120,
+            "price": "85.00",
+            "specId": "SIT-SPEC-0001"
+          }
+        ]
+      }
+    }
+  }
+}

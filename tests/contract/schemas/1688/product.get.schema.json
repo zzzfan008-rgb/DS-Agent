@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "1688 product.get 成功响应（synthetic）",
+  "type": "object",
+  "required": ["success", "result"],
+  "properties": {
+    "success": { "type": "boolean", "const": true },
+    "result": {
+      "type": "object",
+      "required": ["productID", "productName", "skuInfos"],
+      "properties": {
+        "productID": { "type": "integer", "minimum": 1 },
+        "productName": { "type": "string", "minLength": 1 },
+        "status": { "type": "string" },
+        "skuInfos": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["skuId", "amountOnSale", "price"],
+            "properties": {
+              "skuId": { "type": "string", "minLength": 1 },
+              "amountOnSale": { "type": "integer", "minimum": 0 },
+              "price": { "type": "string", "pattern": "^\\d+\\.\\d{2}$" },
+              "specId": { "type": "string" }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

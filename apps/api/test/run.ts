@@ -5,7 +5,8 @@
  *   3) prisma migrate deploy（不用 migrate dev，遵守 t1 约束）；
  *   4) 串行执行 test/*.test.ts。
  *
- * 环境变量：TEST_DATABASE_URL；缺省用 55434 的一次性 pgvector 容器。
+ * 环境变量：TEST_DATABASE_URL（必填；库名必须以 _test 结尾）。
+ * 自包含运行：pnpm test:api（scripts/qa/with-db.mjs 起一次性 pgvector 容器）。
  */
 import { spawnSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
@@ -15,9 +16,13 @@ import { PrismaClient } from '@dssaas/db';
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = resolve(appRoot, '../..');
-const testDatabaseUrl =
-  process.env.TEST_DATABASE_URL ??
-  'postgresql://dssaas:dssaas_dev_pw@localhost:55434/dssaas_test?schema=public';
+const testDatabaseUrl = process.env.TEST_DATABASE_URL;
+if (!testDatabaseUrl) {
+  console.error('[test] 缺少 TEST_DATABASE_URL；拒绝回落到硬编码端口。');
+  console.error('[test] 自包含运行（推荐）：pnpm test:api');
+  console.error('[test] 已有测试库：TEST_DATABASE_URL=postgresql://.../dssaas_test?schema=public pnpm test:api:local');
+  process.exit(2);
+}
 
 function databaseName(url: string): string {
   try {
@@ -28,11 +33,11 @@ function databaseName(url: string): string {
 }
 
 async function resetSchema(): Promise<void> {
-  const name = databaseName(testDatabaseUrl);
+  const name = databaseName(testDatabaseUrl!);
   if (!/_test$/.test(name)) {
     throw new Error(`拒绝对非测试库执行重置：${name || '(unknown)'}（库名必须以 _test 结尾）`);
   }
-  const prisma = new PrismaClient({ datasources: { db: { url: testDatabaseUrl } } });
+  const prisma = new PrismaClient({ datasources: { db: { url: testDatabaseUrl! } } });
   try {
     await prisma.$executeRawUnsafe('DROP SCHEMA IF EXISTS public CASCADE');
     await prisma.$executeRawUnsafe('CREATE SCHEMA public');
@@ -54,15 +59,15 @@ function runNode(
 }
 
 async function main(): Promise<void> {
-  console.log(`[test] database = ${testDatabaseUrl.replace(/:[^:@/]+@/, ':***@')}`);
+  console.log(`[test] database = ${testDatabaseUrl!.replace(/:[^:@/]+@/, ':***@')}`);
   await resetSchema();
   console.log('[test] schema reset');
 
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     NODE_ENV: 'test',
-    DATABASE_URL: testDatabaseUrl,
-    TEST_DATABASE_URL: testDatabaseUrl,
+    DATABASE_URL: testDatabaseUrl!,
+    TEST_DATABASE_URL: testDatabaseUrl!,
   };
 
   const prismaCli = resolve(repoRoot, 'packages/db/node_modules/prisma/build/index.js');
@@ -76,8 +81,10 @@ async function main(): Promise<void> {
   }
   console.log('[test] migrations applied');
 
+  const only = process.env.TEST_ONLY;
   const files = readdirSync(join(appRoot, 'test'))
     .filter((file) => file.endsWith('.test.ts'))
+    .filter((file) => !only || file.includes(only))
     .sort()
     .map((file) => `test/${file}`);
   if (files.length === 0) {

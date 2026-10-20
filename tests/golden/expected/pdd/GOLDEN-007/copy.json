@@ -1,0 +1,23 @@
+{
+  "sku_id": "GOLDEN-007",
+  "platform": "pdd",
+  "content_type": "title",
+  "title": "女装连体竞技泳衣 示例品牌",
+  "selling_points": [
+    "聚酯纤维82%+氨纶18%",
+    "尺码 S/M/L",
+    "48小时内发货"
+  ],
+  "facts": {
+    "price_cents": 23900,
+    "stock_qty": 70,
+    "composition_text": "聚酯纤维82%+氨纶18%",
+    "size_codes": [
+      "S",
+      "M",
+      "L"
+    ],
+    "category_code": "G0201"
+  },
+  "forbidden_words": []
+}

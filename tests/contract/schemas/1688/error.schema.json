@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "1688 错误响应（synthetic）",
+  "type": "object",
+  "required": ["success", "errorCode", "errorMessage"],
+  "properties": {
+    "success": { "type": "boolean", "const": false },
+    "errorCode": { "type": "string", "minLength": 1 },
+    "errorMessage": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": true
+}

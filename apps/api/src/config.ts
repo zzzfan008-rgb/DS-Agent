@@ -59,9 +59,39 @@ const EnvSchema = z.object({
   TOTP_ISSUER: z.string().default('DSSAAS'),
   /** 开发/PoC 的 TOTP 密钥表（JSON: {"ref":"BASE32"}）；生产应由 DSH/Vault 解析。 */
   DSSAAS_TOTP_SECRETS: z.string().optional(),
+  /** 开发/PoC 的模型供应商凭据表（JSON: {"credential_ref":"secret"}）；生产由 DSH 凭据解析。 */
+  DSSAAS_MODEL_CREDENTIALS: z.string().optional(),
 
   /** Prometheus 抓取令牌（可选）；优先仍可用 admin 会话。 */
   METRICS_TOKEN: z.string().min(16).optional(),
+
+  // ---- DSH 桥接（docs/17 §3.3、docs/16 §7.3）----
+  /** 桥接基地址；api 拼接 `/internal/agent/run` 与 `/internal/health`。 */
+  DSH_BRIDGE_URL: z.string().url().default('http://127.0.0.1:43180'),
+  /** 生产从 0600 令牌文件读取；开发可显式注入 DSH_BRIDGE_TOKEN（不含 `/connect`）。 */
+  DSH_BRIDGE_TOKEN_FILE: z.string().min(1).optional(),
+  DSH_BRIDGE_TOKEN: z.string().min(16).optional(),
+  /** 建连超时（docs/17 §2.2 ⑥：3s）。 */
+  DSH_CONNECT_TIMEOUT_MS: z.coerce.number().int().min(100).max(30_000).default(3000),
+  /** 健康探针超时（api `/ready` 与 POST 前置检查）。 */
+  DSH_HEALTH_TIMEOUT_MS: z.coerce.number().int().min(100).max(10_000).default(1500),
+  DSH_HEALTH_CACHE_MS: z.coerce.number().int().min(0).max(60_000).default(2000),
+
+  // ---- Agent 驱动（docs/17 §4.2）----
+  AGENT_MAX_CONCURRENCY: z.coerce.number().int().min(1).max(64).default(8),
+  AGENT_QUEUE_LIMIT: z.coerce.number().int().min(0).max(1000).default(30),
+  AGENT_QUEUE_WAIT_MS: z.coerce.number().int().min(100).max(600_000).default(30_000),
+  AGENT_USER_CONCURRENCY: z.coerce.number().int().min(1).max(64).default(2),
+  AGENT_SESSION_CONCURRENCY: z.coerce.number().int().min(1).max(64).default(1),
+  AGENT_RUN_TIMEOUT_MS: z.coerce.number().int().min(1000).max(600_000).default(120_000),
+  AGENT_MAX_TIMEOUT_MS: z.coerce.number().int().min(1000).max(600_000).default(600_000),
+  AGENT_FIRST_TOKEN_TIMEOUT_MS: z.coerce.number().int().min(100).max(60_000).default(8000),
+  AGENT_HEARTBEAT_MS: z.coerce.number().int().min(1000).max(60_000).default(15_000),
+  /** run 终态后保留查询/事件回放的时长（docs/12 §8.3：30 分钟）。 */
+  AGENT_RUN_RETENTION_MS: z.coerce.number().int().min(60_000).max(24 * 3600 * 1000).default(30 * 60 * 1000),
+  /** 桥接连接期指数退避重试（只在首个业务事件前重试，避免重复输出）。 */
+  AGENT_BRIDGE_RECONNECT_ATTEMPTS: z.coerce.number().int().min(0).max(5).default(2),
+  AGENT_BRIDGE_RECONNECT_BASE_MS: z.coerce.number().int().min(10).max(5000).default(250),
 
   /** seed 脚本使用（不进运行期依赖）。 */
   SEED_ADMIN_EMAIL: z.string().email().optional(),
@@ -94,8 +124,31 @@ export interface AppConfig {
 
   totpIssuer: string;
   totpSecretsJson: string | null;
+  modelCredentialsJson: string | null;
   metricsToken: string | null;
   version: string;
+
+  /** DSH 桥接（docs/17 §3.3）；URL 含协议与端口，api 自行拼接内部路径。 */
+  dshBridgeUrl: string;
+  dshBridgeTokenFile: string | null;
+  dshBridgeToken: string | null;
+  dshConnectTimeoutMs: number;
+  dshHealthTimeoutMs: number;
+  dshHealthCacheMs: number;
+
+  /** Agent 并发/超时/重试（docs/17 §4.2、§6.5）。 */
+  agentMaxConcurrency: number;
+  agentQueueLimit: number;
+  agentQueueWaitMs: number;
+  agentUserConcurrency: number;
+  agentSessionConcurrency: number;
+  agentRunTimeoutMs: number;
+  agentMaxTimeoutMs: number;
+  agentFirstTokenTimeoutMs: number;
+  agentHeartbeatMs: number;
+  agentRunRetentionMs: number;
+  agentBridgeReconnectAttempts: number;
+  agentBridgeReconnectBaseMs: number;
 
   /** seed 脚本专用；运行期 API 不依赖。 */
   seedAdminEmail: string | null;
@@ -155,8 +208,27 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     lockMinutes: raw.AUTH_LOCK_MINUTES,
     totpIssuer: raw.TOTP_ISSUER,
     totpSecretsJson: raw.DSSAAS_TOTP_SECRETS ?? null,
+    modelCredentialsJson: raw.DSSAAS_MODEL_CREDENTIALS ?? null,
     metricsToken: raw.METRICS_TOKEN ?? null,
     version: '0.1.0',
+    dshBridgeUrl: raw.DSH_BRIDGE_URL.replace(/\/+$/, ''),
+    dshBridgeTokenFile: raw.DSH_BRIDGE_TOKEN_FILE ?? null,
+    dshBridgeToken: raw.DSH_BRIDGE_TOKEN ?? null,
+    dshConnectTimeoutMs: raw.DSH_CONNECT_TIMEOUT_MS,
+    dshHealthTimeoutMs: raw.DSH_HEALTH_TIMEOUT_MS,
+    dshHealthCacheMs: raw.DSH_HEALTH_CACHE_MS,
+    agentMaxConcurrency: raw.AGENT_MAX_CONCURRENCY,
+    agentQueueLimit: raw.AGENT_QUEUE_LIMIT,
+    agentQueueWaitMs: raw.AGENT_QUEUE_WAIT_MS,
+    agentUserConcurrency: raw.AGENT_USER_CONCURRENCY,
+    agentSessionConcurrency: raw.AGENT_SESSION_CONCURRENCY,
+    agentRunTimeoutMs: raw.AGENT_RUN_TIMEOUT_MS,
+    agentMaxTimeoutMs: raw.AGENT_MAX_TIMEOUT_MS,
+    agentFirstTokenTimeoutMs: raw.AGENT_FIRST_TOKEN_TIMEOUT_MS,
+    agentHeartbeatMs: raw.AGENT_HEARTBEAT_MS,
+    agentRunRetentionMs: raw.AGENT_RUN_RETENTION_MS,
+    agentBridgeReconnectAttempts: raw.AGENT_BRIDGE_RECONNECT_ATTEMPTS,
+    agentBridgeReconnectBaseMs: raw.AGENT_BRIDGE_RECONNECT_BASE_MS,
     seedAdminEmail: raw.SEED_ADMIN_EMAIL ?? null,
     seedAdminPassword: raw.SEED_ADMIN_PASSWORD ?? null,
     seedAdminName: raw.SEED_ADMIN_NAME ?? null,

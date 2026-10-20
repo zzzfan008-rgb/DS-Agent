@@ -1,0 +1,101 @@
+{
+  "sku_id": "GOLDEN-010",
+  "spu_code": "SPU-B0211-002",
+  "name": "女装九分微喇牛仔裤",
+  "brand": "示例品牌",
+  "category_code": "B0211",
+  "season": "all",
+  "year": 2026,
+  "fit": "regular",
+  "style_tags": [
+    "基础款",
+    "通勤"
+  ],
+  "attributes": {
+    "腰型": "中腰",
+    "版型": "微喇",
+    "弹力": "无弹",
+    "洗水": "深蓝"
+  },
+  "fabric": {
+    "fabric_code": "FAB-DENIM-002",
+    "fabric_name": "全棉牛仔",
+    "role": "main",
+    "materials": [
+      {
+        "material": "棉",
+        "percent": 100
+      }
+    ]
+  },
+  "origin_country": "CN",
+  "care_instructions": {
+    "washing": "机洗30℃",
+    "bleaching": "不可漂白",
+    "ironing": "中温熨烫"
+  },
+  "sizes": [
+    {
+      "size_code": "29",
+      "size_order": 40,
+      "measurements": {
+        "腰围": 74,
+        "裤长": 96,
+        "臀围": 98,
+        "大腿围": 56,
+        "脚口": 36
+      },
+      "recommend_height_min": 162,
+      "recommend_height_max": 172,
+      "recommend_weight_min": 55,
+      "recommend_weight_max": 65
+    },
+    {
+      "size_code": "30",
+      "size_order": 50,
+      "measurements": {
+        "腰围": 77,
+        "裤长": 97,
+        "臀围": 101,
+        "大腿围": 58,
+        "脚口": 37
+      },
+      "recommend_height_min": 165,
+      "recommend_height_max": 175,
+      "recommend_weight_min": 60,
+      "recommend_weight_max": 72
+    }
+  ],
+  "price_cents": 21900,
+  "list_price_cents": 27900,
+  "sale_price_cents": 19900,
+  "cost_cents": 9600,
+  "stock_qty": 110,
+  "min_order_qty": 1,
+  "weight_g": 540,
+  "price_source": "import",
+  "stock_source": "import",
+  "facts": {
+    "policy": "7天无理由退换",
+    "shipping": "48小时内发货"
+  },
+  "platforms": {
+    "1688": {
+      "min_order_qty": 2,
+      "price_tiers": [
+        {
+          "min_qty": 2,
+          "price_cents": 17900
+        },
+        {
+          "min_qty": 40,
+          "price_cents": 16500
+        }
+      ]
+    },
+    "pdd": {
+      "sale_price_cents": 19900,
+      "stock_qty": 110
+    }
+  }
+}

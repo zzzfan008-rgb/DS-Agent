@@ -1,0 +1,120 @@
+{
+  "sku_id": "GOLDEN-003",
+  "spu_code": "SPU-B0211-001",
+  "name": "女装高腰直筒牛仔长裤",
+  "brand": "示例品牌",
+  "category_code": "B0211",
+  "season": "all",
+  "year": 2026,
+  "fit": "regular",
+  "style_tags": [
+    "基础款",
+    "通勤"
+  ],
+  "attributes": {
+    "腰型": "高腰",
+    "版型": "直筒",
+    "弹力": "微弹",
+    "洗水": "浅蓝"
+  },
+  "fabric": {
+    "fabric_code": "FAB-DENIM-001",
+    "fabric_name": "棉弹牛仔",
+    "role": "main",
+    "materials": [
+      {
+        "material": "棉",
+        "percent": 98
+      },
+      {
+        "material": "氨纶",
+        "percent": 2
+      }
+    ]
+  },
+  "origin_country": "CN",
+  "care_instructions": {
+    "washing": "机洗30℃",
+    "bleaching": "不可漂白",
+    "ironing": "中温熨烫"
+  },
+  "sizes": [
+    {
+      "size_code": "26",
+      "size_order": 10,
+      "measurements": {
+        "腰围": 66,
+        "裤长": 98,
+        "臀围": 90,
+        "大腿围": 52,
+        "脚口": 32
+      },
+      "recommend_height_min": 155,
+      "recommend_height_max": 165,
+      "recommend_weight_min": 45,
+      "recommend_weight_max": 52
+    },
+    {
+      "size_code": "27",
+      "size_order": 20,
+      "measurements": {
+        "腰围": 68,
+        "裤长": 99,
+        "臀围": 92,
+        "大腿围": 53,
+        "脚口": 33
+      },
+      "recommend_height_min": 158,
+      "recommend_height_max": 168,
+      "recommend_weight_min": 48,
+      "recommend_weight_max": 56
+    },
+    {
+      "size_code": "28",
+      "size_order": 30,
+      "measurements": {
+        "腰围": 71,
+        "裤长": 100,
+        "臀围": 95,
+        "大腿围": 55,
+        "脚口": 34
+      },
+      "recommend_height_min": 160,
+      "recommend_height_max": 170,
+      "recommend_weight_min": 52,
+      "recommend_weight_max": 62
+    }
+  ],
+  "price_cents": 19900,
+  "list_price_cents": 25900,
+  "sale_price_cents": 18900,
+  "cost_cents": 8800,
+  "stock_qty": 150,
+  "min_order_qty": 1,
+  "weight_g": 520,
+  "price_source": "import",
+  "stock_source": "import",
+  "facts": {
+    "policy": "7天无理由退换",
+    "shipping": "48小时内发货"
+  },
+  "platforms": {
+    "1688": {
+      "min_order_qty": 2,
+      "price_tiers": [
+        {
+          "min_qty": 2,
+          "price_cents": 16900
+        },
+        {
+          "min_qty": 40,
+          "price_cents": 15500
+        }
+      ]
+    },
+    "pdd": {
+      "sale_price_cents": 18900,
+      "stock_qty": 150
+    }
+  }
+}

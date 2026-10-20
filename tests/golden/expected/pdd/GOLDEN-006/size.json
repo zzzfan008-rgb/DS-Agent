@@ -1,0 +1,41 @@
+{
+  "sku_id": "GOLDEN-006",
+  "platform": "pdd",
+  "version_no": 1,
+  "unit": "cm",
+  "rows": [
+    {
+      "size_code": "75B",
+      "size_order": 10,
+      "measurements": {
+        "胸围": 88
+      },
+      "recommend_height_min": 155,
+      "recommend_height_max": 165,
+      "recommend_weight_min": 45,
+      "recommend_weight_max": 55
+    },
+    {
+      "size_code": "80B",
+      "size_order": 20,
+      "measurements": {
+        "胸围": 92
+      },
+      "recommend_height_min": 158,
+      "recommend_height_max": 168,
+      "recommend_weight_min": 50,
+      "recommend_weight_max": 60
+    },
+    {
+      "size_code": "85B",
+      "size_order": 30,
+      "measurements": {
+        "胸围": 96
+      },
+      "recommend_height_min": 160,
+      "recommend_height_max": 172,
+      "recommend_weight_min": 55,
+      "recommend_weight_max": 68
+    }
+  ]
+}

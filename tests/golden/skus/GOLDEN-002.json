@@ -1,0 +1,120 @@
+{
+  "sku_id": "GOLDEN-002",
+  "spu_code": "SPU-A0202-001",
+  "name": "女装翻领长袖衬衫",
+  "brand": "示例品牌",
+  "category_code": "A0202",
+  "season": "spring",
+  "year": 2026,
+  "fit": "regular",
+  "style_tags": [
+    "基础款",
+    "通勤"
+  ],
+  "attributes": {
+    "领型": "翻领",
+    "袖型": "长袖",
+    "版型": "修身",
+    "厚度": "适中"
+  },
+  "fabric": {
+    "fabric_code": "FAB-COTTON-POLY-001",
+    "fabric_name": "棉涤混纺",
+    "role": "main",
+    "materials": [
+      {
+        "material": "棉",
+        "percent": 60
+      },
+      {
+        "material": "聚酯纤维",
+        "percent": 40
+      }
+    ]
+  },
+  "origin_country": "CN",
+  "care_instructions": {
+    "washing": "机洗30℃",
+    "bleaching": "不可漂白",
+    "ironing": "中温熨烫"
+  },
+  "sizes": [
+    {
+      "size_code": "S",
+      "size_order": 20,
+      "measurements": {
+        "胸围": 92,
+        "衣长": 62,
+        "肩宽": 38,
+        "袖长": 56,
+        "领围": 36
+      },
+      "recommend_height_min": 155,
+      "recommend_height_max": 165,
+      "recommend_weight_min": 45,
+      "recommend_weight_max": 55
+    },
+    {
+      "size_code": "M",
+      "size_order": 30,
+      "measurements": {
+        "胸围": 96,
+        "衣长": 64,
+        "肩宽": 40,
+        "袖长": 57,
+        "领围": 38
+      },
+      "recommend_height_min": 160,
+      "recommend_height_max": 170,
+      "recommend_weight_min": 50,
+      "recommend_weight_max": 62
+    },
+    {
+      "size_code": "L",
+      "size_order": 40,
+      "measurements": {
+        "胸围": 100,
+        "衣长": 66,
+        "肩宽": 42,
+        "袖长": 58,
+        "领围": 40
+      },
+      "recommend_height_min": 165,
+      "recommend_height_max": 175,
+      "recommend_weight_min": 58,
+      "recommend_weight_max": 70
+    }
+  ],
+  "price_cents": 15900,
+  "list_price_cents": 19900,
+  "sale_price_cents": 14900,
+  "cost_cents": 7200,
+  "stock_qty": 80,
+  "min_order_qty": 1,
+  "weight_g": 220,
+  "price_source": "import",
+  "stock_source": "import",
+  "facts": {
+    "policy": "7天无理由退换",
+    "shipping": "48小时内发货"
+  },
+  "platforms": {
+    "1688": {
+      "min_order_qty": 3,
+      "price_tiers": [
+        {
+          "min_qty": 3,
+          "price_cents": 13500
+        },
+        {
+          "min_qty": 30,
+          "price_cents": 12500
+        }
+      ]
+    },
+    "pdd": {
+      "sale_price_cents": 14900,
+      "stock_qty": 80
+    }
+  }
+}

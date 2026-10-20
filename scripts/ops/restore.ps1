@@ -90,11 +90,6 @@ if (-not $DryRun) {
     if (-not (Assert-Confirmed -Force:$Force -Action "restore $Target（覆盖/写入目标）")) {
         exit 1
     }
-    if ($targetPath -in @('dssaas', 'postgres') -and -not $AllowProductionTarget) {
-        # 防御式分支：正常情况下 PgDatabase 不会是这两个值；保留以防参数误用
-        Write-Host '拒绝执行：目标库疑似生产库，需显式 -AllowProductionTarget。' -ForegroundColor Red
-        exit 1
-    }
 }
 
 if (-not $targetExists) {
@@ -112,14 +107,13 @@ if ($runPg) {
     }
 
     $remoteDump = "/tmp/dssaas-restore-$timestamp.dump"
-    $checkDbSh = 'psql -U "$POSTGRES_USER" -d postgres -tAc "select 1 from pg_database where datname=' + "''$PgDatabase''" + '"'
-    $createDbSh = 'createdb -U "$POSTGRES_USER" "$POSTGRES_DB"'  # 占位，实际用显式库名
+    $checkDbSh = 'psql -U "$POSTGRES_USER" -d postgres -tAc "select 1 from pg_database where datname=''' + $PgDatabase + '''"'
     $createDbSh = 'createdb -U "$POSTGRES_USER" ' + $PgDatabase
     $restoreSh = 'pg_restore --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d ' + $PgDatabase + ' ' + $remoteDump
     $cleanSh = "rm -f $remoteDump"
 
     if ($DryRun) {
-        Write-Host "  [dry-run] $(Format-DockerCommand -Arguments @('cp', $targetPath, "${PgContainer}:$remoteDump"))"
+        Write-Host "  [dry-run] $(Format-DockerCommand -Arguments @('cp', (ConvertTo-DockerHostPath -Path $targetPath -DockerContext $dockerCtx), "${PgContainer}:$remoteDump"))"
         Write-Host "  [dry-run] $(Format-DockerCommand -Arguments @('exec', $PgContainer, 'sh', '-c', $checkDbSh))"
         Write-Host "  [dry-run] $(Format-DockerCommand -Arguments @('exec', $PgContainer, 'sh', '-c', $createDbSh))  # 仅当目标库不存在"
         Write-Host "  [dry-run] $(Format-DockerCommand -Arguments @('exec', $PgContainer, 'sh', '-c', $restoreSh))"
@@ -128,7 +122,7 @@ if ($runPg) {
     }
     else {
         try {
-            $copy = Invoke-Docker -DockerContext $dockerCtx -Arguments @('cp', $targetPath, "${PgContainer}:$remoteDump")
+            $copy = Invoke-Docker -DockerContext $dockerCtx -Arguments @('cp', (ConvertTo-DockerHostPath -Path $targetPath -DockerContext $dockerCtx), "${PgContainer}:$remoteDump")
             if ($copy.ExitCode -ne 0) { throw "docker cp 失败：$($copy.Output)" }
 
             $exists = Invoke-Docker -DockerContext $dockerCtx -Arguments @('exec', $PgContainer, 'sh', '-c', $checkDbSh)
@@ -194,14 +188,20 @@ if ($runDsh) {
         }
     }
 
+    $hostTar = ConvertTo-DockerHostPath -Path $targetPath -DockerContext $dockerCtx
     $mountArgs = @(
         'run', '--rm',
         '-v', "${DshVolume}:/dsh",
-        '-v', "${targetPath}:/backup/in.tar.gz:ro"
+        '-v', "${hostTar}:/backup/in.tar.gz:ro"
     )
-    if ($checksumHost) { $mountArgs += @('-v', "${checksumHost}:/backup/SHA256SUMS:ro") }
+    if ($checksumHost) {
+        $hostSha = ConvertTo-DockerHostPath -Path $checksumHost -DockerContext $dockerCtx
+        $mountArgs += @('-v', "${hostSha}:/backup/SHA256SUMS:ro")
+    }
+    $mountArgs += 'alpine:3.20'
 
-    $verifySh = 'cd /backup && echo "$EXPECTED_HASH  in.tar.gz" | sha256sum -c -'
+    $hashForCmd = if ($expectedHash) { $expectedHash } else { '<sha256-from-checksum-file>' }
+    $verifySh = 'cd /backup && echo "' + $hashForCmd + '  in.tar.gz" | sha256sum -c -'
     $extractSh = 'tar -C /dsh -xzf /backup/in.tar.gz'
 
     if ($DryRun) {

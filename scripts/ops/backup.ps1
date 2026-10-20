@@ -159,7 +159,7 @@ if ($runPg) {
     $remoteDump = "/tmp/$dumpName"
     $dumpSh = 'pg_dump -Fc -Z6 -U "$POSTGRES_USER" -d "$POSTGRES_DB" > ' + $remoteDump
     $dumpArgs = @('exec', $PgContainer, 'sh', '-c', $dumpSh)
-    $copyArgs = @('cp', "${PgContainer}:$remoteDump", $dumpFile)
+    $copyArgs = @('cp', "${PgContainer}:$remoteDump", (ConvertTo-DockerHostPath -Path $dumpFile -DockerContext $dockerCtx))
     $cleanArgs = @('exec', $PgContainer, 'sh', '-c', "rm -f $remoteDump")
 
     if ($DryRun) {
@@ -244,7 +244,7 @@ if ($runDsh) {
         'echo "excluded=$excluded";',
         'mkdir -p /backup/dsh;',
         "tar -C /dsh --exclude=secrets --exclude=.credentials.yaml --exclude=workspaces -czf /backup/dsh/$tarName . &&",
-        'echo "bytes=$(stat -c %s /backup/dsh/' + $tarName + ')" &&',
+        ('echo "bytes=$(stat -c %s /backup/dsh/' + $tarName + ')" &&'),
         "sha256sum /backup/dsh/$tarName"
     ) -join ' '
     $dshArgs = @(

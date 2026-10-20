@@ -1,0 +1,113 @@
+{
+  "case_id": "NEG-002",
+  "base_spu": "GOLD-SPU-004",
+  "rule": "missing_qualification",
+  "mutation": "qualification_json 置空",
+  "expected": {
+    "verdict": "reject",
+    "error_code": "invalid_fact",
+    "l1": [
+      {
+        "rule_id": "PLAT-QUA-001",
+        "severity": "high",
+        "field": "qualification",
+        "matched": "(空)"
+      }
+    ]
+  },
+  "data": {
+    "spu_code": "GOLD-SPU-004",
+    "title": "女装高腰直筒牛仔长裤 浅蓝",
+    "category_code": "B0211",
+    "fabric": {
+      "fabric_code": "FAB-G-1004",
+      "fabric_name": "棉弹牛仔",
+      "role": "main",
+      "materials": [
+        {
+          "material": "棉",
+          "percent": 98
+        },
+        {
+          "material": "氨纶",
+          "percent": 2
+        }
+      ]
+    },
+    "skuSizes": [
+      "26",
+      "27",
+      "28",
+      "29"
+    ],
+    "chart": [
+      {
+        "sku_size_code": "26",
+        "size_order": 10,
+        "measurements": {
+          "腰围": 66,
+          "裤长": 98,
+          "臀围": 90,
+          "大腿围": 52,
+          "脚口": 32
+        },
+        "recommend_height_min": 150,
+        "recommend_height_max": 160,
+        "recommend_weight_min": 42,
+        "recommend_weight_max": 50
+      },
+      {
+        "sku_size_code": "27",
+        "size_order": 20,
+        "measurements": {
+          "腰围": 68,
+          "裤长": 99,
+          "臀围": 92,
+          "大腿围": 53,
+          "脚口": 33
+        },
+        "recommend_height_min": 155,
+        "recommend_height_max": 165,
+        "recommend_weight_min": 46,
+        "recommend_weight_max": 54
+      },
+      {
+        "sku_size_code": "28",
+        "size_order": 30,
+        "measurements": {
+          "腰围": 71,
+          "裤长": 100,
+          "臀围": 95,
+          "大腿围": 55,
+          "脚口": 34
+        },
+        "recommend_height_min": 158,
+        "recommend_height_max": 168,
+        "recommend_weight_min": 50,
+        "recommend_weight_max": 60
+      },
+      {
+        "sku_size_code": "29",
+        "size_order": 40,
+        "measurements": {
+          "腰围": 74,
+          "裤长": 101,
+          "臀围": 98,
+          "大腿围": 57,
+          "脚口": 35
+        },
+        "recommend_height_min": 162,
+        "recommend_height_max": 172,
+        "recommend_weight_min": 54,
+        "recommend_weight_max": 65
+      }
+    ],
+    "qualification": {},
+    "price_cents": 18900,
+    "stock_qty": 150,
+    "expected": {
+      "verdict": "pass",
+      "l1": []
+    }
+  }
+}

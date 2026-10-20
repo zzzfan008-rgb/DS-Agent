@@ -1,0 +1,22 @@
+{
+  "id": "NEG-004",
+  "rule": "forbidden_claim",
+  "expected_code": "platform_reject",
+  "expected_failure": "文案含平台禁止的绝对化用语",
+  "base_sku": "GOLDEN-001",
+  "copy": {
+    "sku_id": "GOLDEN-001",
+    "platform": "pdd",
+    "content_type": "title",
+    "title": "全网最低价 纯棉T恤",
+    "selling_points": [
+      "第一品质",
+      "绝对划算"
+    ],
+    "forbidden_words": [
+      "全网最低",
+      "第一",
+      "绝对"
+    ]
+  }
+}

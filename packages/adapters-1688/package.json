@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "description": "1688 适配：接口客户端骨架（签名/限流/重试/留档）、领域模型（阶梯价/起批量/代发）、上架包导出、录制回放",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -12,6 +13,11 @@
     }
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "test": "tsx --test \"test/**/*.test.ts\"",
+    "sample": "tsx scripts/generate-sample.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
   }
 }

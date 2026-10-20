@@ -1,0 +1,116 @@
+{
+  "sku_id": "GOLDEN-005",
+  "spu_code": "SPU-D0232-001",
+  "name": "女装短款连帽羽绒服",
+  "brand": "示例品牌",
+  "category_code": "D0232",
+  "season": "winter",
+  "year": 2026,
+  "fit": "regular",
+  "style_tags": [
+    "基础款",
+    "通勤"
+  ],
+  "attributes": {
+    "领型": "连帽",
+    "袖型": "长袖",
+    "版型": "宽松",
+    "填充": "90%白鸭绒"
+  },
+  "fabric": {
+    "fabric_code": "FAB-NYLON-001",
+    "fabric_name": "锦纶防风面料",
+    "role": "main",
+    "materials": [
+      {
+        "material": "锦纶",
+        "percent": 100
+      }
+    ]
+  },
+  "origin_country": "CN",
+  "care_instructions": {
+    "washing": "机洗30℃",
+    "bleaching": "不可漂白",
+    "ironing": "中温熨烫"
+  },
+  "sizes": [
+    {
+      "size_code": "M",
+      "size_order": 30,
+      "measurements": {
+        "胸围": 112,
+        "衣长": 62,
+        "肩宽": 42,
+        "袖长": 60,
+        "下摆": 108
+      },
+      "recommend_height_min": 160,
+      "recommend_height_max": 170,
+      "recommend_weight_min": 50,
+      "recommend_weight_max": 62
+    },
+    {
+      "size_code": "L",
+      "size_order": 40,
+      "measurements": {
+        "胸围": 116,
+        "衣长": 64,
+        "肩宽": 44,
+        "袖长": 61,
+        "下摆": 112
+      },
+      "recommend_height_min": 165,
+      "recommend_height_max": 175,
+      "recommend_weight_min": 56,
+      "recommend_weight_max": 70
+    },
+    {
+      "size_code": "XL",
+      "size_order": 50,
+      "measurements": {
+        "胸围": 120,
+        "衣长": 66,
+        "肩宽": 46,
+        "袖长": 62,
+        "下摆": 116
+      },
+      "recommend_height_min": 170,
+      "recommend_height_max": 180,
+      "recommend_weight_min": 64,
+      "recommend_weight_max": 80
+    }
+  ],
+  "price_cents": 49900,
+  "list_price_cents": 65900,
+  "sale_price_cents": 46900,
+  "cost_cents": 23800,
+  "stock_qty": 45,
+  "min_order_qty": 1,
+  "weight_g": 980,
+  "price_source": "import",
+  "stock_source": "import",
+  "facts": {
+    "policy": "7天无理由退换",
+    "shipping": "48小时内发货"
+  },
+  "platforms": {
+    "1688": {
+      "min_order_qty": 2,
+      "price_tiers": [
+        {
+          "min_qty": 2,
+          "price_cents": 43900
+        },
+        {
+          "min_qty": 20,
+          "price_cents": 40900
+        }
+      ]
+    },
+    "pdd": {
+      "sale_price_cents": 46900,
+      "stock_qty": 45
+    }
+  }
+}

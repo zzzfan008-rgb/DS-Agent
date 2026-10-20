@@ -1,0 +1,23 @@
+{
+  "sku_id": "GOLDEN-002",
+  "platform": "pdd",
+  "content_type": "title",
+  "title": "女装翻领长袖衬衫 示例品牌",
+  "selling_points": [
+    "棉60%+聚酯纤维40%",
+    "尺码 S/M/L",
+    "48小时内发货"
+  ],
+  "facts": {
+    "price_cents": 14900,
+    "stock_qty": 80,
+    "composition_text": "棉60%+聚酯纤维40%",
+    "size_codes": [
+      "S",
+      "M",
+      "L"
+    ],
+    "category_code": "A0202"
+  },
+  "forbidden_words": []
+}

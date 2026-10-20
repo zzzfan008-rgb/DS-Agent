@@ -1,0 +1,9 @@
+﻿spu_code,title,category_code,fit,sku_code,color_id,color_name,size_code,size_order,fabric_id,price_cents,price_yuan,list_price_cents,sale_price_cents,stock_qty,main_image,qualification_report_no,safety_class
+DS-SAMPLE-COAT-001,【样例】三合一防风冲锋衣 男女同款,D0232,regular,DS-SAMPLE-COAT-001-BK-M,BK-0101,黑色,M,50,FAB-SAMPLE-001,39900,399.00,49900,36900,120,s3://dssaas-assets/sample/coat-main.jpg,SAMPLE-QC-2026-001,GB 18401 B类
+DS-SAMPLE-COAT-001,【样例】三合一防风冲锋衣 男女同款,D0232,regular,DS-SAMPLE-COAT-001-BK-L,BK-0101,黑色,L,60,FAB-SAMPLE-001,39900,399.00,49900,36900,96,s3://dssaas-assets/sample/coat-main.jpg,SAMPLE-QC-2026-001,GB 18401 B类
+DS-SAMPLE-COAT-001,【样例】三合一防风冲锋衣 男女同款,D0232,regular,DS-SAMPLE-COAT-001-BK-XL,BK-0101,黑色,XL,70,FAB-SAMPLE-001,39900,399.00,49900,36900,64,s3://dssaas-assets/sample/coat-main.jpg,SAMPLE-QC-2026-001,GB 18401 B类
+DS-SAMPLE-COAT-001,【样例】三合一防风冲锋衣 男女同款,D0232,regular,DS-SAMPLE-COAT-001-BK-XXL,BK-0101,黑色,XXL,80,FAB-SAMPLE-001,39900,399.00,49900,36900,38,s3://dssaas-assets/sample/coat-main.jpg,SAMPLE-QC-2026-001,GB 18401 B类
+DS-SAMPLE-COAT-001,【样例】三合一防风冲锋衣 男女同款,D0232,regular,DS-SAMPLE-COAT-001-KH-M,KH-0101,卡其色,M,50,FAB-SAMPLE-001,39900,399.00,49900,,88,s3://dssaas-assets/sample/coat-main.jpg,SAMPLE-QC-2026-001,GB 18401 B类
+DS-SAMPLE-COAT-001,【样例】三合一防风冲锋衣 男女同款,D0232,regular,DS-SAMPLE-COAT-001-KH-L,KH-0101,卡其色,L,60,FAB-SAMPLE-001,39900,399.00,49900,,72,s3://dssaas-assets/sample/coat-main.jpg,SAMPLE-QC-2026-001,GB 18401 B类
+DS-SAMPLE-COAT-001,【样例】三合一防风冲锋衣 男女同款,D0232,regular,DS-SAMPLE-COAT-001-KH-XL,KH-0101,卡其色,XL,70,FAB-SAMPLE-001,39900,399.00,49900,,44,s3://dssaas-assets/sample/coat-main.jpg,SAMPLE-QC-2026-001,GB 18401 B类
+DS-SAMPLE-COAT-001,【样例】三合一防风冲锋衣 男女同款,D0232,regular,DS-SAMPLE-COAT-001-KH-XXL,KH-0101,卡其色,XXL,80,FAB-SAMPLE-001,39900,399.00,49900,,20,s3://dssaas-assets/sample/coat-main.jpg,SAMPLE-QC-2026-001,GB 18401 B类

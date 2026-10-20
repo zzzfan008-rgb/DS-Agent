@@ -1,0 +1,211 @@
+{
+  "data_origin": "synthetic_sample",
+  "product_id": "0190a7c2-0000-7000-8000-000000000001",
+  "spu_code": "DS-SAMPLE-COAT-001",
+  "name": "【样例】三合一防风冲锋衣 男女同款",
+  "category_code": "D0232",
+  "fit": "regular",
+  "description": "仓库样例数据，仅用于上架包导出与回放测试，不代表真实商品。",
+  "skus": [
+    {
+      "sku_id": "0190a7c2-0000-7000-8000-000000000101",
+      "sku_code": "DS-SAMPLE-COAT-001-BK-M",
+      "color_id": "BK-0101",
+      "color_name": "黑色",
+      "size_code": "M",
+      "fabric_id": "FAB-SAMPLE-001",
+      "price_cents": 39900,
+      "list_price_cents": 49900,
+      "sale_price_cents": 36900,
+      "stock_qty": 120
+    },
+    {
+      "sku_id": "0190a7c2-0000-7000-8000-000000000102",
+      "sku_code": "DS-SAMPLE-COAT-001-BK-L",
+      "color_id": "BK-0101",
+      "color_name": "黑色",
+      "size_code": "L",
+      "fabric_id": "FAB-SAMPLE-001",
+      "price_cents": 39900,
+      "list_price_cents": 49900,
+      "sale_price_cents": 36900,
+      "stock_qty": 96
+    },
+    {
+      "sku_id": "0190a7c2-0000-7000-8000-000000000103",
+      "sku_code": "DS-SAMPLE-COAT-001-BK-XL",
+      "color_id": "BK-0101",
+      "color_name": "黑色",
+      "size_code": "XL",
+      "fabric_id": "FAB-SAMPLE-001",
+      "price_cents": 39900,
+      "list_price_cents": 49900,
+      "sale_price_cents": 36900,
+      "stock_qty": 64
+    },
+    {
+      "sku_id": "0190a7c2-0000-7000-8000-000000000104",
+      "sku_code": "DS-SAMPLE-COAT-001-BK-XXL",
+      "color_id": "BK-0101",
+      "color_name": "黑色",
+      "size_code": "XXL",
+      "fabric_id": "FAB-SAMPLE-001",
+      "price_cents": 39900,
+      "list_price_cents": 49900,
+      "sale_price_cents": 36900,
+      "stock_qty": 38
+    },
+    {
+      "sku_id": "0190a7c2-0000-7000-8000-000000000105",
+      "sku_code": "DS-SAMPLE-COAT-001-KH-M",
+      "color_id": "KH-0101",
+      "color_name": "卡其色",
+      "size_code": "M",
+      "fabric_id": "FAB-SAMPLE-001",
+      "price_cents": 39900,
+      "list_price_cents": 49900,
+      "stock_qty": 88
+    },
+    {
+      "sku_id": "0190a7c2-0000-7000-8000-000000000106",
+      "sku_code": "DS-SAMPLE-COAT-001-KH-L",
+      "color_id": "KH-0101",
+      "color_name": "卡其色",
+      "size_code": "L",
+      "fabric_id": "FAB-SAMPLE-001",
+      "price_cents": 39900,
+      "list_price_cents": 49900,
+      "stock_qty": 72
+    },
+    {
+      "sku_id": "0190a7c2-0000-7000-8000-000000000107",
+      "sku_code": "DS-SAMPLE-COAT-001-KH-XL",
+      "color_id": "KH-0101",
+      "color_name": "卡其色",
+      "size_code": "XL",
+      "fabric_id": "FAB-SAMPLE-001",
+      "price_cents": 39900,
+      "list_price_cents": 49900,
+      "stock_qty": 44
+    },
+    {
+      "sku_id": "0190a7c2-0000-7000-8000-000000000108",
+      "sku_code": "DS-SAMPLE-COAT-001-KH-XXL",
+      "color_id": "KH-0101",
+      "color_name": "卡其色",
+      "size_code": "2XL",
+      "fabric_id": "FAB-SAMPLE-001",
+      "price_cents": 39900,
+      "list_price_cents": 49900,
+      "stock_qty": 20
+    }
+  ],
+  "size_chart": [
+    {
+      "sku_size_code": "M",
+      "size_order": 50,
+      "measurements": {
+        "衣长": 70,
+        "胸围": 112,
+        "肩宽": 47,
+        "袖长": 62
+      },
+      "recommend_height_min": 165,
+      "recommend_height_max": 172,
+      "recommend_weight_min": 60,
+      "recommend_weight_max": 68
+    },
+    {
+      "sku_size_code": "L",
+      "size_order": 60,
+      "measurements": {
+        "衣长": 72,
+        "胸围": 116,
+        "肩宽": 48.5,
+        "袖长": 63
+      },
+      "recommend_height_min": 170,
+      "recommend_height_max": 177,
+      "recommend_weight_min": 65,
+      "recommend_weight_max": 74
+    },
+    {
+      "sku_size_code": "XL",
+      "size_order": 70,
+      "measurements": {
+        "衣长": 74,
+        "胸围": 120,
+        "肩宽": 50,
+        "袖长": 64
+      },
+      "recommend_height_min": 175,
+      "recommend_height_max": 182,
+      "recommend_weight_min": 72,
+      "recommend_weight_max": 82
+    },
+    {
+      "sku_size_code": "XXL",
+      "size_order": 80,
+      "measurements": {
+        "衣长": 76,
+        "胸围": 124,
+        "肩宽": 51.5,
+        "袖长": 65
+      },
+      "recommend_height_min": 180,
+      "recommend_height_max": 187,
+      "recommend_weight_min": 80,
+      "recommend_weight_max": 90
+    }
+  ],
+  "fabric": [
+    {
+      "material": "聚酯纤维",
+      "percent": 62,
+      "note": "主料",
+      "fiber_code": "PES"
+    },
+    {
+      "material": "棉",
+      "percent": 33,
+      "note": "主料",
+      "fiber_code": "CO"
+    },
+    {
+      "material": "氨纶",
+      "percent": 5,
+      "note": "主料",
+      "fiber_code": "PU"
+    }
+  ],
+  "attributes": [
+    {
+      "attr_path": "适用季节",
+      "internal_value": "春秋",
+      "platform_value_id": null
+    },
+    {
+      "attr_path": "版型",
+      "internal_value": "regular",
+      "platform_value_id": null
+    },
+    {
+      "attr_path": "材质成分",
+      "internal_value": "聚酯纤维62%、棉33%、氨纶5%",
+      "platform_value_id": null
+    }
+  ],
+  "media": {
+    "main": "s3://dssaas-assets/sample/coat-main.jpg",
+    "gallery": [
+      "s3://dssaas-assets/sample/coat-detail-1.jpg",
+      "s3://dssaas-assets/sample/coat-detail-2.jpg"
+    ]
+  },
+  "qualification": {
+    "report_no": "SAMPLE-QC-2026-001",
+    "safety_class": "GB 18401 B类",
+    "brand": "DS-SAMPLE",
+    "manufacturer": "【样例】自有工厂"
+  }
+}

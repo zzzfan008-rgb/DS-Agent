@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "pdd 错误响应（synthetic）",
+  "type": "object",
+  "required": ["success", "error_code", "error_msg"],
+  "properties": {
+    "success": { "type": "boolean", "const": false },
+    "error_code": { "type": "string", "minLength": 1 },
+    "error_msg": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": true
+}

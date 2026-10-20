@@ -1,0 +1,944 @@
+{
+  "meta": {
+    "schemaVersion": "1688-listing-package/v0",
+    "platform": "1688",
+    "generatedAt": "2026-10-20T14:00:00.000Z",
+    "contractVerified": false,
+    "templateVerified": false,
+    "openTodoIds": [
+      "TODO-1688-001",
+      "TODO-1688-002",
+      "TODO-1688-003",
+      "TODO-1688-004",
+      "TODO-1688-005",
+      "TODO-1688-006",
+      "TODO-1688-007",
+      "TODO-1688-008",
+      "TODO-1688-009",
+      "TODO-1688-010",
+      "TODO-1688-011",
+      "TODO-1688-012",
+      "TODO-1688-PERSIST-01"
+    ],
+    "publishable": false
+  },
+  "product": {
+    "productId": "0192f0a0-0000-7000-8000-000000000001",
+    "spuCode": "SHIRT-W-2026-001",
+    "name": "女式纯棉翻领长袖衬衫",
+    "brand": "DSSTUDIO",
+    "season": "all",
+    "fit": "regular",
+    "categoryCode": "A0202",
+    "attributes": {
+      "领型": "翻领",
+      "袖长": "长袖",
+      "厚薄": "常规"
+    },
+    "mainAssetId": "0192f0a0-0000-7000-8000-0000000000a1"
+  },
+  "fabric": {
+    "fabricCode": "MAIN-01",
+    "fabricName": "主面料",
+    "role": "main",
+    "materials": [
+      {
+        "material": "棉",
+        "percent": 62,
+        "note": "主料"
+      },
+      {
+        "material": "聚酯纤维",
+        "percent": 33,
+        "note": "主料"
+      },
+      {
+        "material": "氨纶",
+        "percent": 5,
+        "note": "主料"
+      }
+    ],
+    "materialsText": "棉62%、聚酯纤维33%、氨纶5%"
+  },
+  "sizeChart": {
+    "versionNo": 3,
+    "sizeSystem": "alpha",
+    "unit": "cm",
+    "rows": [
+      {
+        "skuSizeCode": "S",
+        "sizeOrder": 40,
+        "measurements": {
+          "衣长": 67,
+          "胸围": 100,
+          "肩宽": 45,
+          "袖长": 59,
+          "领围": 39
+        },
+        "extraMeasures": {},
+        "recommendHeightMin": 158,
+        "recommendHeightMax": 165,
+        "recommendWeightMin": 48,
+        "recommendWeightMax": 55
+      },
+      {
+        "skuSizeCode": "M",
+        "sizeOrder": 50,
+        "measurements": {
+          "衣长": 69,
+          "胸围": 104,
+          "肩宽": 46,
+          "袖长": 60,
+          "领围": 40
+        },
+        "extraMeasures": {},
+        "recommendHeightMin": 165,
+        "recommendHeightMax": 172,
+        "recommendWeightMin": 55,
+        "recommendWeightMax": 63
+      },
+      {
+        "skuSizeCode": "L",
+        "sizeOrder": 60,
+        "measurements": {
+          "衣长": 71,
+          "胸围": 108,
+          "肩宽": 47.5,
+          "袖长": 61,
+          "领围": 41
+        },
+        "extraMeasures": {},
+        "recommendHeightMin": 172,
+        "recommendHeightMax": 179,
+        "recommendWeightMin": 63,
+        "recommendWeightMax": 72
+      }
+    ]
+  },
+  "spec": {
+    "axes": [
+      {
+        "axis": "color",
+        "values": [
+          {
+            "value": "BL-0102",
+            "label": "牛仔蓝",
+            "order": 0,
+            "platformValueId": null,
+            "mappingStatus": "draft"
+          },
+          {
+            "value": "WH-0001",
+            "label": "本白",
+            "order": 1,
+            "platformValueId": null,
+            "mappingStatus": "draft"
+          }
+        ]
+      },
+      {
+        "axis": "size",
+        "values": [
+          {
+            "value": "S",
+            "order": 40,
+            "label": "S",
+            "platformValueId": null,
+            "mappingStatus": "draft"
+          },
+          {
+            "value": "M",
+            "order": 50,
+            "label": "M",
+            "platformValueId": null,
+            "mappingStatus": "draft"
+          },
+          {
+            "value": "L",
+            "order": 60,
+            "label": "L",
+            "platformValueId": null,
+            "mappingStatus": "draft"
+          }
+        ]
+      }
+    ],
+    "matrix": [
+      {
+        "colorId": "BL-0102",
+        "sizeCode": "S",
+        "skuCode": "SHIRT-W-BLU-S",
+        "minOrderQty": 2,
+        "priceCents": 15800
+      },
+      {
+        "colorId": "BL-0102",
+        "sizeCode": "M",
+        "skuCode": "SHIRT-W-BLU-M",
+        "minOrderQty": 2,
+        "priceCents": 15800
+      },
+      {
+        "colorId": "BL-0102",
+        "sizeCode": "L",
+        "skuCode": "SHIRT-W-BLU-L",
+        "minOrderQty": 2,
+        "priceCents": 15800
+      },
+      {
+        "colorId": "WH-0001",
+        "sizeCode": "S",
+        "skuCode": "SHIRT-W-WHT-S",
+        "minOrderQty": 2,
+        "priceCents": 15800
+      },
+      {
+        "colorId": "WH-0001",
+        "sizeCode": "M",
+        "skuCode": "SHIRT-W-WHT-M",
+        "minOrderQty": 2,
+        "priceCents": 15800
+      },
+      {
+        "colorId": "WH-0001",
+        "sizeCode": "L",
+        "skuCode": "SHIRT-W-WHT-L",
+        "minOrderQty": 2,
+        "priceCents": 15800
+      }
+    ],
+    "combinationCount": 6,
+    "presentCount": 6
+  },
+  "skus": [
+    {
+      "skuCode": "SHIRT-W-WHT-S",
+      "colorId": "WH-0001",
+      "colorName": "本白",
+      "sizeCode": "S",
+      "sizeOrder": 40,
+      "status": "active",
+      "priceCents": 15800,
+      "listPriceCents": 19800,
+      "salePriceCents": null,
+      "priceTiers": [
+        {
+          "minQty": 2,
+          "maxQty": 49,
+          "priceCents": 15800
+        },
+        {
+          "minQty": 50,
+          "maxQty": 199,
+          "priceCents": 14200
+        },
+        {
+          "minQty": 200,
+          "maxQty": null,
+          "priceCents": 12800
+        }
+      ],
+      "priceRange": {
+        "minCents": 12800,
+        "maxCents": 15800,
+        "isFlat": false,
+        "display": "¥128.00–¥158.00"
+      },
+      "minOrderQty": 2,
+      "leadTimeDays": 3,
+      "stockQty": 480,
+      "weightG": 320
+    },
+    {
+      "skuCode": "SHIRT-W-WHT-M",
+      "colorId": "WH-0001",
+      "colorName": "本白",
+      "sizeCode": "M",
+      "sizeOrder": 50,
+      "status": "active",
+      "priceCents": 15800,
+      "listPriceCents": 19800,
+      "salePriceCents": null,
+      "priceTiers": [
+        {
+          "minQty": 2,
+          "maxQty": 49,
+          "priceCents": 15800
+        },
+        {
+          "minQty": 50,
+          "maxQty": 199,
+          "priceCents": 14200
+        },
+        {
+          "minQty": 200,
+          "maxQty": null,
+          "priceCents": 12800
+        }
+      ],
+      "priceRange": {
+        "minCents": 12800,
+        "maxCents": 15800,
+        "isFlat": false,
+        "display": "¥128.00–¥158.00"
+      },
+      "minOrderQty": 2,
+      "leadTimeDays": 3,
+      "stockQty": 480,
+      "weightG": 320
+    },
+    {
+      "skuCode": "SHIRT-W-WHT-L",
+      "colorId": "WH-0001",
+      "colorName": "本白",
+      "sizeCode": "L",
+      "sizeOrder": 60,
+      "status": "active",
+      "priceCents": 15800,
+      "listPriceCents": 19800,
+      "salePriceCents": null,
+      "priceTiers": [
+        {
+          "minQty": 2,
+          "maxQty": 49,
+          "priceCents": 15800
+        },
+        {
+          "minQty": 50,
+          "maxQty": 199,
+          "priceCents": 14200
+        },
+        {
+          "minQty": 200,
+          "maxQty": null,
+          "priceCents": 12800
+        }
+      ],
+      "priceRange": {
+        "minCents": 12800,
+        "maxCents": 15800,
+        "isFlat": false,
+        "display": "¥128.00–¥158.00"
+      },
+      "minOrderQty": 2,
+      "leadTimeDays": 3,
+      "stockQty": 480,
+      "weightG": 320
+    },
+    {
+      "skuCode": "SHIRT-W-BLU-S",
+      "colorId": "BL-0102",
+      "colorName": "牛仔蓝",
+      "sizeCode": "S",
+      "sizeOrder": 40,
+      "status": "active",
+      "priceCents": 15800,
+      "listPriceCents": 19800,
+      "salePriceCents": null,
+      "priceTiers": [
+        {
+          "minQty": 2,
+          "maxQty": 49,
+          "priceCents": 15800
+        },
+        {
+          "minQty": 50,
+          "maxQty": 199,
+          "priceCents": 14200
+        },
+        {
+          "minQty": 200,
+          "maxQty": null,
+          "priceCents": 12800
+        }
+      ],
+      "priceRange": {
+        "minCents": 12800,
+        "maxCents": 15800,
+        "isFlat": false,
+        "display": "¥128.00–¥158.00"
+      },
+      "minOrderQty": 2,
+      "leadTimeDays": 3,
+      "stockQty": 480,
+      "weightG": 320
+    },
+    {
+      "skuCode": "SHIRT-W-BLU-M",
+      "colorId": "BL-0102",
+      "colorName": "牛仔蓝",
+      "sizeCode": "M",
+      "sizeOrder": 50,
+      "status": "active",
+      "priceCents": 15800,
+      "listPriceCents": 19800,
+      "salePriceCents": null,
+      "priceTiers": [
+        {
+          "minQty": 2,
+          "maxQty": 49,
+          "priceCents": 15800
+        },
+        {
+          "minQty": 50,
+          "maxQty": 199,
+          "priceCents": 14200
+        },
+        {
+          "minQty": 200,
+          "maxQty": null,
+          "priceCents": 12800
+        }
+      ],
+      "priceRange": {
+        "minCents": 12800,
+        "maxCents": 15800,
+        "isFlat": false,
+        "display": "¥128.00–¥158.00"
+      },
+      "minOrderQty": 2,
+      "leadTimeDays": 3,
+      "stockQty": 480,
+      "weightG": 320
+    },
+    {
+      "skuCode": "SHIRT-W-BLU-L",
+      "colorId": "BL-0102",
+      "colorName": "牛仔蓝",
+      "sizeCode": "L",
+      "sizeOrder": 60,
+      "status": "active",
+      "priceCents": 15800,
+      "listPriceCents": 19800,
+      "salePriceCents": null,
+      "priceTiers": [
+        {
+          "minQty": 2,
+          "maxQty": 49,
+          "priceCents": 15800
+        },
+        {
+          "minQty": 50,
+          "maxQty": 199,
+          "priceCents": 14200
+        },
+        {
+          "minQty": 200,
+          "maxQty": null,
+          "priceCents": 12800
+        }
+      ],
+      "priceRange": {
+        "minCents": 12800,
+        "maxCents": 15800,
+        "isFlat": false,
+        "display": "¥128.00–¥158.00"
+      },
+      "minOrderQty": 2,
+      "leadTimeDays": 3,
+      "stockQty": 480,
+      "weightG": 320
+    }
+  ],
+  "moq": {
+    "minOrderQty": 2,
+    "stepQty": 1,
+    "unit": "piece",
+    "mixBatchAllowed": true,
+    "maxOrderQty": null
+  },
+  "dropship": {
+    "enabled": true,
+    "dropshipPriceCents": 16800,
+    "leadTimeDays": 2,
+    "returnAddressRef": "addr:dropship-hz-01",
+    "stockSource": "supplier",
+    "minOrderQty": 1,
+    "todos": [
+      "TODO-1688-007",
+      "TODO-1688-011",
+      "TODO-1688-PERSIST-01"
+    ],
+    "persisted": false
+  },
+  "attributes": [
+    {
+      "skuId": null,
+      "attrPath": "color",
+      "attrType": "enum",
+      "internalField": "product_sku.color_id",
+      "internalValue": "BL-0102",
+      "platformValueId": null,
+      "platformValueName": null,
+      "extra": {
+        "label": "牛仔蓝",
+        "order": 0
+      },
+      "source": "manual",
+      "todoIds": [
+        "TODO-1688-006",
+        "TODO-1688-009"
+      ],
+      "persisted": true,
+      "platform": "1688",
+      "platformCategoryId": "0192f0a0-0000-7000-8000-0000000000c1",
+      "productId": "0192f0a0-0000-7000-8000-000000000001",
+      "status": "draft"
+    },
+    {
+      "skuId": null,
+      "attrPath": "color",
+      "attrType": "enum",
+      "internalField": "product_sku.color_id",
+      "internalValue": "WH-0001",
+      "platformValueId": null,
+      "platformValueName": null,
+      "extra": {
+        "label": "本白",
+        "order": 1
+      },
+      "source": "manual",
+      "todoIds": [
+        "TODO-1688-006",
+        "TODO-1688-009"
+      ],
+      "persisted": true,
+      "platform": "1688",
+      "platformCategoryId": "0192f0a0-0000-7000-8000-0000000000c1",
+      "productId": "0192f0a0-0000-7000-8000-000000000001",
+      "status": "draft"
+    },
+    {
+      "skuId": null,
+      "attrPath": "size",
+      "attrType": "enum",
+      "internalField": "product_sku.size_code",
+      "internalValue": "S",
+      "platformValueId": null,
+      "platformValueName": null,
+      "extra": {
+        "label": "S",
+        "order": 40,
+        "size_order": 40
+      },
+      "source": "manual",
+      "todoIds": [
+        "TODO-1688-006",
+        "TODO-1688-009"
+      ],
+      "persisted": true,
+      "platform": "1688",
+      "platformCategoryId": "0192f0a0-0000-7000-8000-0000000000c1",
+      "productId": "0192f0a0-0000-7000-8000-000000000001",
+      "status": "draft"
+    },
+    {
+      "skuId": null,
+      "attrPath": "size",
+      "attrType": "enum",
+      "internalField": "product_sku.size_code",
+      "internalValue": "M",
+      "platformValueId": null,
+      "platformValueName": null,
+      "extra": {
+        "label": "M",
+        "order": 50,
+        "size_order": 50
+      },
+      "source": "manual",
+      "todoIds": [
+        "TODO-1688-006",
+        "TODO-1688-009"
+      ],
+      "persisted": true,
+      "platform": "1688",
+      "platformCategoryId": "0192f0a0-0000-7000-8000-0000000000c1",
+      "productId": "0192f0a0-0000-7000-8000-000000000001",
+      "status": "draft"
+    },
+    {
+      "skuId": null,
+      "attrPath": "size",
+      "attrType": "enum",
+      "internalField": "product_sku.size_code",
+      "internalValue": "L",
+      "platformValueId": null,
+      "platformValueName": null,
+      "extra": {
+        "label": "L",
+        "order": 60,
+        "size_order": 60
+      },
+      "source": "manual",
+      "todoIds": [
+        "TODO-1688-006",
+        "TODO-1688-009"
+      ],
+      "persisted": true,
+      "platform": "1688",
+      "platformCategoryId": "0192f0a0-0000-7000-8000-0000000000c1",
+      "productId": "0192f0a0-0000-7000-8000-000000000001",
+      "status": "draft"
+    },
+    {
+      "skuId": null,
+      "attrPath": "material",
+      "attrType": "text",
+      "internalField": "fabric_composition.materials",
+      "internalValue": "棉62%、聚酯纤维33%、氨纶5%",
+      "platformValueId": null,
+      "platformValueName": "棉62%、聚酯纤维33%、氨纶5%",
+      "extra": {
+        "display_divisor": 1
+      },
+      "source": "manual",
+      "todoIds": [
+        "TODO-1688-009"
+      ],
+      "persisted": true,
+      "platform": "1688",
+      "platformCategoryId": "0192f0a0-0000-7000-8000-0000000000c1",
+      "productId": "0192f0a0-0000-7000-8000-000000000001",
+      "status": "draft"
+    },
+    {
+      "skuId": null,
+      "attrPath": "min_order_qty",
+      "attrType": "number",
+      "internalField": "product_sku.min_order_qty",
+      "internalValue": "2",
+      "platformValueId": null,
+      "platformValueName": null,
+      "extra": {
+        "unit": "件",
+        "sku_code": "SHIRT-W-WHT-S"
+      },
+      "source": "manual",
+      "todoIds": [
+        "TODO-1688-006",
+        "TODO-1688-PERSIST-01"
+      ],
+      "persisted": true,
+      "platform": "1688",
+      "platformCategoryId": "0192f0a0-0000-7000-8000-0000000000c1",
+      "productId": "0192f0a0-0000-7000-8000-000000000001",
+      "status": "draft"
+    },
+    {
+      "skuId": null,
+      "attrPath": "min_order_qty",
+      "attrType": "number",
+      "internalField": "product_sku.min_order_qty",
+      "internalValue": "2",
+      "platformValueId": null,
+      "platformValueName": null,
+      "extra": {
+        "unit": "件",
+        "sku_code": "SHIRT-W-WHT-M"
+      },
+      "source": "manual",
+      "todoIds": [
+        "TODO-1688-006",
+        "TODO-1688-PERSIST-01"
+      ],
+      "persisted": true,
+      "platform": "1688",
+      "platformCategoryId": "0192f0a0-0000-7000-8000-0000000000c1",
+      "productId": "0192f0a0-0000-7000-8000-000000000001",
+      "status": "draft"
+    },
+    {
+      "skuId": null,
+      "attrPath": "min_order_qty",
+      "attrType": "number",
+      "internalField": "product_sku.min_order_qty",
+      "internalValue": "2",
+      "platformValueId": null,
+      "platformValueName": null,
+      "extra": {
+        "unit": "件",
+        "sku_code": "SHIRT-W-WHT-L"
+      },
+      "source": "manual",
+      "todoIds": [
+        "TODO-1688-006",
+        "TODO-1688-PERSIST-01"
+      ],
+      "persisted": true,
+      "platform": "1688",
+      "platformCategoryId": "0192f0a0-0000-7000-8000-0000000000c1",
+      "productId": "0192f0a0-0000-7000-8000-000000000001",
+      "status": "draft"
+    },
+    {
+      "skuId": null,
+      "attrPath": "min_order_qty",
+      "attrType": "number",
+      "internalField": "product_sku.min_order_qty",
+      "internalValue": "2",
+      "platformValueId": null,
+      "platformValueName": null,
+      "extra": {
+        "unit": "件",
+        "sku_code": "SHIRT-W-BLU-S"
+      },
+      "source": "manual",
+      "todoIds": [
+        "TODO-1688-006",
+        "TODO-1688-PERSIST-01"
+      ],
+      "persisted": true,
+      "platform": "1688",
+      "platformCategoryId": "0192f0a0-0000-7000-8000-0000000000c1",
+      "productId": "0192f0a0-0000-7000-8000-000000000001",
+      "status": "draft"
+    },
+    {
+      "skuId": null,
+      "attrPath": "min_order_qty",
+      "attrType": "number",
+      "internalField": "product_sku.min_order_qty",
+      "internalValue": "2",
+      "platformValueId": null,
+      "platformValueName": null,
+      "extra": {
+        "unit": "件",
+        "sku_code": "SHIRT-W-BLU-M"
+      },
+      "source": "manual",
+      "todoIds": [
+        "TODO-1688-006",
+        "TODO-1688-PERSIST-01"
+      ],
+      "persisted": true,
+      "platform": "1688",
+      "platformCategoryId": "0192f0a0-0000-7000-8000-0000000000c1",
+      "productId": "0192f0a0-0000-7000-8000-000000000001",
+      "status": "draft"
+    },
+    {
+      "skuId": null,
+      "attrPath": "min_order_qty",
+      "attrType": "number",
+      "internalField": "product_sku.min_order_qty",
+      "internalValue": "2",
+      "platformValueId": null,
+      "platformValueName": null,
+      "extra": {
+        "unit": "件",
+        "sku_code": "SHIRT-W-BLU-L"
+      },
+      "source": "manual",
+      "todoIds": [
+        "TODO-1688-006",
+        "TODO-1688-PERSIST-01"
+      ],
+      "persisted": true,
+      "platform": "1688",
+      "platformCategoryId": "0192f0a0-0000-7000-8000-0000000000c1",
+      "productId": "0192f0a0-0000-7000-8000-000000000001",
+      "status": "draft"
+    },
+    {
+      "skuId": null,
+      "attrPath": "mix_batch",
+      "attrType": "bool",
+      "internalField": null,
+      "internalValue": "true",
+      "platformValueId": null,
+      "platformValueName": null,
+      "extra": {
+        "pending_column": "mix_batch_allowed"
+      },
+      "source": "manual",
+      "todoIds": [
+        "TODO-1688-006",
+        "TODO-1688-009",
+        "TODO-1688-PERSIST-01"
+      ],
+      "persisted": false,
+      "platform": "1688",
+      "platformCategoryId": "0192f0a0-0000-7000-8000-0000000000c1",
+      "productId": "0192f0a0-0000-7000-8000-000000000001",
+      "status": "draft"
+    },
+    {
+      "skuId": null,
+      "attrPath": "spu_code",
+      "attrType": "text",
+      "internalField": "product.spu_code",
+      "internalValue": "SHIRT-W-2026-001",
+      "platformValueId": null,
+      "platformValueName": null,
+      "extra": {},
+      "source": "import",
+      "todoIds": [
+        "TODO-1688-009"
+      ],
+      "persisted": true,
+      "platform": "1688",
+      "platformCategoryId": "0192f0a0-0000-7000-8000-0000000000c1",
+      "productId": "0192f0a0-0000-7000-8000-000000000001",
+      "status": "draft"
+    }
+  ],
+  "qualification": {
+    "status": "valid",
+    "nextExpiry": "2027-01-09",
+    "daysToExpiry": 81,
+    "requirementsKnown": true
+  },
+  "care": {
+    "wash": {
+      "code": "W40",
+      "text": "40℃ 常规机洗",
+      "tempC": 40
+    },
+    "bleach": {
+      "code": "BNONE",
+      "text": "不可漂白",
+      "tempC": null
+    },
+    "dry": {
+      "code": "DHANG",
+      "text": "悬挂晾干",
+      "tempC": null
+    },
+    "iron": {
+      "code": "I150",
+      "text": "熨斗底板最高 150℃",
+      "tempC": null
+    },
+    "dryClean": {
+      "code": "DCP",
+      "text": "常规干洗",
+      "tempC": null
+    },
+    "note": "深浅色分开洗涤",
+    "source": "supplier",
+    "lines": [
+      "40℃ 常规机洗",
+      "不可漂白",
+      "悬挂晾干",
+      "熨斗底板最高 150℃",
+      "常规干洗"
+    ]
+  },
+  "media": {
+    "mainAssetId": "0192f0a0-0000-7000-8000-0000000000a1",
+    "assets": [
+      {
+        "assetId": "0192f0a0-0000-7000-8000-0000000000a1",
+        "kind": "main"
+      },
+      {
+        "assetId": "0192f0a0-0000-7000-8000-0000000000a4",
+        "kind": "gallery"
+      },
+      {
+        "assetId": "0192f0a0-0000-7000-8000-0000000000a2",
+        "kind": "size_chart"
+      }
+    ],
+    "sizeChartAssetId": "0192f0a0-0000-7000-8000-0000000000a2"
+  },
+  "platformCategory": {
+    "id": "0192f0a0-0000-7000-8000-0000000000c1",
+    "externalCategoryId": null,
+    "name": "女士衬衫（示例类目）",
+    "isLeaf": true,
+    "requiredAttrs": [
+      {
+        "attrPath": "color",
+        "required": true
+      },
+      {
+        "attrPath": "size",
+        "required": true
+      },
+      {
+        "attrPath": "min_order_qty",
+        "required": true
+      }
+    ]
+  },
+  "checks": {
+    "blockers": [
+      {
+        "code": "PLAT-ATTR-002",
+        "field": "platform_attribute_mapping.status",
+        "expected": "全部 verified",
+        "actual": "color、material、min_order_qty、mix_batch、size、spu_code 仍为 draft",
+        "hint": "映射未验证禁止发布（docs/19 §10 L2）；需人工补齐平台值 id 后置 verified",
+        "severity": "blocker"
+      },
+      {
+        "code": "CONTRACT_UNVERIFIED",
+        "field": "adapter.contract",
+        "expected": "method / 请求协议 / 签名已核验",
+        "actual": "未核验",
+        "hint": "1688 接口契约未核验，禁止真实写入：TODO-1688-001（docs/02 §0.1 M2、§二、附录 B#1）；TODO-1688-002（docs/02 文首写法约定 #1、§三#2）；TODO-1688-003（docs/02 §1.1#5/#6、附录 B#2）",
+        "severity": "blocker"
+      }
+    ],
+    "warnings": [
+      {
+        "code": "PLAT-ATTR-002",
+        "field": "platform_attribute_mapping.color",
+        "expected": "status=verified",
+        "actual": "draft（平台值未核验）",
+        "hint": "映射未验证，禁止进入发布报文（docs/19 §10 L2 / 铁律 5）",
+        "severity": "warning"
+      },
+      {
+        "code": "PLAT-ATTR-002",
+        "field": "platform_attribute_mapping.size",
+        "expected": "status=verified",
+        "actual": "draft（平台值未核验）",
+        "hint": "映射未验证，禁止进入发布报文（docs/19 §10 L2 / 铁律 5）",
+        "severity": "warning"
+      },
+      {
+        "code": "PLAT-ATTR-002",
+        "field": "platform_attribute_mapping.material",
+        "expected": "status=verified",
+        "actual": "draft（平台值未核验）",
+        "hint": "映射未验证，禁止进入发布报文（docs/19 §10 L2 / 铁律 5）",
+        "severity": "warning"
+      },
+      {
+        "code": "PLAT-ATTR-002",
+        "field": "platform_attribute_mapping.min_order_qty",
+        "expected": "status=verified",
+        "actual": "draft（平台值未核验）",
+        "hint": "映射未验证，禁止进入发布报文（docs/19 §10 L2 / 铁律 5）",
+        "severity": "warning"
+      },
+      {
+        "code": "PLAT-ATTR-002",
+        "field": "platform_attribute_mapping.mix_batch",
+        "expected": "status=verified",
+        "actual": "draft（平台值未核验）",
+        "hint": "映射未验证，禁止进入发布报文（docs/19 §10 L2 / 铁律 5）",
+        "severity": "warning"
+      },
+      {
+        "code": "PLAT-ATTR-002",
+        "field": "platform_attribute_mapping.spu_code",
+        "expected": "status=verified",
+        "actual": "draft（平台值未核验）",
+        "hint": "映射未验证，禁止进入发布报文（docs/19 §10 L2 / 铁律 5）",
+        "severity": "warning"
+      },
+      {
+        "code": "IMPORT_TEMPLATE_UNVERIFIED",
+        "field": "adapter.import_template",
+        "expected": "平台导入模板列名已核验",
+        "actual": "未核验",
+        "hint": "导出 CSV 是内部规范化包，不能直接当作 1688 后台模板（TODO-1688-010）",
+        "severity": "warning"
+      }
+    ]
+  },
+  "packageHash": "832bd9e5dbd5973f87dda37d7dff4e3b6c2220c20c75c403f5f6da632f4b88e4"
+}

@@ -24,7 +24,9 @@ tmp/
 Thumbs.db
 
 # 数据与备份（compose 用命名卷；本地导出也不入库）
-data/
+data/*
+# 黄金集是受版本控制的测试数据（t15）；data/ 其余内容仍忽略
+!data/golden/
 backups/
 
 # Prisma 本地产物

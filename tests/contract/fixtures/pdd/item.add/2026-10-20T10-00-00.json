@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "platform": "pdd",
+    "endpoint": "item.add",
+    "recorded_at": "2026-10-20T02:00:00.000Z",
+    "doc_version": "synthetic（docs/01 未取得接口文档；仅验证回放链路）",
+    "recorder": "qa",
+    "synthetic": true,
+    "schema": "schemas/pdd/item.add.schema.json"
+  },
+  "request": {
+    "method": "POST",
+    "path": "/openapi/router",
+    "query": {
+      "type": "pdd.item.add",
+      "timestamp": "<redacted:timestamp>",
+      "sign": "<redacted:sign>",
+      "access_token": "<redacted:access_token>"
+    },
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "goods_name": "纯棉圆领短袖T恤",
+      "price": 8900,
+      "quantity": 120,
+      "outer_id": "SPU-TSHIRT-M-001"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {},
+    "body": {
+      "success": true,
+      "result": {
+        "goods_id": "SIT-20261020-0001",
+        "created_at": "2026-10-20T02:00:00.000Z"
+      }
+    }
+  }
+}

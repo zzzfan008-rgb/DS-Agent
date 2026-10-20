@@ -32,6 +32,16 @@ export type ErrorCode =
   | 'method_not_allowed'
   | 'payload_too_large'
   | 'unsupported_media_type'
+  | 'no_route'
+  | 'route_exhausted'
+  | 'quota_exceeded'
+  | 'provider_unavailable'
+  | 'model_not_published'
+  | 'model_purpose_mismatch'
+  | 'role_forbidden'
+  | 'kill_switch_blocked'
+  | 'publish_blocked'
+  | 'schema_invalid'
   | 'internal_error';
 
 export type NextAction =
@@ -76,6 +86,16 @@ export const ERROR_DEFS: Record<ErrorCode, ErrorDefinition> = {
   method_not_allowed: { http: 405, retryable: false, nextAction: 'none', message: 'HTTP 方法不允许' },
   payload_too_large: { http: 413, retryable: false, nextAction: 'fix_and_resubmit', message: '请求体过大' },
   unsupported_media_type: { http: 415, retryable: false, nextAction: 'fix_and_resubmit', message: '不支持的媒体类型' },
+  no_route: { http: 503, retryable: false, nextAction: 'contact_admin', message: '该用途没有可用的 active 路由' },
+  route_exhausted: { http: 503, retryable: false, nextAction: 'contact_admin', message: '候选模型全部不可用' },
+  quota_exceeded: { http: 429, retryable: false, nextAction: 'contact_admin', message: '模型配额已耗尽' },
+  provider_unavailable: { http: 503, retryable: true, nextAction: 'contact_admin', message: '供应商凭据或连通性不可用' },
+  model_not_published: { http: 422, retryable: false, nextAction: 'fix_and_resubmit', message: '模型未发布或参数不合法' },
+  model_purpose_mismatch: { http: 422, retryable: false, nextAction: 'fix_and_resubmit', message: '模型能力与用途不兼容' },
+  role_forbidden: { http: 403, retryable: false, nextAction: 'contact_admin', message: '当前角色无权使用该模型用途' },
+  kill_switch_blocked: { http: 423, retryable: false, nextAction: 'contact_admin', message: 'kill switch 已阻断模型调用' },
+  publish_blocked: { http: 409, retryable: false, nextAction: 'fix_and_resubmit', message: '发布守卫未通过' },
+  schema_invalid: { http: 502, retryable: false, nextAction: 'contact_admin', message: '模型输出不符合 Schema' },
   internal_error: { http: 500, retryable: false, nextAction: 'contact_admin', message: '服务内部错误' },
 };
 

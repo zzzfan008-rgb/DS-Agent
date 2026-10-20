@@ -1,0 +1,22 @@
+{
+  "sku_id": "GOLDEN-010",
+  "platform": "pdd",
+  "content_type": "title",
+  "title": "女装九分微喇牛仔裤 示例品牌",
+  "selling_points": [
+    "棉100%",
+    "尺码 29/30",
+    "48小时内发货"
+  ],
+  "facts": {
+    "price_cents": 19900,
+    "stock_qty": 110,
+    "composition_text": "棉100%",
+    "size_codes": [
+      "29",
+      "30"
+    ],
+    "category_code": "B0211"
+  },
+  "forbidden_words": []
+}

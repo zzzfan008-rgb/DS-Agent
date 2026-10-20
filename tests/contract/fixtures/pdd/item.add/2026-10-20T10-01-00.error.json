@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "platform": "pdd",
+    "endpoint": "item.add.rate_limited",
+    "recorded_at": "2026-10-20T02:01:00.000Z",
+    "doc_version": "synthetic（docs/01 未取得接口文档；仅验证错误映射）",
+    "recorder": "qa",
+    "synthetic": true,
+    "schema": "schemas/pdd/error.schema.json"
+  },
+  "request": {
+    "method": "POST",
+    "path": "/openapi/router",
+    "query": {
+      "type": "pdd.item.add",
+      "timestamp": "<redacted:timestamp>",
+      "sign": "<redacted:sign>",
+      "access_token": "<redacted:access_token>"
+    },
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "goods_name": "纯棉圆领短袖T恤",
+      "price": 8900,
+      "quantity": 120,
+      "outer_id": "SPU-TSHIRT-M-001"
+    }
+  },
+  "response": {
+    "status": 429,
+    "headers": {
+      "retry-after": "30"
+    },
+    "body": {
+      "success": false,
+      "error_code": "RATE_LIMIT",
+      "error_msg": "请求过于频繁，请稍后重试"
+    }
+  },
+  "expected_error": {
+    "internal": "quota",
+    "external": "quota"
+  }
+}

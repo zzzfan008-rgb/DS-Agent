@@ -1,0 +1,68 @@
+# dsh-bundle · Cordis patch（business profile 部署层）
+#
+# 用法（docs/16 §5、docs/17 §4.1）：
+#   DSH_HOME=/data/dsh dsh --profile business --patch /opt/dssaas/dsh-bundle/config/cordis.patch.yml
+#
+# 职责边界：
+#   - 本文件只做「组合与配置」：权限预设、MCP 客户端、Host 内桥接插件的参数；
+#   - preset / skill / MCP 白名单各自有版本，见 manifest.json 与 dsh-lock.json；
+#   - 生产卷只读挂载 dsh-bundle，改配置走镜像/发布，不 docker cp（docs/17 §9.1）。
+
+# ── 权限预设（docs/14 §9.2；按用途选档，不按用户角色选）────────────────────
+- id: '@deepseek-ai/dsh-permission-presets'
+  config:
+    presets:
+      viewer:
+        sandbox: read-only
+        approval: ask
+      operator:
+        sandbox: workspace-write
+        approval: ask
+      admin:
+        sandbox: danger-full-access
+        approval: ask
+      ci:
+        sandbox: workspace-write
+        approval: never
+    defaultPreset: viewer
+
+# ── Host 内桥接插件（M3 交付；本 seed 先登记参数并禁用）────────────────────
+# 契约见 docs/17 §3.3、docs/21 §13：精确路由 + 非 owner Peer + 每请求 dispose，
+# 禁止用 /connect（owner principal 会绕过 remoteAccess）。
+- insert:
+    - id: business-bridge
+      name: ./bridge/business-bridge.js
+      disabled: true
+      config:
+        bind:
+          host: 0.0.0.0
+          port: 43180
+        endpoint: /internal/agent/run
+        healthEndpoint: /internal/health
+        tokenFile: /data/dsh/secrets/bridge-token
+        trustProxy: false
+        allowedSourceCidrs:
+          - 127.0.0.1/32
+          - 10.0.0.0/8
+          - 172.16.0.0/12
+        principal:
+          kind: business-api
+          role: agent-runner
+        allowedIntents:
+          - content.draft
+          - content.rewrite
+          - product.qa
+          - support.suggest
+          - inquiry.quote_draft
+          - listing.diagnose
+        maxConcurrency: 8
+        queueLimit: 30
+        runTimeoutMaxMs: 600000
+        firstTokenTimeoutMs: 8000
+        mcpToolCallTimeoutMs: 15000
+
+# ── 业务 preset 注册（M3 落地方式二选一，本 seed 采用 .agent-presets 目录发现）──
+# 方式 A（推荐，当前 DSH 0.2.1-rc.2 已验证）：把 presets/clothing-ops/1.0.0/
+#   复制/软链到 $DSH_HOME/.agent-presets/clothing-ops/（preset.yml + agent.cordis.yml + skills）。
+# 方式 B：用 @deepseek-ai/dsh-agent-preset 在本 patch 里内联 plugins 数组；
+#   语法随版本漂移，升级时按 docs/04 §五 R1 回归后再切换。

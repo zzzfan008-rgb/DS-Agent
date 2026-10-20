@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "platform": "pdd",
+    "endpoint": "test.echo",
+    "recorded_at": "2026-10-20T10:00:00.000Z",
+    "doc_version": "synthetic（docs/01 未取得接口文档；仅验证 t4 回放链路，不是平台录制）",
+    "recorder": "adapter-pdd",
+    "synthetic": true
+  },
+  "request": {
+    "method": "POST",
+    "path": "/synthetic/test/echo",
+    "query": {},
+    "headers": {},
+    "body": {
+      "message": "hello-pdd",
+      "n": 1
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "success": true,
+      "result": {
+        "echo": "hello-pdd",
+        "n": 1
+      }
+    }
+  }
+}

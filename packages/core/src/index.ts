@@ -24,3 +24,8 @@ export {
   can,
 } from './authz/matrix.js';
 export type { Role } from './authz/matrix.js';
+
+export * from './vocab/garment.js';
+export * from './schema/garment.js';
+export * from './facts.js';
+export * from './garment.js';

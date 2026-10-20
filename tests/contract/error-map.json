@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "note": "平台错误 → 内部失败分类 → docs/12 §4 对外错误码。adapter（t4/t5）实现时必须复用本映射；新增条目需同步 docs/12 §4。",
+  "platforms": {
+    "pdd": [
+      {
+        "id": "pdd.rate_limited",
+        "match": { "http_status": 429 },
+        "internal": "quota",
+        "external": "quota",
+        "retry": "retry_after"
+      },
+      {
+        "id": "pdd.business_reject",
+        "match": { "http_status": 200, "body.success": false, "body.error_code_in": ["BIZ_REJECT"] },
+        "internal": "platform_reject",
+        "external": "platform_reject",
+        "retry": "none"
+      },
+      {
+        "id": "pdd.upstream_5xx",
+        "match": { "http_status": "5xx" },
+        "internal": "retryable",
+        "external": "upstream_5xx",
+        "retry": "backoff"
+      }
+    ],
+    "1688": [
+      {
+        "id": "1688.signature_invalid",
+        "match": { "http_status": 401 },
+        "internal": "signature_invalid",
+        "external": "unauthorized",
+        "retry": "none"
+      },
+      {
+        "id": "1688.upstream_5xx",
+        "match": { "http_status": "5xx" },
+        "internal": "retryable",
+        "external": "upstream_5xx",
+        "retry": "backoff"
+      }
+    ]
+  }
+}

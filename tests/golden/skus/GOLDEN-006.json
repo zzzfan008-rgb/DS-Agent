@@ -1,0 +1,108 @@
+{
+  "sku_id": "GOLDEN-006",
+  "spu_code": "SPU-E0201-001",
+  "name": "女装无钢圈薄款文胸",
+  "brand": "示例品牌",
+  "category_code": "E0201",
+  "season": "all",
+  "year": 2026,
+  "fit": "regular",
+  "style_tags": [
+    "基础款",
+    "通勤"
+  ],
+  "attributes": {
+    "杯型": "3/4杯",
+    "钢圈": "无钢圈",
+    "版型": "背心式",
+    "厚度": "薄款"
+  },
+  "fabric": {
+    "fabric_code": "FAB-NYLON-SPANDEX-001",
+    "fabric_name": "锦纶氨纶网布",
+    "role": "main",
+    "materials": [
+      {
+        "material": "锦纶",
+        "percent": 78
+      },
+      {
+        "material": "氨纶",
+        "percent": 22
+      }
+    ]
+  },
+  "origin_country": "CN",
+  "care_instructions": {
+    "washing": "机洗30℃",
+    "bleaching": "不可漂白",
+    "ironing": "中温熨烫"
+  },
+  "sizes": [
+    {
+      "size_code": "75B",
+      "size_order": 10,
+      "measurements": {
+        "胸围": 88
+      },
+      "recommend_height_min": 155,
+      "recommend_height_max": 165,
+      "recommend_weight_min": 45,
+      "recommend_weight_max": 55
+    },
+    {
+      "size_code": "80B",
+      "size_order": 20,
+      "measurements": {
+        "胸围": 92
+      },
+      "recommend_height_min": 158,
+      "recommend_height_max": 168,
+      "recommend_weight_min": 50,
+      "recommend_weight_max": 60
+    },
+    {
+      "size_code": "85B",
+      "size_order": 30,
+      "measurements": {
+        "胸围": 96
+      },
+      "recommend_height_min": 160,
+      "recommend_height_max": 172,
+      "recommend_weight_min": 55,
+      "recommend_weight_max": 68
+    }
+  ],
+  "price_cents": 6900,
+  "list_price_cents": 9900,
+  "sale_price_cents": 5900,
+  "cost_cents": 2800,
+  "stock_qty": 200,
+  "min_order_qty": 1,
+  "weight_g": 90,
+  "price_source": "import",
+  "stock_source": "import",
+  "facts": {
+    "policy": "7天无理由退换",
+    "shipping": "48小时内发货"
+  },
+  "platforms": {
+    "1688": {
+      "min_order_qty": 5,
+      "price_tiers": [
+        {
+          "min_qty": 5,
+          "price_cents": 5200
+        },
+        {
+          "min_qty": 100,
+          "price_cents": 4600
+        }
+      ]
+    },
+    "pdd": {
+      "sale_price_cents": 5900,
+      "stock_qty": 200
+    }
+  }
+}

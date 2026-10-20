@@ -1,0 +1,2 @@
+﻿spu_code,name,category_code,fit,description,main_image,gallery,brand,manufacturer,qualification_report_no,safety_class
+DS-SAMPLE-COAT-001,【样例】三合一防风冲锋衣 男女同款,D0232,regular,仓库样例数据，仅用于上架包导出与回放测试，不代表真实商品。,s3://dssaas-assets/sample/coat-main.jpg,s3://dssaas-assets/sample/coat-detail-1.jpg|s3://dssaas-assets/sample/coat-detail-2.jpg,DS-SAMPLE,【样例】自有工厂,SAMPLE-QC-2026-001,GB 18401 B类

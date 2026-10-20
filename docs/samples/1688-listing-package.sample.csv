@@ -1,0 +1,7 @@
+﻿spu_code,category_code,sku_code,color_id,color_name,size_code,size_order,price_cents,price_yuan,list_price_cents,sale_price_cents,min_order_qty,unit,mix_batch_allowed,lead_time_days,stock_qty,weight_g,tier1_min_qty,tier1_price_cents,tier2_min_qty,tier2_price_cents,tier3_min_qty,tier3_price_cents,tier4_min_qty,tier4_price_cents,tier5_min_qty,tier5_price_cents,price_range_display,dropship_enabled,dropship_price_cents,materials,size_chart_version,qualification_status
+SHIRT-W-2026-001,A0202,SHIRT-W-WHT-S,WH-0001,本白,S,40,15800,158.00,19800,,2,piece,true,3,480,320,2,15800,50,14200,200,12800,,,,,¥128.00–¥158.00,true,16800,棉62%、聚酯纤维33%、氨纶5%,3,valid
+SHIRT-W-2026-001,A0202,SHIRT-W-WHT-M,WH-0001,本白,M,50,15800,158.00,19800,,2,piece,true,3,480,320,2,15800,50,14200,200,12800,,,,,¥128.00–¥158.00,true,16800,棉62%、聚酯纤维33%、氨纶5%,3,valid
+SHIRT-W-2026-001,A0202,SHIRT-W-WHT-L,WH-0001,本白,L,60,15800,158.00,19800,,2,piece,true,3,480,320,2,15800,50,14200,200,12800,,,,,¥128.00–¥158.00,true,16800,棉62%、聚酯纤维33%、氨纶5%,3,valid
+SHIRT-W-2026-001,A0202,SHIRT-W-BLU-S,BL-0102,牛仔蓝,S,40,15800,158.00,19800,,2,piece,true,3,480,320,2,15800,50,14200,200,12800,,,,,¥128.00–¥158.00,true,16800,棉62%、聚酯纤维33%、氨纶5%,3,valid
+SHIRT-W-2026-001,A0202,SHIRT-W-BLU-M,BL-0102,牛仔蓝,M,50,15800,158.00,19800,,2,piece,true,3,480,320,2,15800,50,14200,200,12800,,,,,¥128.00–¥158.00,true,16800,棉62%、聚酯纤维33%、氨纶5%,3,valid
+SHIRT-W-2026-001,A0202,SHIRT-W-BLU-L,BL-0102,牛仔蓝,L,60,15800,158.00,19800,,2,piece,true,3,480,320,2,15800,50,14200,200,12800,,,,,¥128.00–¥158.00,true,16800,棉62%、聚酯纤维33%、氨纶5%,3,valid

@@ -1,0 +1,75 @@
+{
+  "schema_version": "pdd-listing-package-v1",
+  "template_profile": {
+    "id": "pdd-backend-import-unverified-v0",
+    "version": "v0",
+    "verified": false,
+    "source_todo": "待填：拼多多商家后台批量导入模板的列名、必填列、单文件行数上限与失败回执格式（docs/01 §2.1；需开发者账号后台核验）",
+    "notes": [
+      "本 profile 是内部规范列，不是平台官方模板；核验后必须替换列名并升 version。",
+      "价格同时输出 price_cents（整数分，主数据口径）与 price_yuan（两位小数，人工核对用）。",
+      "导入前必须确认后台模板与本 profile 一致；不一致时不得手工改包，应改 profile 后重导。"
+    ]
+  },
+  "generated_at": "2026-10-20T06:42:28.861Z",
+  "generator": {
+    "name": "@dssaas/adapters-pdd",
+    "version": "0.1.0"
+  },
+  "dry_run": true,
+  "data_origin": "synthetic_sample",
+  "payload_hash": "b3f95c7d9679640e8735adf9a7e58996f3ecd00256263be091d46080f0d28674",
+  "row_counts": {
+    "product": 1,
+    "sku": 8,
+    "size_chart": 4,
+    "fabric": 3,
+    "attributes": 3
+  },
+  "files": [
+    {
+      "name": "fabric.csv",
+      "bytes": 103,
+      "sha256": "a0c2762a144d2379154e380ca6849a12088d31af431fc54cead664ed446af9c4"
+    },
+    {
+      "name": "import-notes.md",
+      "bytes": 1598,
+      "sha256": "d5313851cdf704fd0e0b5bcd257a1384fa893be49234d25af4c290400640458b"
+    },
+    {
+      "name": "listing.xlsx",
+      "bytes": 7502,
+      "sha256": "548795fd853016f6b52c960304345b829f8c7683f580fa58234e560957869d2e"
+    },
+    {
+      "name": "platform-attributes.csv",
+      "bytes": 137,
+      "sha256": "adbe3e13ae1d14e0e0397603f5c07722bd7954e069335909a41cffd70635865f"
+    },
+    {
+      "name": "product.csv",
+      "bytes": 491,
+      "sha256": "1ce050f9564da6ebe65565e9943b3c3ef3ebe264c1608f5d16d20b654de2e538"
+    },
+    {
+      "name": "size-chart.csv",
+      "bytes": 371,
+      "sha256": "43e11f6bb4e613a2ddaac8577b684809ff90016143107e6658afce2a4e44beb7"
+    },
+    {
+      "name": "skus.csv",
+      "bytes": 2169,
+      "sha256": "a001da4dc1431c39c42c35fba60c55aa17ae9f753ca0866e8605d7980ea7e3a7"
+    }
+  ],
+  "warnings": [],
+  "import_checklist": [
+    "在拼多多商家后台选择批量导入入口（入口 URL/路径待核验，docs/01 §2.1）",
+    "确认后台模板列名与 manifest.template_profile.id 一致；不一致先改 profile 再导出，禁止手工改包",
+    "导入后回填：批次号、成功条数、失败条数、平台驳回原因、包 sha256（ADR-0006 要求）",
+    "失败行按平台回执修复主数据后重新生成；不重复提交同一包",
+    "资质/主图缺失时不得导入（docs/01 G1：qualification_unknown 禁止进入上架草稿）",
+    "本包不触达平台、不产生任何平台写操作；导入动作由人工执行并登记"
+  ]
+}

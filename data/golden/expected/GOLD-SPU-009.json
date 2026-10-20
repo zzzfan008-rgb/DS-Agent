@@ -1,0 +1,18 @@
+{
+  "spu_code": "GOLD-SPU-009",
+  "platform": "pdd",
+  "expected_verdict": "pass",
+  "expected_l1": [],
+  "facts": {
+    "price_cents": 23900,
+    "stock_qty": 70,
+    "category_code": "C0221",
+    "composition_text": "粘纤70%+聚酯纤维30%",
+    "size_codes": [
+      "M",
+      "L",
+      "XL"
+    ]
+  },
+  "notes": "结构性检查全部通过；L2 语义评分待模型网关接入"
+}

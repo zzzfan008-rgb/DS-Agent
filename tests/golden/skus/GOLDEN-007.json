@@ -1,0 +1,117 @@
+{
+  "sku_id": "GOLDEN-007",
+  "spu_code": "SPU-G0201-001",
+  "name": "女装连体竞技泳衣",
+  "brand": "示例品牌",
+  "category_code": "G0201",
+  "season": "summer",
+  "year": 2026,
+  "fit": "regular",
+  "style_tags": [
+    "基础款",
+    "通勤"
+  ],
+  "attributes": {
+    "领型": "圆领",
+    "袖型": "无袖",
+    "版型": "紧身",
+    "用途": "训练"
+  },
+  "fabric": {
+    "fabric_code": "FAB-POLY-SPANDEX-001",
+    "fabric_name": "聚酯纤维氨纶",
+    "role": "main",
+    "materials": [
+      {
+        "material": "聚酯纤维",
+        "percent": 82
+      },
+      {
+        "material": "氨纶",
+        "percent": 18
+      }
+    ]
+  },
+  "origin_country": "CN",
+  "care_instructions": {
+    "washing": "机洗30℃",
+    "bleaching": "不可漂白",
+    "ironing": "中温熨烫"
+  },
+  "sizes": [
+    {
+      "size_code": "S",
+      "size_order": 20,
+      "measurements": {
+        "胸围": 84,
+        "衣长": 66,
+        "腰围": 66,
+        "臀围": 88
+      },
+      "recommend_height_min": 155,
+      "recommend_height_max": 165,
+      "recommend_weight_min": 45,
+      "recommend_weight_max": 54
+    },
+    {
+      "size_code": "M",
+      "size_order": 30,
+      "measurements": {
+        "胸围": 88,
+        "衣长": 68,
+        "腰围": 70,
+        "臀围": 92
+      },
+      "recommend_height_min": 160,
+      "recommend_height_max": 170,
+      "recommend_weight_min": 50,
+      "recommend_weight_max": 60
+    },
+    {
+      "size_code": "L",
+      "size_order": 40,
+      "measurements": {
+        "胸围": 92,
+        "衣长": 70,
+        "腰围": 74,
+        "臀围": 96
+      },
+      "recommend_height_min": 165,
+      "recommend_height_max": 175,
+      "recommend_weight_min": 56,
+      "recommend_weight_max": 68
+    }
+  ],
+  "price_cents": 25900,
+  "list_price_cents": 32900,
+  "sale_price_cents": 23900,
+  "cost_cents": 11200,
+  "stock_qty": 70,
+  "min_order_qty": 1,
+  "weight_g": 180,
+  "price_source": "import",
+  "stock_source": "import",
+  "facts": {
+    "policy": "7天无理由退换",
+    "shipping": "48小时内发货"
+  },
+  "platforms": {
+    "1688": {
+      "min_order_qty": 2,
+      "price_tiers": [
+        {
+          "min_qty": 2,
+          "price_cents": 21900
+        },
+        {
+          "min_qty": 30,
+          "price_cents": 19900
+        }
+      ]
+    },
+    "pdd": {
+      "sale_price_cents": 23900,
+      "stock_qty": 70
+    }
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "case_id": "NEG-001",
+  "base_spu": "GOLD-SPU-001",
+  "rule": "composition_sum_99",
+  "mutation": "fabric.materials 改为棉 99%",
+  "expected": {
+    "verdict": "reject",
+    "error_code": "invalid_fact",
+    "l1": [
+      {
+        "rule_id": "L1-CMP-001",
+        "severity": "blocker",
+        "field": "detail",
+        "matched": "棉99%"
+      }
+    ]
+  },
+  "data": {
+    "spu_code": "GOLD-SPU-001",
+    "title": "男装纯棉圆领短袖T恤 260g重磅",
+    "category_code": "A0101",
+    "fabric": {
+      "fabric_code": "FAB-G-1001",
+      "fabric_name": "精梳棉",
+      "role": "main",
+      "materials": [
+        {
+          "material": "棉",
+          "percent": 99
+        }
+      ]
+    },
+    "skuSizes": [
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "chart": [
+      {
+        "sku_size_code": "S",
+        "size_order": 20,
+        "measurements": {
+          "胸围": 96,
+          "衣长": 64,
+          "肩宽": 42,
+          "袖长": 21
+        },
+        "recommend_height_min": 155,
+        "recommend_height_max": 165,
+        "recommend_weight_min": 45,
+        "recommend_weight_max": 55
+      },
+      {
+        "sku_size_code": "M",
+        "size_order": 30,
+        "measurements": {
+          "胸围": 100,
+          "衣长": 66,
+          "肩宽": 44,
+          "袖长": 22
+        },
+        "recommend_height_min": 160,
+        "recommend_height_max": 170,
+        "recommend_weight_min": 50,
+        "recommend_weight_max": 62
+      },
+      {
+        "sku_size_code": "L",
+        "size_order": 40,
+        "measurements": {
+          "胸围": 104,
+          "衣长": 68,
+          "肩宽": 46,
+          "袖长": 23
+        },
+        "recommend_height_min": 165,
+        "recommend_height_max": 175,
+        "recommend_weight_min": 56,
+        "recommend_weight_max": 70
+      },
+      {
+        "sku_size_code": "XL",
+        "size_order": 50,
+        "measurements": {
+          "胸围": 108,
+          "衣长": 70,
+          "肩宽": 48,
+          "袖长": 24
+        },
+        "recommend_height_min": 170,
+        "recommend_height_max": 180,
+        "recommend_weight_min": 64,
+        "recommend_weight_max": 78
+      }
+    ],
+    "qualification": {
+      "textile_safety": {
+        "standard": "GB 18401",
+        "grade": "B",
+        "report_no": "FICT-QA-1001"
+      },
+      "origin_country": "CN"
+    },
+    "price_cents": 6900,
+    "stock_qty": 180,
+    "expected": {
+      "verdict": "pass",
+      "l1": []
+    }
+  }
+}

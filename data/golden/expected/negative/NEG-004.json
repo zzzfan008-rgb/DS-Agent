@@ -1,0 +1,85 @@
+{
+  "case_id": "NEG-004",
+  "base_spu": "GOLD-SPU-010",
+  "rule": "size_code_not_covered",
+  "mutation": "尺码表删除 M 码，SKU 仍含 M",
+  "expected": {
+    "verdict": "needs_revision",
+    "error_code": "invalid_fact",
+    "l1": [
+      {
+        "rule_id": "L1-SIZE-004",
+        "severity": "high",
+        "field": "detail",
+        "matched": "M"
+      }
+    ]
+  },
+  "data": {
+    "spu_code": "GOLD-SPU-010",
+    "title": "女装短款连帽羽绒服 90%白鸭绒",
+    "category_code": "D0232",
+    "fabric": {
+      "fabric_code": "FAB-G-1010",
+      "fabric_name": "锦纶防风面料",
+      "role": "main",
+      "materials": [
+        {
+          "material": "锦纶",
+          "percent": 100
+        }
+      ]
+    },
+    "skuSizes": [
+      "M",
+      "L",
+      "XL"
+    ],
+    "chart": [
+      {
+        "sku_size_code": "L",
+        "size_order": 40,
+        "measurements": {
+          "胸围": 114,
+          "衣长": 64,
+          "肩宽": 44,
+          "袖长": 60,
+          "下摆": 110
+        },
+        "recommend_height_min": 160,
+        "recommend_height_max": 170,
+        "recommend_weight_min": 52,
+        "recommend_weight_max": 66
+      },
+      {
+        "sku_size_code": "XL",
+        "size_order": 50,
+        "measurements": {
+          "胸围": 118,
+          "衣长": 66,
+          "肩宽": 46,
+          "袖长": 61,
+          "下摆": 114
+        },
+        "recommend_height_min": 165,
+        "recommend_height_max": 175,
+        "recommend_weight_min": 58,
+        "recommend_weight_max": 74
+      }
+    ],
+    "qualification": {
+      "textile_safety": {
+        "standard": "GB 18401",
+        "grade": "B",
+        "report_no": "FICT-QA-1010"
+      },
+      "origin_country": "CN"
+    },
+    "price_cents": 46900,
+    "stock_qty": 40,
+    "expected": {
+      "verdict": "pass",
+      "l1": []
+    }
+  }
+}

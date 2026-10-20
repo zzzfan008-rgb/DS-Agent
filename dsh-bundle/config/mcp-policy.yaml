@@ -1,0 +1,47 @@
+# MCP 工具白名单（docs/14 §8.2）——落库为 dsh-bundle/config/mcp-policy.yaml
+#
+# 原则：只读；按能力登记，不按服务器全量放行；默认拒绝；每次调用校验业务范围。
+# 守卫实现位置（M3）：dsh-bundle/plugins/mcp-policy —— ctx.tools.guard() 在
+# tools/pre-execute 之后拒绝，不可被后续监听器翻案（docs/14 §8.3）。
+version: 1
+default: deny
+
+servers:
+  erp:
+    description: 内部 ERP 只读补全（商品/库存/采购单）
+    tools:
+      - list_products
+      - get_product
+      - list_inventory
+      - get_purchase_orders
+    denyPrefixes:
+      - create_
+      - update_
+      - delete_
+      - import_
+    scope:
+      org_id: 1
+      store_ids: []          # 空 = 由调用方注入；实现时必须非空校验
+      category_codes: []     # 空 = 不限；非空时校验商品类目
+    timeout_ms: 15000
+    max_calls_per_run: 4
+
+  knowledge:
+    description: 知识库只读检索与引用
+    tools:
+      - search_kb
+      - get_doc
+      - get_chunk
+    deny:
+      - write_doc
+      - delete_doc
+      - reindex
+    resource_uri:
+      schemes: [kb]
+      deny_path_traversal: true
+      allow_absolute_paths: false
+    timeout_ms: 15000
+    max_calls_per_run: 4
+
+# 其它 serverName 一律拒绝（default: deny）。
+# 变更本文件必须：admin + 审计 + 重启 Host 后回归工具清单（docs/14 §8.2）。

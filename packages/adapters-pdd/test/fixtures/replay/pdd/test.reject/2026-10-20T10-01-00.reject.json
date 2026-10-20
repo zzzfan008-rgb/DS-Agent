@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "platform": "pdd",
+    "endpoint": "test.reject",
+    "recorded_at": "2026-10-20T10:01:00.000Z",
+    "doc_version": "synthetic（docs/01 未取得接口文档；仅验证 t4 错误分类链路）",
+    "recorder": "adapter-pdd",
+    "synthetic": true
+  },
+  "request": {
+    "method": "POST",
+    "path": "/synthetic/test/reject",
+    "query": {},
+    "headers": {},
+    "body": {
+      "reason": "qualification_missing"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "success": false,
+      "error_code": "BIZ_REJECT",
+      "error_msg": "商品资质缺失",
+      "request_id": "synthetic-req-0001"
+    }
+  },
+  "expected_error": {
+    "internal": "platform_reject",
+    "external": "platform_reject"
+  }
+}

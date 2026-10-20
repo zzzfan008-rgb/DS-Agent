@@ -1,0 +1,120 @@
+{
+  "id": "NEG-001",
+  "rule": "composition_sum",
+  "expected_code": "invalid_fact",
+  "expected_failure": "成分合计必须为 100%",
+  "base_sku": "GOLDEN-001",
+  "sku": {
+    "sku_id": "GOLDEN-001",
+    "spu_code": "SPU-A0101-001",
+    "name": "男装纯棉圆领短袖T恤",
+    "brand": "示例品牌",
+    "category_code": "A0101",
+    "season": "summer",
+    "year": 2026,
+    "fit": "regular",
+    "style_tags": [
+      "基础款",
+      "通勤"
+    ],
+    "attributes": {
+      "领型": "圆领",
+      "袖型": "短袖",
+      "版型": "常规",
+      "厚度": "适中"
+    },
+    "fabric": {
+      "fabric_code": "FAB-COTTON-001",
+      "fabric_name": "精梳棉",
+      "role": "main",
+      "materials": [
+        {
+          "material": "棉",
+          "percent": 99
+        }
+      ]
+    },
+    "origin_country": "CN",
+    "care_instructions": {
+      "washing": "机洗30℃",
+      "bleaching": "不可漂白",
+      "ironing": "中温熨烫"
+    },
+    "sizes": [
+      {
+        "size_code": "M",
+        "size_order": 30,
+        "measurements": {
+          "胸围": 104,
+          "衣长": 68,
+          "肩宽": 44,
+          "袖长": 22
+        },
+        "recommend_height_min": 165,
+        "recommend_height_max": 175,
+        "recommend_weight_min": 55,
+        "recommend_weight_max": 65
+      },
+      {
+        "size_code": "L",
+        "size_order": 40,
+        "measurements": {
+          "胸围": 108,
+          "衣长": 70,
+          "肩宽": 46,
+          "袖长": 23
+        },
+        "recommend_height_min": 170,
+        "recommend_height_max": 180,
+        "recommend_weight_min": 60,
+        "recommend_weight_max": 72
+      },
+      {
+        "size_code": "XL",
+        "size_order": 50,
+        "measurements": {
+          "胸围": 112,
+          "衣长": 72,
+          "肩宽": 48,
+          "袖长": 24
+        },
+        "recommend_height_min": 175,
+        "recommend_height_max": 185,
+        "recommend_weight_min": 68,
+        "recommend_weight_max": 80
+      }
+    ],
+    "price_cents": 9900,
+    "list_price_cents": 12900,
+    "sale_price_cents": 8900,
+    "cost_cents": 4500,
+    "stock_qty": 120,
+    "min_order_qty": 1,
+    "weight_g": 260,
+    "price_source": "import",
+    "stock_source": "import",
+    "facts": {
+      "policy": "7天无理由退换",
+      "shipping": "48小时内发货"
+    },
+    "platforms": {
+      "1688": {
+        "min_order_qty": 2,
+        "price_tiers": [
+          {
+            "min_qty": 2,
+            "price_cents": 8500
+          },
+          {
+            "min_qty": 50,
+            "price_cents": 7900
+          }
+        ]
+      },
+      "pdd": {
+        "sale_price_cents": 8900,
+        "stock_qty": 120
+      }
+    }
+  }
+}

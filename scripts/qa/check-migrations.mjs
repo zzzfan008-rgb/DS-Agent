@@ -54,7 +54,12 @@ function usage() {
 }
 
 function parseArgs(argv) {
-  const opts = { keep: false, allowRemote: false, allowAnyDb: false, json: false };
+  const opts = {
+    keep: false,
+    allowRemote: process.env.MIGRATE_CHECK_ALLOW_REMOTE === '1',
+    allowAnyDb: process.env.MIGRATE_CHECK_ALLOW_ANY_DB === '1',
+    json: false,
+  };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--') continue; // pnpm/npm 把 -- 原样传给脚本

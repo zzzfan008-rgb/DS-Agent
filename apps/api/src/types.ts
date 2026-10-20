@@ -6,8 +6,11 @@ import type { AppConfig } from './config.js';
 import type { AuthContext, AuthService } from './services/identity.js';
 import type { AuditService } from './services/audit.js';
 import type { MetricsRegistry } from './services/metrics.js';
+import type { RegistryService } from './services/registry.js';
 import type { SessionRecord, SessionStore } from './services/sessions.js';
 import type { MemoryIdempotencyStore } from './plugins/idempotency.js';
+import type { TypertBridgeClient } from './agent/bridge-client.js';
+import type { AgentRunManager } from './agent/run-manager.js';
 
 export interface IdempotencyRequestContext {
   key: string;
@@ -37,6 +40,9 @@ declare module 'fastify' {
     sessions: SessionStore;
     authService: AuthService;
     audit: AuditService;
+    registry: RegistryService;
+    agentBridge: TypertBridgeClient;
+    agentRuns: AgentRunManager;
     metricsRegistry: MetricsRegistry;
     idempotencyStore: MemoryIdempotencyStore;
   }

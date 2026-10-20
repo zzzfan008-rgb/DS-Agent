@@ -1,0 +1,17 @@
+{
+  "sku_id": "GOLDEN-006",
+  "platform": "1688",
+  "content_type": "quote",
+  "min_order_qty": 5,
+  "price_tiers": [
+    {
+      "min_qty": 5,
+      "price_cents": 5200
+    },
+    {
+      "min_qty": 100,
+      "price_cents": 4600
+    }
+  ],
+  "stock_qty": 200
+}

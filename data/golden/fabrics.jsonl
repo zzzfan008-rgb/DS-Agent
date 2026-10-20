@@ -1,0 +1,12 @@
+{"spu_code":"GOLD-SPU-001","fabric_code":"FAB-G-1001","fabric_name":"精梳棉","role":"main","materials":[{"material":"棉","percent":100}]}
+{"spu_code":"GOLD-SPU-002","fabric_code":"FAB-G-1002","fabric_name":"棉涤混纺","role":"main","materials":[{"material":"棉","percent":60},{"material":"聚酯纤维","percent":40}]}
+{"spu_code":"GOLD-SPU-003","fabric_code":"FAB-G-1003","fabric_name":"棉氨纶珠地","role":"main","materials":[{"material":"棉","percent":95},{"material":"氨纶","percent":5}]}
+{"spu_code":"GOLD-SPU-004","fabric_code":"FAB-G-1004","fabric_name":"棉弹牛仔","role":"main","materials":[{"material":"棉","percent":98},{"material":"氨纶","percent":2}]}
+{"spu_code":"GOLD-SPU-005","fabric_code":"FAB-G-1005","fabric_name":"全棉斜纹","role":"main","materials":[{"material":"棉","percent":100}]}
+{"spu_code":"GOLD-SPU-006","fabric_code":"FAB-G-1006","fabric_name":"涤棉工装布","role":"main","materials":[{"material":"聚酯纤维","percent":65},{"material":"棉","percent":35}]}
+{"spu_code":"GOLD-SPU-007","fabric_code":"FAB-G-1007","fabric_name":"粘纤印花布","role":"main","materials":[{"material":"粘纤","percent":100}]}
+{"spu_code":"GOLD-SPU-008","fabric_code":"FAB-G-1008","fabric_name":"聚酯纤维缎面","role":"main","materials":[{"material":"聚酯纤维","percent":100}]}
+{"spu_code":"GOLD-SPU-009","fabric_code":"FAB-G-1009","fabric_name":"粘纤涤纶针织","role":"main","materials":[{"material":"粘纤","percent":70},{"material":"聚酯纤维","percent":30}]}
+{"spu_code":"GOLD-SPU-010","fabric_code":"FAB-G-1010","fabric_name":"锦纶防风面料","role":"main","materials":[{"material":"锦纶","percent":100}]}
+{"spu_code":"GOLD-SPU-011","fabric_code":"FAB-G-1011","fabric_name":"聚酯纤维面料","role":"main","materials":[{"material":"聚酯纤维","percent":100}]}
+{"spu_code":"GOLD-SPU-012","fabric_code":"FAB-G-1012","fabric_name":"聚酯纤维复合面料","role":"main","materials":[{"material":"聚酯纤维","percent":100}]}

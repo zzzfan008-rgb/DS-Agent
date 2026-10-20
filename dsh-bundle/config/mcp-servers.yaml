@@ -1,0 +1,50 @@
+# MCP server 清单（占位；M1 尚未实现 packages/mcp-erp / packages/mcp-knowledge）
+#
+# 约定（docs/14 §8、docs/17 §9）：
+#   - 只暴露只读工具；写平台动作不进 MCP；
+#   - 子进程环境由 dsh-mcp-client 的 scrubbedParentEnv() 清洗（删除 *KEY*/*SECRET*/*TOKEN*
+#     与全部 DSH_*），这里只显式注入该 server 必需项；
+#   - 工具列表变化视为契约变更：更新 dsh-lock.json 的 mcp[].toolsHash 并跑回归。
+version: 1
+
+servers:
+  - name: erp
+    package: '@dssaas/mcp-erp'
+    version: '0.1.0-placeholder'
+    transport: stdio
+    command: node
+    args:
+      - packages/mcp-erp/dist/index.js
+    env:
+      DSSAAS_MCP_SCOPE: erp-readonly
+    toolCallTimeoutMs: 15000
+    failOnStartupError: true
+    reconnect:
+      enabled: true
+      initialDelayMs: 500
+      maxDelayMs: 15000
+      maxAttempts: 10
+    policy: config/mcp-policy.yaml#servers.erp
+
+  - name: knowledge
+    package: '@dssaas/mcp-knowledge'
+    version: '0.1.0-placeholder'
+    transport: stdio
+    command: node
+    args:
+      - packages/mcp-knowledge/dist/index.js
+    env:
+      DSSAAS_MCP_SCOPE: kb-readonly
+    toolCallTimeoutMs: 15000
+    failOnStartupError: true
+    reconnect:
+      enabled: true
+      initialDelayMs: 500
+      maxDelayMs: 15000
+      maxAttempts: 10
+    policy: config/mcp-policy.yaml#servers.knowledge
+
+# 启用前置（M3/M7）：
+#   1) packages/mcp-erp|mcp-knowledge 提供 build 产物与健康检查；
+#   2) 在 presets/clothing-ops/*/agent.cordis.yml 中把 mcp-* 行的 disabled 改为 false；
+#   3) admin 审计后重启 Host，回归工具清单（docs/14 §8.2、docs/04 R3）。

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "pdd.item.add 成功响应（synthetic）",
+  "type": "object",
+  "required": ["success", "result"],
+  "properties": {
+    "success": { "type": "boolean", "const": true },
+    "result": {
+      "type": "object",
+      "required": ["goods_id", "created_at"],
+      "properties": {
+        "goods_id": { "type": "string", "pattern": "^SIT-" },
+        "created_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

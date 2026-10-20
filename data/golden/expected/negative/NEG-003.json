@@ -1,0 +1,96 @@
+{
+  "case_id": "NEG-003",
+  "base_spu": "GOLD-SPU-007",
+  "rule": "required_measurement_missing",
+  "mutation": "M 码 measurements 缺胸围",
+  "expected": {
+    "verdict": "needs_revision",
+    "error_code": "invalid_fact",
+    "l1": [
+      {
+        "rule_id": "L1-SIZE-003",
+        "severity": "high",
+        "field": "detail",
+        "matched": "胸围"
+      }
+    ]
+  },
+  "data": {
+    "spu_code": "GOLD-SPU-007",
+    "title": "女装法式碎花连衣裙 收腰",
+    "category_code": "C0221",
+    "fabric": {
+      "fabric_code": "FAB-G-1007",
+      "fabric_name": "粘纤印花布",
+      "role": "main",
+      "materials": [
+        {
+          "material": "粘纤",
+          "percent": 100
+        }
+      ]
+    },
+    "skuSizes": [
+      "S",
+      "M",
+      "L"
+    ],
+    "chart": [
+      {
+        "sku_size_code": "S",
+        "size_order": 20,
+        "measurements": {
+          "胸围": 86,
+          "裙长": 106,
+          "腰围": 68,
+          "臀围": 92
+        },
+        "recommend_height_min": 150,
+        "recommend_height_max": 160,
+        "recommend_weight_min": 42,
+        "recommend_weight_max": 52
+      },
+      {
+        "sku_size_code": "M",
+        "size_order": 30,
+        "measurements": {
+          "裙长": 108,
+          "腰围": 72,
+          "臀围": 96
+        },
+        "recommend_height_min": 155,
+        "recommend_height_max": 165,
+        "recommend_weight_min": 46,
+        "recommend_weight_max": 56
+      },
+      {
+        "sku_size_code": "L",
+        "size_order": 40,
+        "measurements": {
+          "胸围": 94,
+          "裙长": 110,
+          "腰围": 76,
+          "臀围": 100
+        },
+        "recommend_height_min": 160,
+        "recommend_height_max": 170,
+        "recommend_weight_min": 52,
+        "recommend_weight_max": 64
+      }
+    ],
+    "qualification": {
+      "textile_safety": {
+        "standard": "GB 18401",
+        "grade": "B",
+        "report_no": "FICT-QA-1007"
+      },
+      "origin_country": "CN"
+    },
+    "price_cents": 21900,
+    "stock_qty": 60,
+    "expected": {
+      "verdict": "pass",
+      "l1": []
+    }
+  }
+}

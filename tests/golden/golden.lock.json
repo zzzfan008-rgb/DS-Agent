@@ -1,0 +1,16 @@
+{
+  "dataset_version": "golden-v1-sample",
+  "dataset_sha256": "329fdd4c23ecb87735e56082b840dfc8a0e71be2f2f5bc75d485744c9211056a",
+  "count_skus": 10,
+  "count_series": 20,
+  "count_negative": 4,
+  "rule_version": "judge-rules@2026-10-20",
+  "prompt_version": "copy-v1",
+  "model_route_snapshot": {
+    "purpose": "copy",
+    "layers": "L1+L2",
+    "model": "mock"
+  },
+  "generated_at": "2026-10-20T06:00:00.000Z",
+  "note": "10 条结构化样例（非真实 50 SKU）；M8 起替换为真实脱敏数据。变更需 PR + 业务评审（docs/15 §7.3）。"
+}

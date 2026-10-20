@@ -10,13 +10,18 @@
     "seed": "tsx src/seed.ts",
     "audit:verify": "tsx src/scripts/verify-audit.ts",
     "test": "tsx test/run.ts",
+    "test:agent": "tsx --test --test-concurrency=1 --test-reporter=spec test/agent.test.ts",
+    "smoke:agent": "tsx test/agent-smoke.ts",
     "test:file": "tsx --test",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@dssaas/core": "workspace:*",
     "@dssaas/db": "workspace:*",
+    "@dssaas/judge-rules": "workspace:*",
+    "@dssaas/registry": "workspace:*",
     "@fastify/cookie": "^11.1.3",
+    "@fastify/multipart": "^9.4.0",
     "@node-rs/argon2": "^2.2.2",
     "fastify": "^5.12.7",
     "otpauth": "^9.5.2",

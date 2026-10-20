@@ -1,0 +1,18 @@
+{
+  "spu_code": "GOLD-SPU-007",
+  "platform": "pdd",
+  "expected_verdict": "pass",
+  "expected_l1": [],
+  "facts": {
+    "price_cents": 21900,
+    "stock_qty": 60,
+    "category_code": "C0221",
+    "composition_text": "粘纤100%",
+    "size_codes": [
+      "S",
+      "M",
+      "L"
+    ]
+  },
+  "notes": "结构性检查全部通过；L2 语义评分待模型网关接入"
+}

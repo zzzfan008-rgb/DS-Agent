@@ -1,0 +1,117 @@
+{
+  "sku_id": "GOLDEN-008",
+  "spu_code": "SPU-A0101-002",
+  "name": "男装重磅纯棉T恤（大码）",
+  "brand": "示例品牌",
+  "category_code": "A0101",
+  "season": "summer",
+  "year": 2026,
+  "fit": "regular",
+  "style_tags": [
+    "基础款",
+    "通勤"
+  ],
+  "attributes": {
+    "领型": "圆领",
+    "袖型": "短袖",
+    "版型": "宽松",
+    "克重": "260g"
+  },
+  "fabric": {
+    "fabric_code": "FAB-COTTON-SPANDEX-001",
+    "fabric_name": "棉氨纶",
+    "role": "main",
+    "materials": [
+      {
+        "material": "棉",
+        "percent": 95
+      },
+      {
+        "material": "氨纶",
+        "percent": 5
+      }
+    ]
+  },
+  "origin_country": "CN",
+  "care_instructions": {
+    "washing": "机洗30℃",
+    "bleaching": "不可漂白",
+    "ironing": "中温熨烫"
+  },
+  "sizes": [
+    {
+      "size_code": "2XL",
+      "size_order": 60,
+      "measurements": {
+        "胸围": 120,
+        "衣长": 76,
+        "肩宽": 52,
+        "袖长": 25
+      },
+      "recommend_height_min": 175,
+      "recommend_height_max": 185,
+      "recommend_weight_min": 78,
+      "recommend_weight_max": 92
+    },
+    {
+      "size_code": "3XL",
+      "size_order": 70,
+      "measurements": {
+        "胸围": 126,
+        "衣长": 78,
+        "肩宽": 55,
+        "袖长": 26
+      },
+      "recommend_height_min": 178,
+      "recommend_height_max": 190,
+      "recommend_weight_min": 88,
+      "recommend_weight_max": 105
+    },
+    {
+      "size_code": "4XL",
+      "size_order": 80,
+      "measurements": {
+        "胸围": 132,
+        "衣长": 80,
+        "肩宽": 58,
+        "袖长": 27
+      },
+      "recommend_height_min": 180,
+      "recommend_height_max": 195,
+      "recommend_weight_min": 100,
+      "recommend_weight_max": 120
+    }
+  ],
+  "price_cents": 11900,
+  "list_price_cents": 14900,
+  "sale_price_cents": 10900,
+  "cost_cents": 5200,
+  "stock_qty": 90,
+  "min_order_qty": 1,
+  "weight_g": 300,
+  "price_source": "import",
+  "stock_source": "import",
+  "facts": {
+    "policy": "7天无理由退换",
+    "shipping": "48小时内发货"
+  },
+  "platforms": {
+    "1688": {
+      "min_order_qty": 3,
+      "price_tiers": [
+        {
+          "min_qty": 3,
+          "price_cents": 9900
+        },
+        {
+          "min_qty": 60,
+          "price_cents": 9200
+        }
+      ]
+    },
+    "pdd": {
+      "sale_price_cents": 10900,
+      "stock_qty": 90
+    }
+  }
+}

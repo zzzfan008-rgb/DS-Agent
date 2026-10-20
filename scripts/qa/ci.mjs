@@ -36,6 +36,24 @@ const STEPS = [
     ],
   },
   {
+    id: 'test:contract',
+    name: '契约回放（fixture / Schema / 错误映射）',
+    commands: [[NODE, ['--test', 'tests/contract/replay.test.mjs']]],
+  },
+  {
+    id: 'test:fault',
+    name: '故障注入（矩阵四维断言）',
+    commands: [[NODE, ['--test', 'tests/fault/fault-injection.test.mjs']]],
+  },
+  {
+    id: 'test:golden',
+    name: '黄金集（结构 / 硬事实 / 版本锁）',
+    commands: [
+      [NODE, ['--test', 'tests/golden/golden.test.mjs']],
+      [NODE, ['scripts/qa/golden-check.mjs']],
+    ],
+  },
+  {
     id: 'db:validate',
     name: 'Prisma schema 校验',
     commands: [[NODE, ['scripts/qa/prisma-cli.mjs', 'validate', '--schema', 'prisma/schema.prisma']]],
