@@ -32,6 +32,8 @@ export interface MediaJobRecord {
   externalJobId: string | null;
   pollAfter: Date | null;
   pollCount: number;
+  lockedBy: string | null;
+  lockedUntil: Date | null;
   attempt: number;
   maxAttempts: number;
   resultUrl: string | null;
@@ -102,6 +104,12 @@ export interface MediaRepository {
   getJob(id: string): Promise<MediaJobRecord | null>;
   updateJob(id: string, patch: Partial<MediaJobRecord>): Promise<void>;
   listDueJobs(now: Date, limit: number): Promise<MediaJobRecord[]>;
+  /** 原子抢占可执行任务：FOR UPDATE SKIP LOCKED + 租约（workerId/lockedUntil）。 */
+  claimDueJobs(now: Date, limit: number, workerId: string, leaseMs: number): Promise<MediaJobRecord[]>;
+  /** 心跳续租；返回 false 表示租约已丢失（被抢占/过期被接手）。 */
+  renewLease(jobId: string, workerId: string, leaseMs: number): Promise<boolean>;
+  /** 带租约守卫的更新；返回 false 表示租约已丢失，调用方必须立即停止写入。 */
+  updateLockedJob(jobId: string, workerId: string, patch: Partial<MediaJobRecord>): Promise<boolean>;
   listCancelledJobs(limit: number): Promise<MediaJobRecord[]>;
   getAssetByJob(jobId: string): Promise<MediaAssetRecord | null>;
   saveAsset(asset: MediaAssetRecord): Promise<MediaAssetRecord>;

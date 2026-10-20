@@ -592,6 +592,8 @@ model MediaJob {
   externalJobId         String?   @map("external_job_id")
   pollAfter             DateTime? @map("poll_after") @db.Timestamptz
   pollCount             Int       @default(0) @map("poll_count")
+  lockedBy              String?   @map("locked_by")
+  lockedUntil           DateTime? @map("locked_until") @db.Timestamptz
   resultUrl             String?   @map("result_url")
   resultExpiresAt       DateTime? @map("result_expires_at") @db.Timestamptz
   mediaAssetId          String?   @map("media_asset_id") @db.Uuid

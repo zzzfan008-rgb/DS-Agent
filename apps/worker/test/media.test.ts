@@ -10,9 +10,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { backoffDelayMs } from '../src/media/backoff.js';
-import { MEDIA_BUCKET, RAW_BUCKET, VARIANTS_BUCKET, tempPrefix } from '../src/media/keys.js';
+import { MEDIA_BUCKET, chartObjectKey, exportObjectKey, sourceObjectKey, tempPrefix, variantObjectKey } from '../src/media/keys.js';
 import { MemoryMediaRepository, makeJob } from '../src/media/memory-repository.js';
-import { MediaPipeline, QuotaExceededError } from '../src/media/pipeline.js';
+import { MediaPipeline, LeaseLostError, QuotaExceededError } from '../src/media/pipeline.js';
 import { MockMediaProvider } from '../src/media/provider.js';
 import { renderSizeChart } from '../src/media/render.js';
 import { FsStorage } from '../src/media/storage.js';
@@ -88,8 +88,8 @@ test('管线成功：3 个变体落库，成本只记一次，重复推进幂等
 
   // 三个变体与源对象都在对应桶里
   for (const variant of asset.variants) {
-    assert.equal(variant.bucket, VARIANTS_BUCKET);
-    assert.ok(await storage.exists(VARIANTS_BUCKET, variant.objectKey));
+    assert.equal(variant.bucket, MEDIA_BUCKET);
+    assert.ok(await storage.exists(MEDIA_BUCKET, variant.objectKey));
   }
   assert.ok(await storage.exists(MEDIA_BUCKET, asset.objectKey));
 });
@@ -137,12 +137,12 @@ test('取消：终态 cancelled，临时对象被清理，重复取消幂等', a
   });
   const job = makeJob({ id: 'job-cancel' });
   repo.jobs.set(job.id, job);
-  await storage.put(RAW_BUCKET, `${tempPrefix(job.id)}source.png`, Buffer.from('tmp'), 'image/png');
-  assert.equal((await storage.list(RAW_BUCKET, tempPrefix(job.id))).length, 1);
+  await storage.put(MEDIA_BUCKET, `${tempPrefix(job.id)}source.png`, Buffer.from('tmp'), 'image/png');
+  assert.equal((await storage.list(MEDIA_BUCKET, tempPrefix(job.id))).length, 1);
 
   const cancelled = await pipeline.cancel(job.id);
   assert.equal(cancelled.status, 'cancelled');
-  assert.equal((await storage.list(RAW_BUCKET, tempPrefix(job.id))).length, 0);
+  assert.equal((await storage.list(MEDIA_BUCKET, tempPrefix(job.id))).length, 0);
   assert.equal((await repo.getAssetByJob(job.id)), null);
 
   const again = await pipeline.cancel(job.id);
@@ -261,6 +261,111 @@ test('配额超限：拒绝并给可读错误，不产生资产/费用', async (
   assert.equal(failed?.errorCode, 'quota');
   assert.equal(repo.ledgers.length, 0);
   assert.equal(repo.assets.size, 0);
+});
+
+test('单桶 + 前缀：对象键集中在 keys.ts', () => {
+  const at = new Date('2026-10-20T10:15:00Z');
+  const assetId = '018f3c2a-1111-7222-8333-444455556666';
+  const base = { kind: 'scene', orgId: 1n, at, assetId };
+  assert.equal(MEDIA_BUCKET, 'dssaas-media');
+  assert.equal(sourceObjectKey({ ...base, ext: 'png' }), `raw/scene/1/2026/10/${assetId}/source.png`);
+  assert.equal(
+    variantObjectKey({ ...base, variantKey: 'thumb_320', ext: 'webp' }),
+    `derived/scene/1/2026/10/${assetId}/thumb_320.webp`,
+  );
+  assert.equal(
+    chartObjectKey({ ...base, dataVersion: 'v20261020T101500Z' }),
+    `derived/scene/1/2026/10/${assetId}/chart_v20261020T101500Z.png`,
+  );
+  assert.equal(exportObjectKey('listing/batch-1.zip'), 'exports/listing/batch-1.zip');
+  assert.equal(tempPrefix('job-1'), 'mock/_tmp/job-1/');
+});
+
+test('多实例：两个 worker 同时抢占，同一 job 只被一个处理', async (t) => {
+  const storage = await withStorage(t);
+  const clock = new FakeClock();
+  const repo = new MemoryMediaRepository();
+  const provider = new MockMediaProvider({ pendingPolls: 0 });
+  const job = makeJob({ id: 'job-lease-claim' });
+  repo.jobs.set(job.id, job);
+
+  const workerA = new MediaPipeline({
+    repo,
+    storage,
+    provider,
+    clock,
+    random: () => 0.5,
+    workerId: 'worker-a',
+  });
+  const workerB = new MediaPipeline({
+    repo,
+    storage,
+    provider,
+    clock,
+    random: () => 0.5,
+    workerId: 'worker-b',
+  });
+
+  const [first, second] = await Promise.all([workerA.runDue(1), workerB.runDue(1)]);
+  assert.equal(first.length + second.length, 1);
+  assert.equal(provider.getSubmitCount(), 1);
+  assert.equal((await repo.getJob(job.id))?.lockedBy, null); // 单步结束即释放租约
+});
+
+test('租约过期：另一个 worker 接手，旧 worker 的守卫更新失败', async () => {
+  const clock = new FakeClock();
+  const repo = new MemoryMediaRepository();
+  const job = makeJob({ id: 'job-lease-expire' });
+  repo.jobs.set(job.id, job);
+
+  const claimedA = await repo.claimDueJobs(clock.now(), 1, 'worker-a', 90_000);
+  assert.equal(claimedA.length, 1);
+  assert.equal(claimedA[0]?.lockedBy, 'worker-a');
+
+  // 模拟租约过期（进程崩溃未续租）
+  await repo.updateJob(job.id, { lockedUntil: new Date(clock.now().getTime() - 1_000) });
+  const claimedB = await repo.claimDueJobs(clock.now(), 1, 'worker-b', 90_000);
+  assert.equal(claimedB.length, 1);
+  assert.equal(claimedB[0]?.lockedBy, 'worker-b');
+
+  assert.equal(await repo.updateLockedJob(job.id, 'worker-a', { status: 'failed' }), false);
+  assert.equal(await repo.updateLockedJob(job.id, 'worker-b', { status: 'polling' }), true);
+});
+
+test('租约丢失：心跳续租失败时旧 worker 停止写库（无 asset / 无 ledger）', async (t) => {
+  const storage = await withStorage(t);
+  const clock = new FakeClock();
+  const repo = new MemoryMediaRepository();
+  const job = makeJob({
+    id: 'job-lease-lost',
+    status: 'retrieved',
+    externalJobId: 'mock_lost',
+    lockedBy: 'worker-a',
+    lockedUntil: new Date(clock.now().getTime() + 90_000),
+    costCents: 4,
+  });
+  repo.jobs.set(job.id, job);
+  repo.renewalFailures.add(job.id);
+
+  const pipeline = new MediaPipeline({
+    repo,
+    storage,
+    provider: new MockMediaProvider({ pendingPolls: 0 }),
+    clock,
+    random: () => 0.5,
+    workerId: 'worker-a',
+    heartbeatMs: 1_000,
+  });
+
+  await assert.rejects(
+    () => pipeline.advance(job.id),
+    (error: unknown) => error instanceof LeaseLostError,
+  );
+  assert.equal(repo.assets.size, 0);
+  assert.equal(repo.ledgers.length, 0);
+  const after = await repo.getJob(job.id);
+  assert.equal(after?.status, 'retrieved');
+  assert.equal(after?.lockedBy, 'worker-a');
 });
 
 test('S3Storage：path-style 桶/键、SigV4 头、get/list/delete', async (t) => {

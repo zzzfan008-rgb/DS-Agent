@@ -17,6 +17,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { disconnectPrisma, getPrisma } from '@dssaas/db';
 import { loadConfig, loadEnvFiles } from '../config.js';
+import { assertRecordedAllowed } from '../lib/adapter-refusal.js';
 import { isDayString, todayBusinessDay } from '../lib/day.js';
 import { createDriftStore } from '../reconcile/stores.js';
 import { createPlatformReader, type ReaderMode } from '../reconcile/readers.js';
@@ -61,6 +62,7 @@ async function main(): Promise<void> {
   loadEnvFiles();
   const config = loadConfig();
   const options = parseArgs(process.argv.slice(2), config.reconcileReader);
+  assertRecordedAllowed(config.nodeEnv, options.mode, '生成日报');
   const prisma = getPrisma();
 
   try {

@@ -6,15 +6,15 @@
  * - 状态推进一次只走一步（submit → poll → retrieve/store），由 poller 反复调用；
  * - 幂等：provider 以 idempotencyKey 去重，asset 以 mediaJobId 只建一次，
  *   cost_ledger 以 refId 只记一次；
- * - 取消：非终态置 cancelled，并清理 `media-raw/_tmp/<jobId>/` 临时对象；
- * - 失败：retryable 按 attempt 重投；manual/permanent 直接 failed（error_class 落库）。
+ * - 取消：非终态置 cancelled，并清理 `mock/_tmp/<jobId>/` 临时对象；
+ * - 失败：retryable 按 attempt 重投；manual/permanent 直接 failed（error_class 落库）；
+ * - 多实例：claimDueJobs（FOR UPDATE SKIP LOCKED + locked_by/until 租约）+ 30s 心跳续租，
+ *   续租失败立即放弃写入；poll_after 只表示下次轮询时间。
  */
 import { randomUUID } from 'node:crypto';
 import { backoffDelayMs } from './backoff.js';
 import {
   MEDIA_BUCKET,
-  RAW_BUCKET,
-  VARIANTS_BUCKET,
   chartObjectKey,
   mimeToExt,
   sourceObjectKey,
@@ -61,6 +61,17 @@ export interface MediaPipelineDeps {
   clock?: Clock;
   random?: () => number;
   log?: { warn: (obj: unknown, msg?: string) => void };
+  /** 多实例租约：worker 标识 / 租约时长 / 心跳间隔。 */
+  workerId?: string;
+  leaseMs?: number;
+  heartbeatMs?: number;
+}
+
+export class LeaseLostError extends MediaPipelineError {
+  constructor(jobId: string) {
+    super('conflict', `媒体任务租约已丢失（${jobId}），放弃本次处理`);
+    this.name = 'LeaseLostError';
+  }
 }
 
 const TERMINAL: MediaJobStatus[] = ['succeeded', 'failed', 'expired', 'cancelled'];
@@ -81,10 +92,18 @@ function assetKind(job: MediaJobRecord): string {
 export class MediaPipeline {
   private readonly clock: Clock;
   private readonly random: () => number;
+  readonly workerId: string;
+  private readonly leaseMs: number;
+  private readonly heartbeatMs: number;
+  private readonly leaseLost = new Set<string>();
+  private readonly heartbeats = new Map<string, NodeJS.Timeout>();
 
   constructor(private readonly deps: MediaPipelineDeps) {
     this.clock = deps.clock ?? systemClock;
     this.random = deps.random ?? Math.random;
+    this.workerId = deps.workerId ?? `worker-${randomUUID().slice(0, 8)}`;
+    this.leaseMs = deps.leaseMs ?? 90_000;
+    this.heartbeatMs = deps.heartbeatMs ?? 30_000;
   }
 
   private now(): Date {
@@ -99,17 +118,90 @@ export class MediaPipeline {
       if (job.status === 'cancelled') await this.cleanupTemp(job);
       return job;
     }
-    if (!job.externalJobId && job.status !== 'retrieved') return this.submit(job);
-    if (job.status === 'retrieved') return this.store(job);
-    return this.poll(job);
+    const guarded = job.lockedBy !== null && job.lockedBy === this.workerId;
+    if (guarded) this.startHeartbeat(job.id);
+    try {
+      if (!job.externalJobId && job.status !== 'retrieved') return await this.submit(job);
+      if (job.status === 'retrieved') return await this.store(job);
+      return await this.poll(job);
+    } finally {
+      this.stopHeartbeat(job.id);
+      if (guarded) await this.release(job.id);
+    }
+  }
+
+  private startHeartbeat(jobId: string): void {
+    if (this.heartbeats.has(jobId)) return;
+    const timer = setInterval(() => {
+      if (this.leaseLost.has(jobId)) return;
+      void this.deps.repo
+        .renewLease(jobId, this.workerId, this.leaseMs)
+        .then((ok) => {
+          if (!ok) this.leaseLost.add(jobId);
+        })
+        .catch(() => {
+          this.leaseLost.add(jobId);
+        });
+    }, this.heartbeatMs);
+    timer.unref();
+    this.heartbeats.set(jobId, timer);
+  }
+
+  private stopHeartbeat(jobId: string): void {
+    const timer = this.heartbeats.get(jobId);
+    if (timer) clearInterval(timer);
+    this.heartbeats.delete(jobId);
+  }
+
+  /** 每次写库/落对象前确认租约仍在；失租立即抛错，禁止继续写。 */
+  private async ensureLease(job: MediaJobRecord): Promise<void> {
+    if (job.lockedBy === null || job.lockedBy !== this.workerId) return;
+    if (this.leaseLost.has(job.id)) throw new LeaseLostError(job.id);
+    const ok = await this.deps.repo.renewLease(job.id, this.workerId, this.leaseMs);
+    if (!ok) {
+      this.leaseLost.add(job.id);
+      throw new LeaseLostError(job.id);
+    }
+  }
+
+  /** 带租约守卫的更新：锁定任务必须用 locked_by 条件更新；失败即放弃。 */
+  private async persist(
+    job: MediaJobRecord,
+    patch: Partial<MediaJobRecord>,
+  ): Promise<MediaJobRecord> {
+    const next = { ...job, ...patch };
+    if (job.lockedBy !== null && job.lockedBy === this.workerId) {
+      const ok = await this.deps.repo.updateLockedJob(job.id, this.workerId, patch);
+      if (!ok) {
+        this.leaseLost.add(job.id);
+        throw new LeaseLostError(job.id);
+      }
+    } else {
+      await this.deps.repo.updateJob(job.id, patch);
+    }
+    return next;
+  }
+
+  /** 单步处理结束释放租约；poll_after 仍是下次轮询时间，不受租约影响。 */
+  private async release(jobId: string): Promise<void> {
+    if (this.leaseLost.has(jobId)) return;
+    try {
+      await this.deps.repo.updateLockedJob(jobId, this.workerId, {
+        lockedBy: null,
+        lockedUntil: null,
+      });
+    } catch {
+      // 释放失败只会让租约自然过期，不影响正确性。
+    }
   }
 
   /** 提交：先做配额判定，再向 provider 提交并设置首次轮询时间。 */
   private async submit(job: MediaJobRecord): Promise<MediaJobRecord> {
+    await this.ensureLease(job);
     const now = this.now();
     const quota = await this.deps.repo.checkQuota(job, now);
     if (!quota.allowed) {
-      await this.deps.repo.updateJob(job.id, {
+      await this.persist(job, {
         status: 'failed',
         errorClass: 'manual',
         errorCode: 'quota',
@@ -135,11 +227,12 @@ export class MediaPipeline {
       pollCount: 0,
       pollAfter: new Date(now.getTime() + delay),
     };
-    await this.deps.repo.updateJob(job.id, updated);
+    await this.persist(job, updated);
     return updated;
   }
 
   private async poll(job: MediaJobRecord): Promise<MediaJobRecord> {
+    await this.ensureLease(job);
     const now = this.now();
     const result = await this.deps.provider.poll(job.externalJobId as string);
     const maxPoll = typeof job.params.max_poll === 'number' ? job.params.max_poll : 60;
@@ -155,7 +248,7 @@ export class MediaPipeline {
           pollCount,
           finishedAt: now,
         };
-        await this.deps.repo.updateJob(job.id, updated);
+        await this.persist(job, updated);
         return updated;
       }
       const delay = backoffDelayMs(job.purpose, pollCount, this.random);
@@ -165,7 +258,7 @@ export class MediaPipeline {
         pollCount,
         pollAfter: new Date(now.getTime() + delay),
       };
-      await this.deps.repo.updateJob(job.id, updated);
+      await this.persist(job, updated);
       return updated;
     }
 
@@ -184,7 +277,7 @@ export class MediaPipeline {
           errorCode: result.code,
           pollAfter: new Date(now.getTime() + delay),
         };
-        await this.deps.repo.updateJob(job.id, updated);
+        await this.persist(job, updated);
         return updated;
       }
       const updated: MediaJobRecord = {
@@ -194,7 +287,7 @@ export class MediaPipeline {
         errorCode: result.code,
         finishedAt: now,
       };
-      await this.deps.repo.updateJob(job.id, updated);
+      await this.persist(job, updated);
       return updated;
     }
 
@@ -206,17 +299,19 @@ export class MediaPipeline {
       costCents: result.usage.costCents,
       pollAfter: now,
     };
-    await this.deps.repo.updateJob(job.id, updated);
+    await this.persist(job, updated);
     return updated;
   }
 
   private async store(job: MediaJobRecord): Promise<MediaJobRecord> {
+    await this.ensureLease(job);
     const existing = await this.deps.repo.getAssetByJob(job.id);
     if (existing) return this.finalize(job, existing);
 
     try {
       return job.purpose === 'render' ? await this.storeRenderedChart(job) : await this.storeProviderAsset(job);
     } catch (error) {
+      if (error instanceof LeaseLostError) throw error;
       const message = error instanceof Error ? error.message : String(error);
       const attempt = job.attempt + 1;
       if (attempt <= job.maxAttempts) {
@@ -230,7 +325,7 @@ export class MediaPipeline {
           errorCode: 'store_failed',
           pollAfter: new Date(this.now().getTime() + delay),
         };
-        await this.deps.repo.updateJob(job.id, updated);
+        await this.persist(job, updated);
         this.deps.log?.warn({ jobId: job.id, message }, '媒体落库失败，已安排重试');
         return updated;
       }
@@ -241,12 +336,13 @@ export class MediaPipeline {
         errorCode: 'store_failed',
         finishedAt: this.now(),
       };
-      await this.deps.repo.updateJob(job.id, updated);
+      await this.persist(job, updated);
       return updated;
     }
   }
 
   private async storeProviderAsset(job: MediaJobRecord): Promise<MediaJobRecord> {
+    await this.ensureLease(job);
     const now = this.now();
     const fetched = await this.deps.provider.fetch(job.externalJobId as string);
     const kind = assetKind(job);
@@ -261,8 +357,8 @@ export class MediaPipeline {
     const sourceKey = sourceObjectKey({ ...base, ext });
     const tempKey = `${tempPrefix(job.id)}source.${ext}`;
 
-    // 临时对象：取消时按 `_tmp/<jobId>/` 前缀清理。
-    await this.deps.storage.put(RAW_BUCKET, tempKey, fetched.bytes, fetched.mime);
+    // 临时对象：取消时按 `mock/_tmp/<jobId>/` 前缀清理。
+    await this.deps.storage.put(MEDIA_BUCKET, tempKey, fetched.bytes, fetched.mime);
     await this.deps.storage.put(MEDIA_BUCKET, sourceKey, fetched.bytes, fetched.mime);
 
     const aigc = isAigc(job);
@@ -270,10 +366,10 @@ export class MediaPipeline {
     const variants: VariantMeta[] = [];
     for (const variant of rendered) {
       const key = variantObjectKey({ ...base, variantKey: variant.key, ext: 'webp' });
-      await this.deps.storage.put(VARIANTS_BUCKET, key, variant.buffer, variant.mime);
+      await this.deps.storage.put(MEDIA_BUCKET, key, variant.buffer, variant.mime);
       variants.push({
         key: variant.key,
-        bucket: VARIANTS_BUCKET,
+        bucket: MEDIA_BUCKET,
         objectKey: key,
         sha256: variant.sha256,
         mime: variant.mime,
@@ -307,17 +403,19 @@ export class MediaPipeline {
       mediaJobId: job.id,
       costCents: job.costCents,
     };
+    await this.ensureLease(job);
     await this.deps.repo.saveAsset(asset);
     await this.deps.repo.consumeQuota(job, now, 1);
     const seconds = job.purpose === 'video' && typeof job.params.duration_seconds === 'number'
       ? job.params.duration_seconds
       : 0;
     await this.addCostIfMissing(job, job.costCents, seconds, now);
-    await this.deps.storage.delete(RAW_BUCKET, tempKey);
+    await this.deps.storage.delete(MEDIA_BUCKET, tempKey);
     return this.finalize(job, asset);
   }
 
   private async storeRenderedChart(job: MediaJobRecord): Promise<MediaJobRecord> {
+    await this.ensureLease(job);
     const now = this.now();
     const raw = job.params.size_chart;
     if (!raw || typeof raw !== 'object') throw new Error('render 任务缺少 params.size_chart');
@@ -333,10 +431,10 @@ export class MediaPipeline {
     for (const chart of rendered.charts) {
       const ext = chart.key === 'chart_750' ? '' : '_1200';
       const key = chartObjectKey({ ...base, dataVersion: `${rendered.dataVersion}${ext}` });
-      await this.deps.storage.put(VARIANTS_BUCKET, key, chart.buffer, chart.mime);
+      await this.deps.storage.put(MEDIA_BUCKET, key, chart.buffer, chart.mime);
       variants.push({
         key: chart.key,
-        bucket: VARIANTS_BUCKET,
+        bucket: MEDIA_BUCKET,
         objectKey: key,
         sha256: chart.sha256,
         mime: chart.mime,
@@ -353,7 +451,7 @@ export class MediaPipeline {
       orgId: job.orgId,
       kind: 'size_chart',
       source: 'rendered',
-      bucket: VARIANTS_BUCKET,
+      bucket: MEDIA_BUCKET,
       objectKey: first.objectKey,
       sha256: first.sha256,
       mime: 'image/png',
@@ -367,6 +465,7 @@ export class MediaPipeline {
       mediaJobId: job.id,
       costCents: 0,
     };
+    await this.ensureLease(job);
     await this.deps.repo.saveAsset(asset);
     await this.addCostIfMissing(job, 0, 0.5, now);
     return this.finalize(job, asset);
@@ -379,6 +478,7 @@ export class MediaPipeline {
     at: Date,
   ): Promise<void> {
     if (await this.deps.repo.hasMediaCost(job.id)) return;
+    await this.ensureLease(job);
     const entry: CostLedgerEntry = {
       orgId: job.orgId,
       kind: 'media',
@@ -402,7 +502,7 @@ export class MediaPipeline {
       errorCode: null,
       finishedAt: job.finishedAt ?? this.now(),
     };
-    await this.deps.repo.updateJob(job.id, updated);
+    await this.persist(job, updated);
     return updated;
   }
 
@@ -421,7 +521,7 @@ export class MediaPipeline {
       await this.cleanupTemp(job);
       return job;
     }
-    await this.deps.repo.updateJob(job.id, {
+    await this.persist(job, {
       status: 'cancelled',
       errorCode: reason === 'user' ? 'cancelled_by_user' : reason,
       finishedAt: this.now(),
@@ -440,8 +540,8 @@ export class MediaPipeline {
   async cleanupTemp(job: MediaJobRecord): Promise<void> {
     const prefix = tempPrefix(job.id);
     try {
-      const keys = await this.deps.storage.list(RAW_BUCKET, prefix);
-      for (const key of keys) await this.deps.storage.delete(RAW_BUCKET, key);
+      const keys = await this.deps.storage.list(MEDIA_BUCKET, prefix);
+      for (const key of keys) await this.deps.storage.delete(MEDIA_BUCKET, key);
     } catch (error) {
       this.deps.log?.warn({ jobId: job.id, error }, '清理媒体临时对象失败');
     }
@@ -455,7 +555,7 @@ export class MediaPipeline {
 
   /** 扫描到期任务并逐个推进；单个任务失败不影响其余任务。 */
   async runDue(limit = 10): Promise<MediaJobRecord[]> {
-    const jobs = await this.deps.repo.listDueJobs(this.now(), limit);
+    const jobs = await this.deps.repo.claimDueJobs(this.now(), limit, this.workerId, this.leaseMs);
     const results: MediaJobRecord[] = [];
     for (const job of jobs) {
       try {

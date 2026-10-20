@@ -110,6 +110,9 @@
           maxSkillBytes: 20000
           maxTotalBytes: 30000
           debugFile: D:/DSSAAS/dsh-bundle/.dev-home/logs/f1-injection.jsonl
+        # F1：客服回复关闭 deep reasoning，避免隐藏思考把首 token 拖到 7s+。
+        reasoningEffort:
+          support.suggest: off
     - id: business-bridge
       name: file:///D:/DSSAAS/dsh-bundle/bridge/business-bridge.mjs
       config:

@@ -16,6 +16,8 @@ export class MemoryMediaRepository implements MediaRepository {
   readonly jobs = new Map<string, MediaJobRecord>();
   readonly assets = new Map<string, MediaAssetRecord>();
   readonly ledgers: CostLedgerEntry[] = [];
+  /** 测试注入：这些 job 的心跳续租会失败（模拟租约被抢）。 */
+  readonly renewalFailures = new Set<string>();
   quota: MemoryQuota | null;
 
   constructor(seed: { jobs?: MediaJobRecord[]; quota?: MemoryQuota | null } = {}) {
@@ -42,6 +44,50 @@ export class MemoryMediaRepository implements MediaRepository {
       )
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
       .slice(0, limit);
+  }
+
+  async claimDueJobs(
+    now: Date,
+    limit: number,
+    workerId: string,
+    leaseMs: number,
+  ): Promise<MediaJobRecord[]> {
+    const claimed: MediaJobRecord[] = [];
+    for (const job of [...this.jobs.values()].sort(
+      (a, b) => (a.pollAfter?.getTime() ?? 0) - (b.pollAfter?.getTime() ?? 0),
+    )) {
+      if (claimed.length >= limit) break;
+      if (!['queued', 'submitted', 'polling', 'retrieved'].includes(job.status)) continue;
+      if (job.pollAfter && job.pollAfter.getTime() > now.getTime()) continue;
+      if (job.lockedUntil && job.lockedUntil.getTime() >= now.getTime()) continue;
+      const next: MediaJobRecord = {
+        ...job,
+        lockedBy: workerId,
+        lockedUntil: new Date(now.getTime() + leaseMs),
+      };
+      this.jobs.set(job.id, next);
+      claimed.push(next);
+    }
+    return claimed;
+  }
+
+  async renewLease(jobId: string, workerId: string, leaseMs: number): Promise<boolean> {
+    const job = this.jobs.get(jobId);
+    if (!job || job.lockedBy !== workerId) return false;
+    if (this.renewalFailures.has(jobId)) return false;
+    this.jobs.set(jobId, { ...job, lockedUntil: new Date(Date.now() + leaseMs) });
+    return true;
+  }
+
+  async updateLockedJob(
+    jobId: string,
+    workerId: string,
+    patch: Partial<MediaJobRecord>,
+  ): Promise<boolean> {
+    const job = this.jobs.get(jobId);
+    if (!job || job.lockedBy !== workerId) return false;
+    this.jobs.set(jobId, { ...job, ...patch });
+    return true;
   }
 
   async listCancelledJobs(limit: number): Promise<MediaJobRecord[]> {
@@ -98,6 +144,8 @@ export function makeJob(overrides: Partial<MediaJobRecord> = {}): MediaJobRecord
     externalJobId: null,
     pollAfter: null,
     pollCount: 0,
+    lockedBy: null,
+    lockedUntil: null,
     attempt: 0,
     maxAttempts: 2,
     resultUrl: null,

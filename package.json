@@ -22,6 +22,7 @@
     "notices:ticket": "node scripts/platform/open-change-ticket.mjs",
     "adapter:regression": "node scripts/platform/run-adapter-regression.mjs",
     "test:api:local": "node scripts/qa/workspace-task.mjs test --filter @dssaas/api",
+    "e2e": "node scripts/qa/with-db.mjs -- node apps/api/node_modules/tsx/dist/cli.mjs scripts/e2e/full-chain.mjs",
     "typecheck": "node scripts/qa/workspace-task.mjs typecheck",
     "ci": "node scripts/qa/ci.mjs",
     "verify": "node scripts/qa/ci.mjs",

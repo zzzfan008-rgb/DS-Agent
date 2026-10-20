@@ -27,6 +27,8 @@ interface JobRow {
   externalJobId: string | null;
   pollAfter: Date | null;
   pollCount: number;
+  lockedBy: string | null;
+  lockedUntil: Date | null;
   attempt: number;
   maxAttempts: number;
   resultUrl: string | null;
@@ -80,6 +82,8 @@ function mapJob(row: JobRow): MediaJobRecord {
     externalJobId: row.externalJobId,
     pollAfter: row.pollAfter,
     pollCount: row.pollCount,
+    lockedBy: row.lockedBy,
+    lockedUntil: row.lockedUntil,
     attempt: row.attempt,
     maxAttempts: row.maxAttempts,
     resultUrl: row.resultUrl,
@@ -132,6 +136,8 @@ export class PrismaMediaRepository implements MediaRepository {
       'externalJobId',
       'pollAfter',
       'pollCount',
+      'lockedBy',
+      'lockedUntil',
       'attempt',
       'resultUrl',
       'mediaAssetId',
@@ -157,6 +163,84 @@ export class PrismaMediaRepository implements MediaRepository {
       take: limit,
     })) as unknown as JobRow[];
     return rows.map(mapJob);
+  }
+
+  /**
+   * 原子抢占：`FOR UPDATE SKIP LOCKED` + 显式租约（locked_by/locked_until）。
+   * poll_after 仍只表示“下次轮询时间”，不再兼职租约。
+   */
+  async claimDueJobs(
+    now: Date,
+    limit: number,
+    workerId: string,
+    leaseMs: number,
+  ): Promise<MediaJobRecord[]> {
+    const leaseUntil = new Date(now.getTime() + leaseMs);
+    const claimed = await this.prisma.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+      UPDATE media_job AS m
+      SET locked_by = ${workerId},
+          locked_until = ${leaseUntil},
+          updated_at = now()
+      WHERE m.id IN (
+        SELECT id FROM media_job
+        WHERE status IN ('queued', 'submitted', 'polling', 'retrieved')
+          AND (poll_after IS NULL OR poll_after <= ${now})
+          AND (locked_until IS NULL OR locked_until < ${now})
+          AND archived_at IS NULL
+        ORDER BY poll_after ASC NULLS FIRST
+        FOR UPDATE SKIP LOCKED
+        LIMIT ${limit}
+      )
+      RETURNING m.id
+    `);
+    if (claimed.length === 0) return [];
+    const rows = (await this.prisma.mediaJob.findMany({
+      where: { id: { in: claimed.map((item) => item.id) } },
+    })) as unknown as JobRow[];
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    return claimed
+      .map((item) => byId.get(item.id))
+      .filter((row): row is JobRow => row !== undefined)
+      .map(mapJob);
+  }
+
+  async renewLease(jobId: string, workerId: string, leaseMs: number): Promise<boolean> {
+    const result = await this.prisma.mediaJob.updateMany({
+      where: { id: jobId, lockedBy: workerId },
+      data: { lockedUntil: new Date(Date.now() + leaseMs) },
+    });
+    return result.count > 0;
+  }
+
+  async updateLockedJob(
+    jobId: string,
+    workerId: string,
+    patch: Partial<MediaJobRecord>,
+  ): Promise<boolean> {
+    const data: Record<string, unknown> = {};
+    for (const key of [
+      'status',
+      'externalJobId',
+      'pollAfter',
+      'pollCount',
+      'lockedBy',
+      'lockedUntil',
+      'attempt',
+      'resultUrl',
+      'mediaAssetId',
+      'errorClass',
+      'errorCode',
+      'costCents',
+      'finishedAt',
+    ] as const) {
+      if (patch[key] !== undefined) data[key] = patch[key];
+    }
+    if (Object.keys(data).length === 0) return true;
+    const result = await this.prisma.mediaJob.updateMany({
+      where: { id: jobId, lockedBy: workerId },
+      data: data as Prisma.MediaJobUpdateInput,
+    });
+    return result.count > 0;
   }
 
   async listCancelledJobs(limit: number): Promise<MediaJobRecord[]> {

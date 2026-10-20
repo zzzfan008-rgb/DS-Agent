@@ -9,6 +9,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { ApiError } from '../lib/errors.js';
 import { isDayString, todayBusinessDay } from '../lib/day.js';
+import { assertRecordedAllowed } from '../lib/adapter-refusal.js';
 import { ok } from '../lib/response.js';
 import { serviceContext } from '../lib/service-context.js';
 import { getReconcileContext } from '../reconcile/context.js';
@@ -35,12 +36,14 @@ export function registerReconcileRoutes(app: FastifyInstance): void {
     }
     const context = serviceContext(request);
     const reconcile = await getReconcileContext(app);
-    const service = reconcile.serviceFor(body.mode ?? app.config.reconcileReader);
+    const mode = body.mode ?? app.config.reconcileReader;
+    assertRecordedAllowed(app.config.nodeEnv, mode, '对账');
+    const service = reconcile.serviceFor(mode);
     const result = await service.run(platform, {
       day,
       requestId: context.requestId,
       actorId: context.userId,
-      mode: body.mode ?? app.config.reconcileReader,
+      mode,
     });
     // 服务内已写 `reconcile.run` 审计；置位避免通用钩子重复记一条 api.post。
     request.auditLogged = true;

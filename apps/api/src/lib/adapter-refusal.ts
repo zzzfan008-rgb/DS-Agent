@@ -32,3 +32,20 @@ export function adapterContractRefusal(platform: Platform, purpose: string): Api
     },
   );
 }
+
+/**
+ * 生产环境禁止用录制样本对账：样本只覆盖固定 fixture，拿它对比真实主数据会把
+ * 所有非样本商品误判为"平台不存在"。生产必须用 adapter（未核验则 409，而不是假差异）。
+ */
+export function assertRecordedAllowed(nodeEnv: string, mode: 'recorded' | 'adapter', purpose: string): void {
+  if (nodeEnv === 'production' && mode === 'recorded') {
+    throw new ApiError('validation_failed', `生产环境禁止用 recorded 样本${purpose}：样本不完整会产生误报`, {
+      detail: {
+        reason: 'recorded_samples_forbidden_in_production',
+        node_env: nodeEnv,
+        mode,
+        next_action: 'use_adapter_reader',
+      },
+    });
+  }
+}

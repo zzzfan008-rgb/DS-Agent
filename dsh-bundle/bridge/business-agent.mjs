@@ -71,6 +71,10 @@ function numberOrZero(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
+function reasoningWanted(config, intent) {
+  return Boolean(config?.reasoningEffort?.[intent] ?? config?.defaultReasoningEffort);
+}
+
 function debugRecord(config, record) {
   const file = config?.skillInjection?.debugFile;
   if (!file) return;
@@ -149,15 +153,58 @@ export class BusinessAgentService extends TypertRemoteService {
     }
 
     let modelId = config.modelLabel ?? 'deepseek-flash';
+    let providerId = null;
     const bundleVersion = config.bundleVersion ?? 'host-1.0.0';
     try {
       const session = this.ctx.agents.get(sessionId)?.session ?? this.ctx.sessions?.get(sessionId);
       const selection = session ? this.ctx.sessionProjections?.stateOf?.(session, 'modelSelection') : undefined;
       modelId = selection?.next?.model ?? selection?.lastUsed?.model ?? modelId;
-
+      providerId = selection?.next?.provider ?? selection?.lastUsed?.provider ?? null;
     } catch {
       // 投影不可用时用配置兜底
     }
+    if (reasoningWanted(config, env.intent) && !providerId) {
+      try {
+        const catalog = await this.ctx.sessionController.modelCatalog();
+        const groups = Array.isArray(catalog?.groups) ? catalog.groups : [];
+        const group = groups.find((item) => Array.isArray(item.models) && item.models.some((model) => model.id === modelId));
+        providerId = group?.id ?? null;
+      } catch (error) {
+        debugRecord(config, {
+          runId: env.runId,
+          event: 'model-catalog-error',
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    // F1 延迟：客服 reply_draft 不需要 deep reasoning；把 reasoningEffort 降到 off/low，
+    // 否则 deepseek-flash 默认 high 会先做隐藏思考，首 token 仍 >5s（实测见验收记录）。
+    const reasoningEffort = config.reasoningEffort?.[env.intent] ?? config.defaultReasoningEffort;
+    if (reasoningEffort && providerId && modelId) {
+      try {
+        await this.ctx.sessionController.selectModel({
+          sessionId,
+          provider: providerId,
+          model: modelId,
+          reasoningEffort,
+        });
+      } catch (error) {
+        debugRecord(config, {
+          runId: env.runId,
+          event: 'select-model-error',
+          reasoningEffort,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+    debugRecord(config, {
+      runId: env.runId,
+      event: 'model-selection',
+      providerId,
+      modelId,
+      reasoningEffort: reasoningEffort ?? null,
+    });
 
     debugRecord(config, {
       runId: env.runId,

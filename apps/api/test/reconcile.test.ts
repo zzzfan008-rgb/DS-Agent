@@ -30,6 +30,7 @@ import { SyncService } from '../src/sync/service.js';
 import { todayBusinessDay } from '../src/lib/day.js';
 import { uuidv7 } from '../src/lib/ids.js';
 import { ApiError } from '../src/lib/errors.js';
+import { assertRecordedAllowed } from '../src/lib/adapter-refusal.js';
 import type { LocalListingSnapshot, PlatformSnapshot } from '../src/reconcile/types.js';
 
 const DAY = todayBusinessDay(new Date());
@@ -634,6 +635,15 @@ test('日报指标：collectDailyMetrics 的平台过滤与成本口径（global
   assert.equal(metrics.media_cost_scope, 'global');
   assert.equal(metrics.media_cost_cents, 1234);
   assert.ok(metrics.listed >= 1);
+});
+
+test('生产环境禁止 recorded 样本对账（避免样本不全导致全量误报）', () => {
+  assert.throws(
+    () => assertRecordedAllowed('production', 'recorded', '对账'),
+    (error: unknown) => error instanceof ApiError && error.code === 'validation_failed',
+  );
+  assert.doesNotThrow(() => assertRecordedAllowed('test', 'recorded', '对账'));
+  assert.doesNotThrow(() => assertRecordedAllowed('production', 'adapter', '对账'));
 });
 
 test('Prisma 游标存储：真实 sync_cursor 行可创建、抢占、checkpoint、失败计数', async () => {
