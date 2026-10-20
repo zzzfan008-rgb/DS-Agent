@@ -57,6 +57,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Prisma Client 必须先显式生成：apps/api 的 tsc 与测试都依赖生成的类型/运行时。
+      # 不能依赖 pnpm typecheck 的包间并发顺序（曾导致 CI 上大量 TS2694/TS7006）。
+      - name: Prisma generate（先于 typecheck 与 test）
+        run: pnpm --filter @dssaas/db exec prisma generate --schema prisma/schema.prisma
+
       - name: Apply migrations（测试库）
         run: pnpm db:deploy
 
@@ -121,6 +126,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Prisma generate（测试与迁移都依赖生成的 client）
+        run: pnpm --filter @dssaas/db exec prisma generate --schema prisma/schema.prisma
 
       - name: API tests（复用 service postgres，自包含落库）
         run: |
