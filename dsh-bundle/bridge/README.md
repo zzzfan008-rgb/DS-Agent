@@ -134,13 +134,39 @@ api 侧连接期指数退避重试最多 2 次（`AGENT_BRIDGE_RECONNECT_ATTEMPT
 2. 插件：`business-agent.mjs`（Remote service）+ `business-bridge.mjs`（路由/policy/peer/gateway）。
 3. 真实事件：`apps/api/test/agent-real-host-{stream,cancel,auth}.log`，摘要见
    `docs/验收记录-M2-DSH真实联调.md`。
-4. 已知问题：真实首 token 10.0s > api 默认 8s（F1，需决策）；成本为按 token 的估算（F2）；
+4. 已知问题：F1（真实首 token 10.0s）已在 t23 关闭，见 §4.1；成本为按 token 的估算（F2）；
    每 run 新建 Host session（F3）。
+
+### 4.1 F1 skill 前置注入（t23 已实现）
+
+`business-agent.mjs` 在 `sessionController.prompt` 前读取 `skill-injection.mjs`，把 intent 对应的
+`SKILL.md` 正文直接拼入 prompt（不再让模型先调 `tool-skill`）。配置（`dev-host.patch.yml`）：
+
+```yaml
+business-agent:
+  config:
+    skillInjection:
+      enabled: true                 # false = 回退工具加载
+      enabledIntents: [support.suggest, content.draft, content.rewrite]
+      intentSkills:                 # 可选，覆盖 manifest.intents[intent].skills
+        support.suggest: [return-policy@1.3.0, brand-tone@2.1.0, size-guide@3.0.1]
+      manifestFile: D:/DSSAAS/dsh-bundle/manifest.json
+      skillRoot: D:/DSSAAS/dsh-bundle/skills
+      maxSkillBytes: 20000
+      maxTotalBytes: 30000
+      debugFile: D:/DSSAAS/dsh-bundle/.dev-home/logs/f1-injection.jsonl
+    reasoningEffort:
+      support.suggest: off          # 客服回复关闭 deep reasoning（F1 实测必需）
+```
+
+- 注入失败/未命中 → 自动回退 `tool-skill`，`meta.skillInjection.mode=tool`，不阻断 run；
+- `support.suggest` 同时注入 `size-guide`，否则客服问尺码时会再触发一次 skill 工具调用；
+- 首 token 分档在 api 侧（reply_draft 5000 / copy 8000 / 其他 8000），本插件不判超时；
+- 真实 Host 5 次采样与成本结论见 `docs/验收记录-M2-DSH真实联调.md` §8A。
 
 ## 5. 生产化（M3）剩余
 
-1. `businessAgent` 接入业务 preset 的 skill **前置注入**，避免首 token 前的 skill 工具往返（F1 方案 2）。
-2. api 的 sessionKey → Host session 映射（Redis）；多轮上下文复用。
+1. api 的 sessionKey → Host session 映射（Redis）；多轮上下文复用。
 3. 真实计价：`model_call_log` + `cost_ledger`（M2/t7），bridge 只上报 token。
 4. 生产 `dsh-host` 镜像、卷权限、`/ready` 聚合、MCP 启用与 `ctx.tools.guard`（docs/14 §8.3）。
 5. 生产鉴权失败改 404（`authFailureStatus: 404`，docs/14 §4.3）；dev 保持 401（t18 要求）。
