@@ -3,7 +3,7 @@
 本目录实现 `docs/21-接口契约裁决.md` §11.3 与 `docs/15-测试与质量门策略.md` §9/§10 要求的
 静态检查与 PR 门禁。**零运行时依赖**：只用 Node 内置模块，`pnpm install` 后即可执行。
 
-> 状态：t10/t16/t29 已交付；测试库隔离与运行锁见 §6。
+> 状态：t10/t16/t29/t52 已交付；测试库隔离、运行锁与并发 fork 见 §6。
 
 ## 1. 命令
 
@@ -133,13 +133,54 @@ pnpm 脚本内部再调用 `pnpm` 时，会继承 `npm_execpath`；在多 agent 
 
 - reuse：`dssaas_test_<6 hex>`；
 - docker：`dssaas_<8 hex>_test`；
-- `apps/api/test/run.ts` 允许：`_test` 结尾、`dssaas_test_<6hex>`、`dssaas_ci`（CI service）；
+- 共享库名直连时自动 fork：`dssaas_test_<pid>_<6 hex>`（t52，见 §6.6）；
+- `apps/api/test/run.ts` 允许：`_test` 结尾、`dssaas_test_<6hex>`、`dssaas_test_<pid>_<6hex>`、`dssaas_ci`（CI service）；
   若设置 `DSSAAS_EXPECT_DB_PREFIX`，库名还须以该前缀开头，否则 exit 2（防误连共享库）。
 
 ### 6.5 CI 说明
 
 GitHub Actions 使用干净的 `pgvector/pgvector:pg16` service（`dssaas_ci`），**不需要**运行锁或复用机制；
 CI 的 API 测试步骤直接 `pnpm --filter @dssaas/api test`。本机制只服务本地并行开发。
+
+### 6.6 并发跑测试：共享库自动 fork（t52）
+
+**问题**：两个 `pnpm --filter @dssaas/api test` 用同一个库同时跑，一方 `DROP/CREATE SCHEMA` 时另一方撞
+`relation "roles" does not exist`。这不是偶发，是机制问题——靠"记得用独立库"必然复发。
+
+**为什么不用 advisory lock（方案 A）**：锁只能串行化 `resetSchema` 那一下。但测试套件共用**固定 fixture**——
+固定邮箱（`admin.t21@test.local` 等）与 `orgId=1n`。实测同一 schema 上第二个进程创建同名用户直接
+`P2002`。锁一释放，两个进程仍在同一份数据上互相踩（唯一约束冲突、数据串味）。所以必须让两次运行
+**不共享 schema**。
+
+**机制（方案 B）**：`run.ts` 解析 `TEST_DATABASE_URL`：
+
+| 库名形态 | 行为 |
+|---|---|
+| `dssaas_test_<6hex>`（with-db reuse） | 已按运行隔离，直接使用 |
+| `dssaas_<8hex>_test`（with-db docker） | 同上 |
+| `dssaas_ci`（CI service） | 同上 |
+| 其他 `_test` 结尾的共享库（如 `dssaas_full_test`） | **fork** 成 `dssaas_test_<pid>_<6hex>`，跑完 DROP |
+
+- 建库需要连接用户有 `CREATEDB`；admin 连接默认把库名换成 `postgres`，可用 `DSSAAS_PG_ADMIN_URL` 覆盖；
+- **崩溃回收**：`finally` 只在正常退出/可捕获信号时执行；进程被 `kill -9` 时库会残留。因此每次 fork 前会扫
+  `^dssaas_test_<pid>_<6hex>$`，**pid 已不存在**的库自动 `DROP`（`DSSAAS_TEST_DB_RECLAIM=0` 可关闭）；
+- 显式关闭 fork：`DSSAAS_TEST_DB_MODE=direct`（需自行保证隔离，不再防并发）。
+
+**实测（153 条用例，2026-10-21）**：
+
+- 两个进程同时跑同一共享库名 `dssaas_full_test`：各自 fork（`dssaas_test_8332_558934` / `dssaas_test_8904_021629`），
+  **双方 153/153、exit 0**，两份日志 `does not exist` 计数均为 **0**；总墙钟 **37.8s**；
+- 单进程耗时：不 fork（`dssaas_test_ab12cd`）34.9/35.0s vs fork 36.1/35.4s，**增量 +0.4~1.1s**（要求 < 5s）；
+- 崩溃场景：`kill -9` 持库进程后该库残留；下一次运行自动打印 `回收残留库 dssaas_test_37964_85079e（其 pid=37964 已不存在）` 并清理。
+
+**限制**：
+
+- 只覆盖**同一台机器、同一个 Postgres 实例**。跨机器并发各自 fork 到不同库名，不会互踢，但会各自建库；
+- 依赖 `CREATEDB` 权限；无权限的环境需 `DSSAAS_TEST_DB_MODE=direct` 并自行隔离；
+- 每次运行多一次建库/删库（约 1s 量级）与一次迁移 `migrate deploy`（与之前相同）；
+- `direct` 模式不防并发，仅用于排查或权限受限环境。
+
+**CI**：不变。`dssaas_ci` 每个 job 一台干净 service、job 内串行，被识别为已隔离，**不 fork**、不建库。
 
 ## 7. 全链路 E2E（t38）
 

@@ -232,3 +232,106 @@ pnpm db:validate && pnpm check:migrations
   - 运行锁只覆盖同一台机器/同一仓库；跨机器并发由各自独立库保障，但仍需避免共用同一数据库；
   - 失败默认保留库/容器会占用资源，需按打印的清理命令回收（或 `DSSAAS_KEEP_DB=0` 强制清理）。
 - **变更文件**：`scripts/qa/with-db.mjs`、`apps/api/test/run.ts`、`scripts/qa/README.md`、`docs/验收记录-QA.md`；未改业务代码/schema。
+
+## 14. 并发跑测试根治：共享库自动 fork（t52）
+
+日期：2026-10-21 03:10（Asia/Shanghai）
+关联：t47 与 captain 均踩到 `public.roles does not exist`；t52 收口。
+
+### 14.1 结论先行
+
+1. **选方案 B（强制独立库），不是方案 A（advisory lock）**。理由有实测支撑，见 14.2。
+2. **两个进程同时跑同一共享库名：双方 153/153、exit 0、`does not exist` 出现 0 次**。
+3. **单进程耗时增量 +0.4~1.1s**（要求 < 5s）。
+4. **崩溃残留已兜住**：`kill -9` 后库会残留，下次运行自动识别 pid 已死并 DROP。
+
+### 14.2 为什么不是 advisory lock
+
+方案 A 的锁只能串行化 `resetSchema` 那一下。但测试套件共用**固定 fixture**：固定邮箱
+（`admin.t21@test.local` 等 24 个）与固定 `orgId=1n`。
+
+**实测**：同一 schema 上，进程 A 创建 `admin.t21@test.local` 成功；进程 B 创建同名用户 → `P2002`。
+锁一释放，两个进程仍在同一份数据上互相踩（唯一约束冲突、数据串味、一方 DROP 掉另一方正在用的表）。
+因此 A 不满足验收 1（两边都全绿），只有让两次运行**不共享 schema** 才能从机制上根治。
+
+### 14.3 机制
+
+`apps/api/test/run.ts` 解析 `TEST_DATABASE_URL`：
+
+| 库名形态 | 行为 |
+|---|---|
+| `dssaas_test_<6hex>`（with-db reuse） | 已按运行隔离，直接用 |
+| `dssaas_<8hex>_test`（with-db docker） | 同上 |
+| `dssaas_ci`（CI service） | 同上（每 job 干净 PG、job 内串行） |
+| 其他 `_test` 结尾的共享库 | **fork** 为 `dssaas_test_<pid>_<6hex>`，跑完 DROP |
+
+- admin 连接默认把库名换成 `postgres`（可用 `DSSAAS_PG_ADMIN_URL` 覆盖），需 `CREATEDB`；
+- 信号处理：`SIGINT`/`SIGTERM` 走 `finally` 清理；`kill -9` 无法拦截，故补**残留回收**——
+  每次 fork 前扫 `^dssaas_test_<pid>_<6hex>$`，pid 已不存在的库自动 `DROP DATABASE ... WITH (FORCE)`；
+- `DSSAAS_TEST_DB_MODE=direct` 显式关闭 fork；`DSSAAS_TEST_DB_RECLAIM=0` 关闭残留回收。
+
+### 14.4 真实输出
+
+**并发（验收 1、2）** —— 两个 `pnpm --filter @dssaas/api test` 同时启动，`TEST_DATABASE_URL` 同为
+`.../dssaas_full_test`：
+
+```
+A: [test] 库 dssaas_full_test 是共享库，按 t52 规则 fork 独立库 dssaas_test_8332_558934（跑完自动 DROP，避免并发 reset 互踢）
+   [test] pid = 8332 · started_at = 2026-10-20T19:07:47.777Z
+   [test] 已创建独立库 dssaas_test_8332_558934
+   [test] finished_at = 2026-10-20T19:08:24.623Z · pid = 8332
+   [test] 已 DROP 独立库 dssaas_test_8332_558934
+   ℹ tests 153 / pass 153 / fail 0        → exit 0
+
+B: [test] 库 dssaas_full_test 是共享库，按 t52 规则 fork 独立库 dssaas_test_8904_021629（跑完自动 DROP，避免并发 reset 互踢）
+   [test] pid = 8904 · started_at = 2026-10-20T19:07:47.785Z
+   [test] 已创建独立库 dssaas_test_8904_021629
+   [test] finished_at = 2026-10-20T19:08:24.604Z · pid = 8904
+   [test] 已 DROP 独立库 dssaas_test_8904_021629
+   ℹ tests 153 / pass 153 / fail 0        → exit 0
+
+总墙钟：37.8s；grep -c "does not exist"：A=0，B=0
+```
+
+**单进程耗时（验收 3）**：
+
+| 路径 | 第 1 次 | 第 2 次 |
+|---|---|---|
+| 不 fork（`dssaas_test_ab12cd`） | 34.9s | 35.0s |
+| fork（`dssaas_full_test`） | 36.1s | 35.4s |
+| 增量 | **+1.1s** | **+0.4s** |
+
+**崩溃场景（验收 4）** —— `kill -9` 掉持库进程后该库残留（`dssaas_test_37964_85079e`），
+下一次运行自动回收：
+
+```
+[test] 回收残留库 dssaas_test_37964_85079e（其 pid=37964 已不存在）
+[test] 已创建独立库 dssaas_test_37220_a7dc8a（admin=postgresql://dssaas:***@172.23.33.92:55434/postgres?schema=public）
+[test] 已 DROP 独立库 dssaas_test_37220_a7dc8a
+ℹ tests 147 / pass 147 / fail 0
+```
+
+（该次为 t51 合入前，147 条；合入后复跑为 153/153。）
+
+**守卫与兼容**：
+
+- `dssaas_test_<6hex>` 打印 `已按运行隔离，直接使用`，不 fork、不建库；
+- `dssaas_ci` 同上，CI 行为不变；
+- 非隔离库名仍 exit 2（`拒绝对非隔离测试库执行重置`）。
+
+### 14.5 限制
+
+- 只覆盖**同一台机器、同一个 Postgres 实例**。跨机器并发各自 fork 到不同库名，不会互踢，但会各自建库；
+- 依赖 `CREATEDB` 权限；无权限环境需 `DSSAAS_TEST_DB_MODE=direct` 并自行隔离（该模式不防并发）；
+- 每次运行多一次建库/删库（约 1s 量级）；`migrate deploy` 次数与之前相同；
+- `kill -9` 的残留靠下次运行回收，不保证实时清理。
+
+### 14.6 CI
+
+不变。`.github/workflows/ci.yml` 两个 job 都用 `dssaas_ci`（每 job 一台干净 `pgvector/pgvector:pg16`，
+job 内串行），被识别为已隔离 → 不 fork、不建库、不依赖 `CREATEDB`。
+
+### 14.7 变更文件
+
+`apps/api/test/run.ts`、`scripts/qa/README.md`（§6.4/§6.6）、`docs/验收记录-QA.md`（本节）。
+未改业务代码、未改 schema。
