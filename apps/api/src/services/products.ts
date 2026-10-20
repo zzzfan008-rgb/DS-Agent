@@ -368,45 +368,59 @@ export const PRODUCT_MISSING_CODES = {
 } as const;
 
 /**
- * 商品列表聚合（t28 G1）。
+ * 商品列表聚合（t28 G1，t51 分页下推）。
  *
  * 拉取当前筛选下的商品后，用 4 条批量查询（SKU / size_chart / fabric / listing）聚合，
- * 不做逐商品查询；1000 条商品下仍为常数条 SQL。`missing_fields=true` 与 `platform`
- * 在聚合结果上过滤，游标仍按 spu_code 升序稳定分页。
+ * 不做逐商品查询。
+ *
+ * **t51 修复（M9 压测 P1）**：原实现 `product.findMany({where, orderBy})` 没有 `take/skip`，
+ * 会把全量行拉进内存再 slice —— 10,000 条时 p95 886–991ms 且线性增长。现在：
+ * - 无 `missing_fields` 过滤：`take/skip` 直接下推（`skip` 由游标换算，语义仍是 `spu_code > cursor`），
+ *   只 `select` 列表真正用到的列；
+ * - 有 `missing_fields` 过滤：缺失字段必须先聚合才知道，无法纯 SQL 下推 → 改为
+ *   **分批扫描（`SCAN_BATCH` 一页）+ 聚合 + 早停**，凑够 `limit+1` 条就停，不再全量拉取。
+ *   这是"过滤条件依赖聚合结果"的固有代价；最坏情况（几乎没有缺失商品）仍会扫到末尾，
+ *   但内存占用被限制在单批，且正常场景（有缺失商品）只需扫一小部分。
  */
-export async function listProducts(deps: ProductServiceDeps, query: ProductListQuery) {
-  const where: Prisma.ProductWhereInput = { orgId: 1n, archivedAt: null };
-  if (query.category_code) where.categoryCode = query.category_code;
-  if (query.status) where.status = query.status;
-  if (query.q) {
-    where.OR = [
-      { name: { contains: query.q, mode: 'insensitive' } },
-      { spuCode: { contains: query.q, mode: 'insensitive' } },
-    ];
-  }
-  if (query.platform) {
-    const platformProducts = await deps.prisma.listing.findMany({
-      where: { orgId: 1n, platform: query.platform, archivedAt: null },
-      select: { productId: true },
-      distinct: ['productId'],
-    });
-    where.id = { in: platformProducts.map((row) => row.productId) };
-  }
-  const rows = await deps.prisma.product.findMany({
-    where,
-    orderBy: { spuCode: 'asc' },
-  });
+const SCAN_BATCH = 500;
+
+/** 列表页真正用到的 product 列（t51：只 select 需要的列，避免拉 `attributes` 等大 JSON）。 */
+const PRODUCT_LIST_SELECT = {
+  id: true,
+  spuCode: true,
+  name: true,
+  categoryCode: true,
+  fit: true,
+  status: true,
+  qualification: true,
+  updatedAt: true,
+} as const;
+
+type ProductListRow = {
+  id: string;
+  spuCode: string;
+  name: string;
+  categoryCode: string;
+  fit: string | null;
+  status: string;
+  qualification: unknown;
+  updatedAt: Date;
+};
+
+/**
+ * 批量聚合 4 张关联表，返回构造列表项所需的索引。
+ * 抽成函数是为了让"下推路径"和"分批扫描路径"共用同一套聚合逻辑。
+ */
+async function aggregateProductRows(deps: ProductServiceDeps, rows: readonly ProductListRow[]) {
   const ids = rows.map((row) => row.id);
   const skuCounts = new Map<string, { skus: number; colors: Set<string> }>();
   const chartVersion = new Map<string, number>();
   const effectiveCharts = new Set<string>();
   const effectiveFabrics = new Set<string>();
-  const listingsByProduct = new Map<string, Map<string, {
-    status: string;
-    platformState: string | null;
-    platformCategoryId: string | null;
-    lastWriteAt: Date | null;
-  }>>();
+  const listingsByProduct = new Map<
+    string,
+    Map<string, { status: string; platformState: string | null; platformCategoryId: string | null; lastWriteAt: Date | null }>
+  >();
 
   if (ids.length > 0) {
     const [skus, charts, fabrics, listings] = await Promise.all([
@@ -464,61 +478,123 @@ export async function listProducts(deps: ProductServiceDeps, query: ProductListQ
       }
     }
   }
+  return { skuCounts, chartVersion, effectiveCharts, effectiveFabrics, listingsByProduct };
+}
 
-  const items = rows.map((row) => {
-    const counts = skuCounts.get(row.id) ?? { skus: 0, colors: new Set<string>() };
-    const byPlatform = listingsByProduct.get(row.id);
-    const pdd = byPlatform?.get('pdd');
-    const ali = byPlatform?.get('1688');
-    const qualification = row.qualification;
-    const hasQualification =
-      qualification !== null &&
-      typeof qualification === 'object' &&
-      !Array.isArray(qualification) &&
-      Object.keys(qualification as Record<string, unknown>).length > 0;
-    const hasPlatformCategory = Boolean(
-      byPlatform && [...byPlatform.values()].some((listing) => listing.platformCategoryId !== null),
-    );
-    const missing: string[] = [];
-    if (!effectiveCharts.has(row.id)) missing.push(PRODUCT_MISSING_CODES.sizeChart);
-    if (!effectiveFabrics.has(row.id)) missing.push(PRODUCT_MISSING_CODES.fabric);
-    if (!hasQualification) missing.push(PRODUCT_MISSING_CODES.qualification);
-    if (!hasPlatformCategory) missing.push(PRODUCT_MISSING_CODES.platformCategory);
-    return {
-      id: row.id,
-      spu_code: row.spuCode,
-      name: row.name,
-      category_code: row.categoryCode,
-      fit: row.fit,
-      color_count: counts.colors.size,
-      sku_count: counts.skus,
-      status: row.status,
-      platform_states: {
-        pdd: {
-          status: pdd?.status ?? 'not_listed',
-          platform_state: pdd?.platformState ?? null,
-          last_write_at: pdd?.lastWriteAt?.toISOString() ?? null,
-        },
-        '1688': {
-          status: ali?.status ?? 'not_listed',
-          platform_state: ali?.platformState ?? null,
-          last_write_at: ali?.lastWriteAt?.toISOString() ?? null,
-        },
-      },
-      missing_fields: missing,
-      size_chart_version: chartVersion.get(row.id) ?? 0,
-      updated_at: row.updatedAt.toISOString(),
-    };
-  });
+type ProductAggregation = Awaited<ReturnType<typeof aggregateProductRows>>;
 
-  const filtered = query.missing_fields ? items.filter((item) => item.missing_fields.length > 0) : items;
-  const startIndex = query.cursor ? filtered.findIndex((item) => item.spu_code > query.cursor!) : 0;
-  const safeStart = startIndex < 0 ? filtered.length : startIndex;
-  const page = filtered.slice(safeStart, safeStart + query.limit + 1);
-  const visible = page.slice(0, query.limit);
+function buildListItem(row: ProductListRow, agg: ProductAggregation) {
+  const counts = agg.skuCounts.get(row.id) ?? { skus: 0, colors: new Set<string>() };
+  const byPlatform = agg.listingsByProduct.get(row.id);
+  const pdd = byPlatform?.get('pdd');
+  const ali = byPlatform?.get('1688');
+  const qualification = row.qualification;
+  const hasQualification =
+    qualification !== null &&
+    typeof qualification === 'object' &&
+    !Array.isArray(qualification) &&
+    Object.keys(qualification as Record<string, unknown>).length > 0;
+  const hasPlatformCategory = Boolean(
+    byPlatform && [...byPlatform.values()].some((listing) => listing.platformCategoryId !== null),
+  );
+  const missing: string[] = [];
+  if (!agg.effectiveCharts.has(row.id)) missing.push(PRODUCT_MISSING_CODES.sizeChart);
+  if (!agg.effectiveFabrics.has(row.id)) missing.push(PRODUCT_MISSING_CODES.fabric);
+  if (!hasQualification) missing.push(PRODUCT_MISSING_CODES.qualification);
+  if (!hasPlatformCategory) missing.push(PRODUCT_MISSING_CODES.platformCategory);
   return {
-    items: visible,
-    nextCursor: page.length > query.limit ? visible[visible.length - 1]!.spu_code : null,
+    id: row.id,
+    spu_code: row.spuCode,
+    name: row.name,
+    category_code: row.categoryCode,
+    fit: row.fit,
+    color_count: counts.colors.size,
+    sku_count: counts.skus,
+    status: row.status,
+    platform_states: {
+      pdd: {
+        status: pdd?.status ?? 'not_listed',
+        platform_state: pdd?.platformState ?? null,
+        last_write_at: pdd?.lastWriteAt?.toISOString() ?? null,
+      },
+      '1688': {
+        status: ali?.status ?? 'not_listed',
+        platform_state: ali?.platformState ?? null,
+        last_write_at: ali?.lastWriteAt?.toISOString() ?? null,
+      },
+    },
+    missing_fields: missing,
+    size_chart_version: agg.chartVersion.get(row.id) ?? 0,
+    updated_at: row.updatedAt.toISOString(),
+  };
+}
+
+export async function listProducts(deps: ProductServiceDeps, query: ProductListQuery) {
+  const where: Prisma.ProductWhereInput = { orgId: 1n, archivedAt: null };
+  if (query.category_code) where.categoryCode = query.category_code;
+  if (query.status) where.status = query.status;
+  if (query.q) {
+    where.OR = [
+      { name: { contains: query.q, mode: 'insensitive' } },
+      { spuCode: { contains: query.q, mode: 'insensitive' } },
+    ];
+  }
+  if (query.platform) {
+    const platformProducts = await deps.prisma.listing.findMany({
+      where: { orgId: 1n, platform: query.platform, archivedAt: null },
+      select: { productId: true },
+      distinct: ['productId'],
+    });
+    where.id = { in: platformProducts.map((row) => row.productId) };
+  }
+
+  // 游标语义不变：spu_code 严格大于 cursor（升序稳定分页）。
+  const cursorWhere: Prisma.ProductWhereInput = query.cursor
+    ? { ...where, spuCode: { gt: query.cursor } }
+    : where;
+  const need = query.limit + 1; // 多取一条用于判断 nextCursor
+
+  if (!query.missing_fields) {
+    // 快速路径：无聚合依赖过滤 → take/skip 直接下推。
+    const rows = await deps.prisma.product.findMany({
+      where: cursorWhere,
+      orderBy: { spuCode: 'asc' },
+      take: need,
+      select: PRODUCT_LIST_SELECT,
+    });
+    const agg = await aggregateProductRows(deps, rows);
+    const items = rows.map((row) => buildListItem(row, agg));
+    return {
+      items: items.slice(0, query.limit),
+      nextCursor: items.length > query.limit ? items[query.limit - 1]!.spu_code : null,
+    };
+  }
+
+  // 过滤路径：缺失字段依赖聚合，无法纯 SQL 下推 → 分批扫描 + 早停。
+  const collected: ReturnType<typeof buildListItem>[] = [];
+  let scanCursor = query.cursor ?? null;
+  for (;;) {
+    const batchWhere: Prisma.ProductWhereInput = scanCursor ? { ...where, spuCode: { gt: scanCursor } } : where;
+    const rows = await deps.prisma.product.findMany({
+      where: batchWhere,
+      orderBy: { spuCode: 'asc' },
+      take: SCAN_BATCH,
+      select: PRODUCT_LIST_SELECT,
+    });
+    if (rows.length === 0) break;
+    const agg = await aggregateProductRows(deps, rows);
+    for (const row of rows) {
+      const item = buildListItem(row, agg);
+      if (item.missing_fields.length > 0) collected.push(item);
+      if (collected.length >= need) break;
+    }
+    if (collected.length >= need) break;
+    if (rows.length < SCAN_BATCH) break;
+    scanCursor = rows[rows.length - 1]!.spuCode;
+  }
+  return {
+    items: collected.slice(0, query.limit),
+    nextCursor: collected.length > query.limit ? collected[query.limit - 1]!.spu_code : null,
   };
 }
 

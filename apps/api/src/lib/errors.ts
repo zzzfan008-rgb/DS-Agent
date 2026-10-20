@@ -36,6 +36,7 @@ export type ErrorCode =
   | 'route_exhausted'
   | 'quota_exceeded'
   | 'provider_unavailable'
+  | 'db_pool_exhausted'
   | 'model_not_published'
   | 'model_purpose_mismatch'
   | 'role_forbidden'
@@ -91,6 +92,9 @@ export const ERROR_DEFS: Record<ErrorCode, ErrorDefinition> = {
   route_exhausted: { http: 503, retryable: false, nextAction: 'contact_admin', message: '候选模型全部不可用' },
   quota_exceeded: { http: 429, retryable: false, nextAction: 'contact_admin', message: '模型配额已耗尽' },
   provider_unavailable: { http: 503, retryable: true, nextAction: 'contact_admin', message: '供应商凭据或连通性不可用' },
+  // t51（M9 P1）：Prisma P2024 = 连接池等待超时。它不是代码 bug，是容量问题：
+  // 必须 503 + retryable，否则客户端不重试、值班按 500 误判成代码缺陷。
+  db_pool_exhausted: { http: 503, retryable: true, nextAction: 'retry_later', message: '数据库连接池已耗尽，请稍后重试' },
   model_not_published: { http: 422, retryable: false, nextAction: 'fix_and_resubmit', message: '模型未发布或参数不合法' },
   model_purpose_mismatch: { http: 422, retryable: false, nextAction: 'fix_and_resubmit', message: '模型能力与用途不兼容' },
   role_forbidden: { http: 403, retryable: false, nextAction: 'contact_admin', message: '当前角色无权使用该模型用途' },
@@ -175,6 +179,7 @@ export function toApiError(error: unknown): ApiError {
     statusCode?: number;
     message?: string;
     validation?: unknown;
+    clientVersion?: string;
   };
   switch (candidate?.code) {
     case 'FST_ERR_CTP_BODY_TOO_LARGE':
@@ -186,6 +191,23 @@ export function toApiError(error: unknown): ApiError {
       return new ApiError('validation_failed', '请求体不是合法 JSON', { httpStatus: 400 });
     case 'FST_ERR_VALIDATION':
       return new ApiError('validation_failed', '请求参数校验失败', { detail: candidate.validation });
+    // t51（M9 P1）：Prisma 连接池等待超时 → 503 + retryable + Retry-After。
+    // 带 Retry-After 是为了让客户端/网关知道"退避一下还有救"，而不是当 500 死掉。
+    case 'P2024':
+      return new ApiError('db_pool_exhausted', undefined, {
+        headers: { 'retry-after': '2' },
+        detail: { prisma_code: 'P2024', hint: 'connection_limit 需按实例数显式配置，见 docs/16 与 .env.example' },
+        cause: error,
+      });
+    // P1001/P1002/P1017：连不上/连不上/连接被关。同样属于"可重试的容量/网络问题"。
+    case 'P1001':
+    case 'P1002':
+    case 'P1017':
+      return new ApiError('db_pool_exhausted', '数据库连接不可用', {
+        headers: { 'retry-after': '2' },
+        detail: { prisma_code: candidate.code },
+        cause: error,
+      });
     default:
       break;
   }

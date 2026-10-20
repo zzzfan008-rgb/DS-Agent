@@ -10,6 +10,19 @@ export function registerErrorHandler(app: FastifyInstance): void {
     } else if (apiError.httpStatus >= 500) {
       request.log.warn({ err: error, code: apiError.code }, 'request failed with server error');
     }
+    // t51（M9 P1）：错误按 code 打点。连接池耗尽属于容量问题，必须能与"代码 bug 的 500"
+    // 分开看 —— `dssaas_errors_total{code="db_pool_exhausted"}` 持续增长 = 该调池子/加实例。
+    //
+    // 必须 try/catch：错误处理本身不能因为打点失败而抛错 —— 那会把 422/409 洗成 500，
+    // 正好毁掉这次修复想表达的信息。测试里 app 可能尚未 decorate metricsRegistry。
+    try {
+      app.metricsRegistry?.inc('dssaas_errors_total', '业务错误数（按错误码）', {
+        code: apiError.code,
+        retryable: String(apiError.retryable),
+      });
+    } catch (metricsError) {
+      request.log.warn({ err: metricsError, code: apiError.code }, 'error metric increment failed');
+    }
     if (apiError.headers) reply.headers(apiError.headers);
     reply
       .code(apiError.httpStatus)

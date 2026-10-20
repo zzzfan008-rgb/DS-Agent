@@ -133,6 +133,12 @@ const EnvSchema = z.object({
   DAILY_SNAPSHOT_DIR: z.string().min(1).optional(),
   /** 日报告警阈值 JSON；不配置则只报事实不告警（任务要求：不写死数字）。 */
   DAILY_ALERT_THRESHOLDS: z.string().optional(),
+
+  // ---- 连接池（t51 / M9 P1：F3）----
+  /** 预期部署实例数：用于校验 `connection_limit × 实例数` 是否逼近 `max_connections`（只 WARNING，不阻断）。 */
+  API_INSTANCE_COUNT: z.coerce.number().int().min(1).max(1000).default(1),
+  /** Postgres 侧 `max_connections`（官方镜像默认 100）。 */
+  PG_MAX_CONNECTIONS: z.coerce.number().int().min(10).max(100_000).default(100),
 });
 
 export interface AppConfig {
@@ -205,6 +211,10 @@ export interface AppConfig {
   dailySnapshotDir: string;
   /** `null` = 未配置阈值：只报事实、不告警。 */
   dailyAlertThresholds: AlertThresholds | null;
+
+  /** t51：连接池容量校验用（只 WARNING，不阻断启动）。 */
+  apiInstanceCount: number;
+  pgMaxConnections: number;
 }
 
 export class ConfigError extends Error {
@@ -298,7 +308,57 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     afterSaleRetryMaxItems: raw.AFTER_SALE_RETRY_MAX_ITEMS,
     dailySnapshotDir: raw.DAILY_SNAPSHOT_DIR ?? DEFAULT_DAILY_SNAPSHOT_DIR,
     dailyAlertThresholds: thresholds.thresholds,
+    apiInstanceCount: raw.API_INSTANCE_COUNT,
+    pgMaxConnections: raw.PG_MAX_CONNECTIONS,
   };
+}
+
+/**
+ * 连接池容量校验（t51 / M9 P1：F3）。
+ *
+ * Prisma 未显式配置 `connection_limit` 时默认 `num_cpus * 2 + 1`（常见机器上 = 33/实例）。
+ * 3 实例就是 99 连接，逼近 `max_connections=100` —— 一旦到顶，所有请求都开始 P2024。
+ *
+ * 这里**只返回告警文本，不阻断启动**：池子多大是部署决策，代码没有资格因为"配置不理想"
+ * 就让服务起不来。但必须让人在启动日志里看见。
+ */
+export function checkPoolCapacity(config: {
+  databaseUrl: string;
+  apiInstanceCount: number;
+  pgMaxConnections: number;
+}): { warnings: string[]; connectionLimit: number | null; effectiveLimit: number } {
+  const warnings: string[] = [];
+  let connectionLimit: number | null = null;
+  try {
+    const parsed = new URL(config.databaseUrl);
+    const raw = parsed.searchParams.get('connection_limit');
+    if (raw !== null) {
+      const value = Number.parseInt(raw, 10);
+      if (Number.isFinite(value) && value > 0) connectionLimit = value;
+    }
+  } catch {
+    // 非法 URL 由 loadConfig 之外的地方处理；这里只跳过容量校验。
+  }
+
+  if (connectionLimit === null) {
+    warnings.push(
+      'DATABASE_URL 未显式设置 connection_limit：Prisma 默认约 (CPU×2+1)/实例，' +
+        '多实例部署时会逼近 max_connections。请在连接串里显式配置（如 ?connection_limit=20&pool_timeout=10）。',
+    );
+  }
+
+  // 未显式配置时按 Prisma 默认上限 33 估算（保守取值，不依赖运行机器核数）。
+  const perInstance = connectionLimit ?? 33;
+  const effectiveLimit = perInstance * config.apiInstanceCount;
+  const budget = Math.floor(config.pgMaxConnections * 0.8); // 留 20% 给运维/迁移
+  if (effectiveLimit > budget) {
+    warnings.push(
+      `连接池总量 ${perInstance}×${config.apiInstanceCount}=${effectiveLimit} 超过 ` +
+        `max_connections(${config.pgMaxConnections}) 的 80%（预算 ${budget}）：` +
+        '请调小 connection_limit 或增加 max_connections，否则高并发下会大面积 P2024。',
+    );
+  }
+  return { warnings, connectionLimit, effectiveLimit };
 }
 
 /** 日志/启动横幅用：隐去连接串口令。 */

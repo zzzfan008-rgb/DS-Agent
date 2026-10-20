@@ -1798,6 +1798,53 @@ test('t49 告警落库：配置 after_sale_platform_only=0 → 出现即写 even
   }
 });
 
+test('t50 延伸：日报里的 pending 重放 —— 无新订单也能把售后救回（不必等 orders 同步）', async () => {
+  const sink = new MemoryAfterSaleSink();
+  const readers = createSyncReaders('recorded');
+  // 模拟"店铺停售/淡季"：售后先到，订单一直没有新单 → orders 同步永远不会触发重放。
+  const service = new SyncService({
+    store: new MemorySyncCursorStore(),
+    readers,
+    sinks: { orders: new MemoryOrderSink(), after_sale: sink },
+  });
+  const first = await service.run('1688', 'after_sale', { owner: 'w1' });
+  assert.equal(first.stats.pending, 3, '三笔全部 pending（本地无订单）');
+
+  // 日报里的重放：订单补齐后（这里直接注入已知订单，模拟别的途径补上了订单）
+  sink.knownOrders.add('ALI-ORDER-1004');
+  sink.knownOrders.add('ALI-ORDER-1005');
+  const replay = await replayPendingAfterSales(readers.after_sale, sink, '1688', new Date());
+  assert.equal(replay.created, 2, '日报重放救回两笔');
+  assert.equal(replay.pending, 1, '缺订单的那笔仍 pending');
+  assert.equal(sink.rows.size, 2);
+});
+
+test('t50 延伸：日报重放失败不影响日报生成（只记 error）', async () => {
+  // 直接验证"重放抛错 → 外层仍然拿到 error 字段而不是整体失败"的契约。
+  // daily-report 脚本里用 try/catch 包住，这里断言 catch 分支产生的结构。
+  const failing = async (): Promise<Record<string, unknown>> => {
+    try {
+      await replayPendingAfterSales(
+        {
+          source: 'recorded',
+          read: async () => {
+            throw new Error('reader down');
+          },
+        },
+        new MemoryAfterSaleSink(),
+        '1688',
+        new Date(),
+      );
+      return { ok: true };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : String(error) };
+    }
+  };
+  const outcome = await failing();
+  assert.equal(outcome.ok, undefined, '重放必须失败');
+  assert.match(String(outcome.error), /reader down/, '失败原因要能落到日报里');
+});
+
 test('未配置阈值：日报只报事实、alerts 为空', async () => {
   const report = await buildDailyReport({
     prisma,

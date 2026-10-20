@@ -1,4 +1,21 @@
-/** t50 真实输出取证脚本（内存 sink，纯本地，不碰库）。 */
+/**
+ * t50 手工证据脚本 —— **CI 不跑，需手动执行**。
+ *
+ * 为什么单独一个文件：它验证的是"三种时序下的 pending 重放行为"，需要人工看输出，
+ * 不是断言型测试。因此**故意不命名为 `*.test.ts`**，`apps/api/test/run.ts` 的
+ * `.filter((file) => file.endsWith('.test.ts'))` 不会把它纳入 `pnpm test`。
+ *
+ * 运行：
+ *   cd apps/api && npx tsx test/t50-evidence.ts
+ *
+ * **防腐提示**：改动以下任一处后，必须手动重跑本脚本并核对输出：
+ * - `src/sync/after-sale-sink.ts`（`replayPendingAfterSales` / `MemoryAfterSaleSink`）
+ * - `src/sync/service.ts`（`replayPendingAfterOrders` 触发条件）
+ * - `src/sync/readers.ts` 的 `after_sale` 录制样本
+ * - `src/sync/order-sink.ts`（`MemoryOrderSink`）
+ *
+ * 断言型覆盖在 `test/reconcile.test.ts` 的 5 条 `t50` 用例里；本脚本只负责"人眼可读的证据"。
+ */
 import { MemorySyncCursorStore } from '../src/sync/cursor-store.js';
 import { createSyncReaders } from '../src/sync/readers.js';
 import { MemoryOrderSink } from '../src/sync/order-sink.js';

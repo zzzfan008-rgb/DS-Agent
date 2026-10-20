@@ -16,6 +16,17 @@ import {
 import { listProducts, PRODUCT_MISSING_CODES } from '../src/services/products.js';
 import { contentDraftTargetPayload } from '../src/services/content-target.js';
 import { computeLevel } from '../src/write-gate/actions.js';
+import { checkPoolCapacity } from '../src/config.js';
+import { errorEnvelope, toApiError } from '../src/lib/errors.js';
+
+/** where 子句里含 BigInt（orgId），JSON.stringify 会抛 —— 用带 BigInt 支持的序列化做拦截判断。 */
+function whereText(where: unknown): string {
+  try {
+    return JSON.stringify(where, (_key, value) => (typeof value === 'bigint' ? value.toString() : value)) ?? '';
+  } catch {
+    return '';
+  }
+}
 
 const ADMIN_PASSWORD = 'TestAdminPassword!2026';
 const OPERATOR_PASSWORD = 'TestOperatorPassword!2026';
@@ -224,6 +235,153 @@ test('1000 条商品聚合耗时（批量查询，无 N+1）', async () => {
   assert.ok(result.items.length > 0);
   assert.ok(elapsedMs < 2000, `1000 条商品聚合耗时 ${elapsedMs.toFixed(1)}ms 超过 2s`);
   console.log(`[t28] 1000 products aggregate: ${elapsedMs.toFixed(1)}ms, page=${result.items.length}`);
+});
+
+test('t51/F1：分页下推 —— 只取 limit+1 行，不再全量拉取（SQL 行数断言）', async () => {
+  const prefix = `${PREFIX}-PUSHDOWN`;
+  await prisma.product.createMany({
+    data: Array.from({ length: 300 }, (_, index) => ({
+      orgId: 1n,
+      spuCode: `${prefix}-${String(index).padStart(4, '0')}`,
+      name: `pushdown ${index}`,
+      categoryCode: 'A0101',
+      createdBy: operator.id,
+    })),
+  });
+  const created = await prisma.product.findMany({ where: { spuCode: { startsWith: prefix } }, select: { id: true } });
+  cleanupProductIds.push(...created.map((row) => row.id));
+
+  // 拦截 findMany，记录 product 查询实际带了多少行回内存。
+  const original = app.prisma.product.findMany.bind(app.prisma.product);
+  let maxRowsFetched = 0;
+  let productQueryCalls = 0;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  (app.prisma.product as any).findMany = async (args: any) => {
+    const rows = await original(args);
+    if (whereText(args?.where).includes(prefix)) {
+      productQueryCalls += 1;
+      maxRowsFetched = Math.max(maxRowsFetched, Array.isArray(rows) ? rows.length : 0);
+    }
+    return rows;
+  };
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+  try {
+    const result = await listProducts({ prisma: app.prisma, audit: app.audit }, { limit: 20, q: prefix });
+    assert.equal(result.items.length, 20);
+    assert.equal(productQueryCalls, 1, '无 missing_fields 过滤时只查一次');
+    assert.ok(maxRowsFetched <= 21, `实际拉取 ${maxRowsFetched} 行，应 ≤ limit+1=21（分页必须下推）`);
+    // 游标语义：nextCursor 是最后一条的 spu_code，下一页严格大于它。
+    assert.equal(result.nextCursor, result.items[result.items.length - 1]!.spu_code);
+    const next = await listProducts(
+      { prisma: app.prisma, audit: app.audit },
+      { limit: 20, q: prefix, cursor: result.nextCursor! },
+    );
+    assert.equal(next.items[0]!.spu_code, `${prefix}-0020`, '游标分页必须连续、不重不漏');
+  } finally {
+    (app.prisma.product as any).findMany = original;
+  }
+});
+
+test('t51/F1：missing_fields 过滤仍是分批扫描 + 早停，语义不变', async () => {
+  const prefix = `${PREFIX}-MISSING`;
+  await prisma.product.createMany({
+    data: Array.from({ length: 120 }, (_, index) => ({
+      orgId: 1n,
+      spuCode: `${prefix}-${String(index).padStart(4, '0')}`,
+      name: `missing ${index}`,
+      categoryCode: 'A0101',
+      createdBy: operator.id,
+    })),
+  });
+  const created = await prisma.product.findMany({ where: { spuCode: { startsWith: prefix } }, select: { id: true } });
+  cleanupProductIds.push(...created.map((row) => row.id));
+
+  const original = app.prisma.product.findMany.bind(app.prisma.product);
+  let batches = 0;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  (app.prisma.product as any).findMany = async (args: any) => {
+    const rows = await original(args);
+    if (whereText(args?.where).includes(prefix)) batches += 1;
+    return rows;
+  };
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+  try {
+    // 这 120 条都没尺码表/成分/资质/类目 → 全部 missing，第一批就凑够 limit+1 → 早停。
+    const result = await listProducts(
+      { prisma: app.prisma, audit: app.audit },
+      { limit: 20, q: prefix, missing_fields: true },
+    );
+    assert.equal(result.items.length, 20);
+    assert.ok(result.items.every((item) => item.missing_fields.length > 0));
+    assert.equal(batches, 1, '凑够 limit+1 就必须早停，不得扫完全部批次');
+  } finally {
+    (app.prisma.product as any).findMany = original;
+  }
+});
+
+test('t51/F2：Prisma P2024（连接池耗尽）映射为 503 + retryable + Retry-After', () => {
+  const p2024 = Object.assign(new Error('Timed out fetching a new connection from the connection pool'), {
+    code: 'P2024',
+    clientVersion: '6.19.3',
+  });
+  const apiError = toApiError(p2024);
+  assert.equal(apiError.code, 'db_pool_exhausted');
+  assert.equal(apiError.httpStatus, 503, '连接池耗尽不是代码 bug，不能报 500');
+  assert.equal(apiError.retryable, true, '必须可重试，否则客户端直接放弃');
+  assert.equal(apiError.nextAction, 'retry_later');
+  assert.equal(apiError.headers?.['retry-after'], '2');
+  const detail = apiError.detail as { prisma_code?: string };
+  assert.equal(detail.prisma_code, 'P2024');
+  // 错误信封可读
+  const envelope = errorEnvelope('req-1', apiError);
+  assert.equal(envelope.error.code, 'db_pool_exhausted');
+  assert.equal(envelope.error.retryable, true);
+
+  // 连接类错误同样按可重试处理
+  for (const code of ['P1001', 'P1002', 'P1017']) {
+    const mapped = toApiError(Object.assign(new Error('conn'), { code }));
+    assert.equal(mapped.code, 'db_pool_exhausted', `${code} 应映射为 db_pool_exhausted`);
+    assert.equal(mapped.httpStatus, 503);
+    assert.equal(mapped.retryable, true);
+  }
+  // 其他未知异常仍是 500（不要把所有错误都洗成 503）
+  const unknown = toApiError(new Error('boom'));
+  assert.equal(unknown.code, 'internal_error');
+  assert.equal(unknown.httpStatus, 500);
+});
+
+test('t51/F3：连接池容量校验只 WARNING 不阻断，且能识别显式配置', () => {
+  // 未显式配置 connection_limit + 3 实例 → 两条告警（未显式 + 超预算）
+  const missing = checkPoolCapacity({
+    databaseUrl: 'postgresql://u:p@db:5432/dssaas',
+    apiInstanceCount: 3,
+    pgMaxConnections: 100,
+  });
+  assert.equal(missing.connectionLimit, null);
+  assert.equal(missing.effectiveLimit, 99, '未配置时按 Prisma 默认 33 估算：33×3=99');
+  assert.equal(missing.warnings.length, 2);
+  assert.match(missing.warnings[0]!, /connection_limit/);
+  assert.match(missing.warnings[1]!, /99|超过/);
+
+  // 显式配 20 + 3 实例 → 60 < 80 预算 → 无告警
+  const configured = checkPoolCapacity({
+    databaseUrl: 'postgresql://u:p@db:5432/dssaas?connection_limit=20&pool_timeout=10',
+    apiInstanceCount: 3,
+    pgMaxConnections: 100,
+  });
+  assert.equal(configured.connectionLimit, 20);
+  assert.equal(configured.effectiveLimit, 60);
+  assert.deepEqual(configured.warnings, []);
+
+  // 显式配但总量仍超 → 只有超预算那一条
+  const oversubscribed = checkPoolCapacity({
+    databaseUrl: 'postgresql://u:p@db:5432/dssaas?connection_limit=40',
+    apiInstanceCount: 3,
+    pgMaxConnections: 100,
+  });
+  assert.equal(oversubscribed.effectiveLimit, 120);
+  assert.equal(oversubscribed.warnings.length, 1);
+  assert.match(oversubscribed.warnings[0]!, /120/);
 });
 
 test('审批内容失效：编辑草稿后旧审批 decide → 428 approval_stale + resubmit；新审批可批', async () => {

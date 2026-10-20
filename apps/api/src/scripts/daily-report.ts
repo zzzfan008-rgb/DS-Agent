@@ -23,6 +23,8 @@ import { createDriftStore } from '../reconcile/stores.js';
 import { createPlatformReader, type ReaderMode } from '../reconcile/readers.js';
 import { ReconcileService } from '../reconcile/service.js';
 import type { Platform } from '../reconcile/types.js';
+import { PrismaAfterSaleSink, replayPendingAfterSales } from '../sync/after-sale-sink.js';
+import { createSyncReaders } from '../sync/readers.js';
 import { buildDailyReport, type DailyReport } from '../daily/report.js';
 import { persistAlerts } from '../daily/alerts.js';
 import { criticalThresholdStatus } from '../daily/thresholds.js';
@@ -94,8 +96,58 @@ async function main(): Promise<void> {
 
     const perPlatform: DailyReport[] = [];
     const reconcileSummaries: Array<{ platform: Platform; total: number; by_kind: Record<string, number>; store: string; persisted: { inserted: number; updated: number; unchanged: number } }> = [];
+    const retrySummaries: Array<{ platform: Platform; result: Record<string, unknown> }> = [];
 
     for (const platform of options.platforms) {
+      // t50 延伸：日报里也跑一次 pending 售后重放。
+      // 为什么必须在这里做：orders 同步只在"平台有新订单"时触发，店铺停售/淡季时
+      // pending 售后会永久挂着 —— 而恰恰那种时候最容易出"平台有退款、本地没记录"。
+      // 与 orders 同步时的重放完全同源：after_sale 全量读 + 关联，**不推进 after_sale 游标**。
+      {
+        const afterSaleSink = new PrismaAfterSaleSink(prisma);
+        let outcome: Record<string, unknown>;
+        try {
+          const replay = await replayPendingAfterSales(
+            createSyncReaders(options.mode).after_sale,
+            afterSaleSink,
+            platform,
+            new Date(),
+            { maxItems: config.afterSaleRetryMaxItems },
+          );
+          outcome = {
+            created: replay.created,
+            updated: replay.updated,
+            skipped: replay.skipped,
+            pending: replay.pending,
+            degraded: replay.degraded,
+            scanned: replay.scanned,
+          };
+          console.log(
+            `[daily] after_sale 重放 ${platform}: scanned=${replay.scanned} ` +
+              `created=${replay.created} updated=${replay.updated} skipped=${replay.skipped} pending=${replay.pending}` +
+              (replay.degraded ? `（degraded：超过 ${config.afterSaleRetryMaxItems} 条上限）` : ''),
+          );
+          if (replay.degraded) {
+            console.warn(
+              `[daily] WARNING: ${platform} after_sale 重放超过 AFTER_SALE_RETRY_MAX_ITEMS=${config.afterSaleRetryMaxItems}，` +
+                '本次只处理前 N 条；请调大上限或检查售后积压。',
+            );
+          }
+          if (replay.pending > 0) {
+            console.warn(
+              `[daily] WARNING: ${platform} 仍有 ${replay.pending} 笔售后 pending（本地缺对应订单）—— ` +
+                '这些退款在本地没有记录，必须人工核对是同步失败还是绕过系统退款。',
+            );
+          }
+        } catch (error) {
+          // 重放失败不影响日报生成（与 orders 同步同一原则：补偿逻辑不污染主流程）。
+          const message = error instanceof Error ? error.message : String(error);
+          outcome = { error: message };
+          console.warn(`[daily] WARNING: ${platform} after_sale 重放失败（不影响日报生成）：${message}`);
+        }
+        retrySummaries.push({ platform, result: outcome });
+      }
+
       if (options.reconcile) {
         const service = new ReconcileService({
           prisma,
@@ -172,6 +224,8 @@ async function main(): Promise<void> {
       drift_store: { name: bundle.store.name, note: bundle.note },
       thresholds_configured: config.dailyAlertThresholds !== null,
       reconcile: options.reconcile ? reconcileSummaries : null,
+      /** t50 延伸：本次日报顺带跑的 pending 售后重放结果（每个平台一条）。 */
+      after_sale_retry: retrySummaries,
       platforms: perPlatform,
       combined,
     };
