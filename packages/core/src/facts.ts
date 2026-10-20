@@ -1,5 +1,6 @@
 /** 事实信封（docs/06 §6.5）：canonical JSON + sha256 facts_hash，事实单一化的哈希锚点。 */
 import { createHash } from 'node:crypto';
+import { canonicalJson } from './idempotency/canonical.js';
 
 export interface FactItem {
   key: string;
@@ -20,23 +21,11 @@ export interface FactEnvelope {
   facts_hash: string;
 }
 
-export function canonicalize(value: unknown): unknown {
-  if (value === null || value === undefined) return value;
-  if (Array.isArray(value)) return value.map(canonicalize);
-  if (typeof value === 'object') {
-    const source = value as Record<string, unknown>;
-    const out: Record<string, unknown> = {};
-    for (const key of Object.keys(source).sort()) {
-      if (source[key] !== undefined) out[key] = canonicalize(source[key]);
-    }
-    return out;
-  }
-  return value;
-}
-
-export function canonicalJson(value: unknown): string {
-  return JSON.stringify(canonicalize(value));
-}
+/**
+ * 规范化与哈希**只允许一个实现**：统一走 `idempotency/canonical.ts`。
+ * 曾经这里有一份独立实现（排序但不剥 volatile 字段），与幂等键的规范化语义不同，
+ * 会导致同一逻辑负载在 facts_hash 与 idempotency_key 两处算出不同值。
+ */
 
 /** 哈希输入按 (key, source_table, source_id) 排序，避免数组顺序造成 facts_hash 抖动。 */
 export function computeFactsHash(input: {
