@@ -67,7 +67,7 @@ function resolvePnpmCommand(explicitPath) {
   for (const candidate of candidates) {
     if (!candidate || seen.has(candidate) || !existsSync(candidate)) continue;
     seen.add(candidate);
-    const probe = spawnSync(`"${candidate}"`, ['-v'], {
+    const probe = spawnSync(`"${candidate}" -v`, {
       shell: true,
       encoding: 'utf8',
       timeout: 20_000,

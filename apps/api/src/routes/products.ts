@@ -136,7 +136,9 @@ export function registerProductRoutes(app: FastifyInstance): void {
     const result = await listProducts(deps, {
       ...(query.q === undefined ? {} : { q: query.q }),
       ...(query.category_code === undefined ? {} : { category_code: query.category_code }),
+      ...(query.platform === undefined ? {} : { platform: query.platform }),
       ...(query.status === undefined ? {} : { status: query.status }),
+      ...(query.missing_fields === undefined ? {} : { missing_fields: query.missing_fields === '1' }),
       ...(query.cursor === undefined ? {} : { cursor: query.cursor }),
       limit,
     });

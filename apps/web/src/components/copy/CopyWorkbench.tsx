@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { ApiFailure } from '@/lib/api';
 import {
   createContentDraft,
@@ -13,9 +14,7 @@ import {
 import { fetchProduct, fetchProductList } from '@/lib/products-client';
 import { isApiFailure, redirectToLogin } from '@/lib/m3-api';
 import {
-  CONTENT_TYPE_LABEL,
   contentTypeLabel,
-  parseYuanToCents,
   severityLabel,
   TONE_OPTIONS,
   verdictLabel,
@@ -127,7 +126,7 @@ function HighlightedText({
   if (!text) return null;
   if (hits.length === 0) return <p className={styles.hitPreview}>{text}</p>;
   const ranges = buildRanges(text, hits);
-  const segments: React.ReactNode[] = [];
+  const segments: ReactNode[] = [];
   let cursor = 0;
   ranges.forEach((range, index) => {
     if (range.start > cursor) segments.push(text.slice(cursor, range.start));
@@ -519,7 +518,11 @@ export function CopyWorkbench({ canWrite }: CopyWorkbenchProps) {
 
   const contentChangedAfterApproval =
     approvedContent !== null && text !== approvedContent;
-  const submitGuard = decisionAllowsSubmit(judgment);
+  const baseGuard = decisionAllowsSubmit(judgment);
+  const submitGuard =
+    approval !== null && approvedContent === text
+      ? { ok: false, reason: '同一内容已有待审批（target_hash 相同）；修改正文后可提交新审批' }
+      : baseGuard;
   const hits = judgment?.rule_hits ?? [];
   const judgedMatchesCurrent = judgment !== null && judgedText === text;
 

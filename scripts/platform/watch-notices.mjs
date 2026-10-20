@@ -73,6 +73,7 @@ const PDD_SOURCE = {
 
 const PDD_CATEGORIES_FALLBACK = {
   '-1': '所有公告',
+  0: '未分类',
   1: '活动公告',
   2: '技术变更',
   3: '规则变更',
@@ -494,8 +495,7 @@ async function watchPdd(flags) {
   }
 
   const summary = summarize({ platform: 'pdd', mode, baseline, snapshot, delta, snapshotFile, shaFile, deltaFile, previousFile });
-  if (flags.json) console.log(JSON.stringify(summary, null, 2));
-  else printSummary(summary, newItems);
+  if (!flags.json) printSummary(summary, newItems);
   return summary;
 }
 
@@ -559,8 +559,8 @@ async function main() {
     console.log('[watch] --fixture 只作用于 PDD；1688 仍需登录，未运行。');
   }
 
-  if (flags.json && errors.length > 0) {
-    console.log(JSON.stringify({ ok: false, errors, summaries }, null, 2));
+  if (flags.json) {
+    console.log(JSON.stringify({ ok: errors.length === 0, summaries, errors }, null, 2));
   }
   const parserError = errors.find((error) => error.code === 3);
   const networkError = errors.find((error) => error.code === 2);

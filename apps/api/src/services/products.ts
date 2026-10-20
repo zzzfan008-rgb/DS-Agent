@@ -352,11 +352,28 @@ export async function createProduct(
 export interface ProductListQuery {
   q?: string;
   category_code?: string;
+  platform?: 'pdd' | '1688';
   status?: string;
+  missing_fields?: boolean;
   cursor?: string;
   limit: number;
 }
 
+/** 稳定字段编码（前端负责中文/图标映射，禁止在 API 里返回展示文案）。 */
+export const PRODUCT_MISSING_CODES = {
+  sizeChart: 'missing_size_chart',
+  fabric: 'missing_fabric',
+  qualification: 'missing_qualification',
+  platformCategory: 'missing_platform_category',
+} as const;
+
+/**
+ * 商品列表聚合（t28 G1）。
+ *
+ * 拉取当前筛选下的商品后，用 4 条批量查询（SKU / size_chart / fabric / listing）聚合，
+ * 不做逐商品查询；1000 条商品下仍为常数条 SQL。`missing_fields=true` 与 `platform`
+ * 在聚合结果上过滤，游标仍按 spu_code 升序稳定分页。
+ */
 export async function listProducts(deps: ProductServiceDeps, query: ProductListQuery) {
   const where: Prisma.ProductWhereInput = { orgId: 1n, archivedAt: null };
   if (query.category_code) where.categoryCode = query.category_code;
@@ -367,38 +384,106 @@ export async function listProducts(deps: ProductServiceDeps, query: ProductListQ
       { spuCode: { contains: query.q, mode: 'insensitive' } },
     ];
   }
-  if (query.cursor) where.spuCode = { gt: query.cursor };
+  if (query.platform) {
+    const platformProducts = await deps.prisma.listing.findMany({
+      where: { orgId: 1n, platform: query.platform, archivedAt: null },
+      select: { productId: true },
+      distinct: ['productId'],
+    });
+    where.id = { in: platformProducts.map((row) => row.productId) };
+  }
   const rows = await deps.prisma.product.findMany({
     where,
     orderBy: { spuCode: 'asc' },
-    take: query.limit + 1,
   });
-  const page = rows.slice(0, query.limit);
-  const ids = page.map((row) => row.id);
+  const ids = rows.map((row) => row.id);
   const skuCounts = new Map<string, { skus: number; colors: Set<string> }>();
+  const chartVersion = new Map<string, number>();
+  const effectiveCharts = new Set<string>();
+  const effectiveFabrics = new Set<string>();
+  const listingsByProduct = new Map<string, Map<string, {
+    status: string;
+    platformState: string | null;
+    platformCategoryId: string | null;
+    lastWriteAt: Date | null;
+  }>>();
+
   if (ids.length > 0) {
-    const skus = await deps.prisma.productSku.findMany({
-      where: { productId: { in: ids }, archivedAt: null },
-      select: { productId: true, colorId: true },
-    });
+    const [skus, charts, fabrics, listings] = await Promise.all([
+      deps.prisma.productSku.findMany({
+        where: { productId: { in: ids }, archivedAt: null },
+        select: { productId: true, colorId: true },
+      }),
+      deps.prisma.sizeChart.findMany({
+        where: { productId: { in: ids }, archivedAt: null },
+        select: { productId: true, versionNo: true, status: true },
+      }),
+      deps.prisma.fabricComposition.findMany({
+        where: { productId: { in: ids }, archivedAt: null, status: 'effective' },
+        select: { productId: true },
+      }),
+      deps.prisma.listing.findMany({
+        where: { productId: { in: ids }, archivedAt: null },
+        select: {
+          productId: true,
+          platform: true,
+          status: true,
+          platformState: true,
+          platformCategoryId: true,
+          updatedAt: true,
+          lastSyncedAt: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+      }),
+    ]);
     for (const sku of skus) {
       const entry = skuCounts.get(sku.productId) ?? { skus: 0, colors: new Set<string>() };
       entry.skus += 1;
       entry.colors.add(sku.colorId);
       skuCounts.set(sku.productId, entry);
     }
+    for (const chart of charts) {
+      chartVersion.set(chart.productId, Math.max(chartVersion.get(chart.productId) ?? 0, chart.versionNo));
+      if (chart.status === 'effective') effectiveCharts.add(chart.productId);
+    }
+    for (const fabric of fabrics) effectiveFabrics.add(fabric.productId);
+    for (const listing of listings) {
+      let byPlatform = listingsByProduct.get(listing.productId);
+      if (!byPlatform) {
+        byPlatform = new Map();
+        listingsByProduct.set(listing.productId, byPlatform);
+      }
+      // 同一平台多 listing 时取 updated_at 最新一条（查询已按 updatedAt desc）。
+      if (!byPlatform.has(listing.platform)) {
+        byPlatform.set(listing.platform, {
+          status: listing.status,
+          platformState: listing.platformState,
+          platformCategoryId: listing.platformCategoryId,
+          lastWriteAt: listing.lastSyncedAt ?? listing.updatedAt,
+        });
+      }
+    }
   }
-  const charts = ids.length
-    ? await deps.prisma.sizeChart.groupBy({
-        by: ['productId'],
-        where: { productId: { in: ids }, archivedAt: null },
-        _max: { versionNo: true },
-      })
-    : [];
-  const chartVersion = new Map(charts.map((row) => [row.productId, row._max.versionNo ?? 0]));
 
-  const items = page.map((row) => {
+  const items = rows.map((row) => {
     const counts = skuCounts.get(row.id) ?? { skus: 0, colors: new Set<string>() };
+    const byPlatform = listingsByProduct.get(row.id);
+    const pdd = byPlatform?.get('pdd');
+    const ali = byPlatform?.get('1688');
+    const qualification = row.qualification;
+    const hasQualification =
+      qualification !== null &&
+      typeof qualification === 'object' &&
+      !Array.isArray(qualification) &&
+      Object.keys(qualification as Record<string, unknown>).length > 0;
+    const hasPlatformCategory = Boolean(
+      byPlatform && [...byPlatform.values()].some((listing) => listing.platformCategoryId !== null),
+    );
+    const missing: string[] = [];
+    if (!effectiveCharts.has(row.id)) missing.push(PRODUCT_MISSING_CODES.sizeChart);
+    if (!effectiveFabrics.has(row.id)) missing.push(PRODUCT_MISSING_CODES.fabric);
+    if (!hasQualification) missing.push(PRODUCT_MISSING_CODES.qualification);
+    if (!hasPlatformCategory) missing.push(PRODUCT_MISSING_CODES.platformCategory);
     return {
       id: row.id,
       spu_code: row.spuCode,
@@ -408,13 +493,32 @@ export async function listProducts(deps: ProductServiceDeps, query: ProductListQ
       color_count: counts.colors.size,
       sku_count: counts.skus,
       status: row.status,
+      platform_states: {
+        pdd: {
+          status: pdd?.status ?? 'not_listed',
+          platform_state: pdd?.platformState ?? null,
+          last_write_at: pdd?.lastWriteAt?.toISOString() ?? null,
+        },
+        '1688': {
+          status: ali?.status ?? 'not_listed',
+          platform_state: ali?.platformState ?? null,
+          last_write_at: ali?.lastWriteAt?.toISOString() ?? null,
+        },
+      },
+      missing_fields: missing,
       size_chart_version: chartVersion.get(row.id) ?? 0,
       updated_at: row.updatedAt.toISOString(),
     };
   });
+
+  const filtered = query.missing_fields ? items.filter((item) => item.missing_fields.length > 0) : items;
+  const startIndex = query.cursor ? filtered.findIndex((item) => item.spu_code > query.cursor!) : 0;
+  const safeStart = startIndex < 0 ? filtered.length : startIndex;
+  const page = filtered.slice(safeStart, safeStart + query.limit + 1);
+  const visible = page.slice(0, query.limit);
   return {
-    items,
-    nextCursor: rows.length > query.limit ? page[page.length - 1]!.spuCode : null,
+    items: visible,
+    nextCursor: page.length > query.limit ? visible[visible.length - 1]!.spu_code : null,
   };
 }
 
