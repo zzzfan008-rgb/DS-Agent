@@ -5,7 +5,7 @@ import { ApiError } from '../lib/errors.js';
 import { ok } from '../lib/response.js';
 import { serviceContext } from '../lib/service-context.js';
 import { getM5Services } from '../services/m5.js';
-import { quoteTargetPayload } from '../services/quotes.js';
+import { sendQuote } from '../services/quotes.js';
 import { getWriteGateServices } from '../write-gate/services.js';
 
 const PriceTier = z.object({
@@ -38,7 +38,7 @@ export function registerInquiryRoutes(app: FastifyInstance): void {
     const params = z.object({ id: z.string().uuid() }).parse(request.params);
     const body = QuoteBody.parse(request.body ?? {});
     const context = serviceContext(request);
-    const result = await quotes.sendQuote(
+    const result = await sendQuote(
       quotes,
       {
         conversation_id: params.id,
@@ -54,7 +54,13 @@ export function registerInquiryRoutes(app: FastifyInstance): void {
       context,
     );
     request.auditLogged = true;
-    if (Object.keys(result.event).length > 0) hub.publish('message.created', result.event);
+    if (Object.keys(result.event).length > 0) {
+      if (result.event_seq !== null) {
+        hub.publishWithSeq(result.event_seq, 'message.created', result.event);
+      } else {
+        hub.publish('message.created', result.event);
+      }
+    }
     reply.code(result.deduped ? 200 : 201);
     return ok(request, result);
   });

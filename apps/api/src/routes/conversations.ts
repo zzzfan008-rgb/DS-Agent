@@ -93,8 +93,8 @@ export function registerConversationRoutes(app: FastifyInstance): void {
       const body = SimulateInbound.parse(request.body ?? {});
       const context = serviceContext(request);
       const result = await simulateInbound(conversations, body, context);
-      if (!result.deduped) {
-        hub.publish('message.created', result.event);
+      if (!result.deduped && result.event_seq !== null) {
+        hub.publishWithSeq(result.event_seq, 'message.created', result.event);
       }
       request.auditLogged = true;
       reply.code(result.deduped ? 200 : 201);

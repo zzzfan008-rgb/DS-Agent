@@ -711,10 +711,13 @@ model Conversation {
   id                     String    @id @default(uuid(7)) @db.Uuid
   orgId                  BigInt    @default(1) @map("org_id")
   platform               String
+  bizLine                String?   @map("biz_line")
   shopId                 String    @default("default") @map("shop_id")
   platformConversationId String    @map("platform_conversation_id")
   buyerRef               String    @map("buyer_ref")
   buyerNick              String?   @map("buyer_nick")
+  companyRef             String?   @map("company_ref")
+  contactRef             String?   @map("contact_ref")
   kind                   String    @default("pre_sale")
   status                 String    @default("open")
   assignedUserId         String?   @map("assigned_user_id") @db.Uuid
@@ -742,11 +745,17 @@ model Message {
   id                     String    @id @default(uuid(7)) @db.Uuid
   orgId                  BigInt    @default(1) @map("org_id")
   conversationId         String    @map("conversation_id") @db.Uuid
+  platform               String?   @map("platform")
+  senderRole             String?   @map("sender_role")
   direction              String
   platformMessageId      String?   @map("platform_message_id")
   contentType            String    @default("text") @map("content_type")
   content                String    @default("")
   attachments            Json      @default("[]")
+  eventSeq               BigInt    @default(dbgenerated("nextval('message_event_seq_seq'::regclass)")) @map("event_seq")
+  readAt                 DateTime? @map("read_at") @db.Timestamptz
+  platformSentAt         DateTime? @map("platform_sent_at") @db.Timestamptz
+  rawObjectKey           String?   @map("raw_object_key")
   sentAt                 DateTime? @map("sent_at") @db.Timestamptz
   status                 String    @default("received")
   outboundIdempotencyKey String?   @map("outbound_idempotency_key")
@@ -1042,8 +1051,13 @@ model ReplyDraft {
   id         String    @id @default(uuid(7)) @db.Uuid
   orgId      BigInt    @default(1) @map("org_id")
   messageId  String    @map("message_id") @db.Uuid
+  conversationId String? @map("conversation_id") @db.Uuid
   draftText  String    @map("draft_text")
   degraded   Boolean   @default(false)
+  evidenceRefs Json    @default("[]") @map("evidence_refs")
+  fallbackReason String? @map("fallback_reason")
+  modelCallId String?  @map("model_call_id") @db.Uuid
+  latencyMs  Int?      @map("latency_ms")
   templateId String?   @map("template_id") @db.Uuid
   status     String    @default("draft")
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
@@ -1061,6 +1075,14 @@ model ReplyTemplate {
   orgId      BigInt    @default(1) @map("org_id")
   platform   String
   intent     String
+  name       String?
+  category   String?
+  priority   Int       @default(0)
+  usageCount Int       @default(0) @map("usage_count")
+  lastUsedAt DateTime? @map("last_used_at") @db.Timestamptz
+  approvedAt DateTime? @map("approved_at") @db.Timestamptz
+  effectiveFrom DateTime? @map("effective_from") @db.Timestamptz
+  effectiveTo DateTime? @map("effective_to") @db.Timestamptz
   content    String
   status     String    @default("draft")
   weight     Int       @default(100)
@@ -1071,6 +1093,17 @@ model ReplyTemplate {
   archivedAt DateTime? @map("archived_at") @db.Timestamptz
 
   @@map("reply_template")
+}
+
+/// event_log — SSE 事件重放日志（docs/18；保留 7 天，应用清理）。seq 为全局单调游标。
+model EventLog {
+  seq       BigInt   @id @default(autoincrement()) @db.BigInt
+  userId    String?  @map("user_id") @db.Uuid
+  topic     String
+  payload   Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("event_log")
 }
 
 /// idempotency_key — 写操作幂等键（docs/11 §5.3；docs/12 §9.2）。

@@ -164,10 +164,13 @@ export async function createReplyDraft(
   if (evidence.length === 0) {
     const template = suggestions[0];
     const draft = await persistDraft(deps, {
+      conversationId: conversation.id,
       inboundMessageId: inbound.id,
       text: template?.text ?? '您好，这个信息需要人工确认，我稍后回复您。',
       degraded: true,
       templateId: template && !template.builtin ? template.id : null,
+      fallbackReason: 'no_evidence',
+      latencyMs: Date.now() - started,
       context,
       evidence,
     });
@@ -213,10 +216,13 @@ export async function createReplyDraft(
   }
   const trimmed = text.trim().slice(0, 5000);
   const draft = await persistDraft(deps, {
+    conversationId: conversation.id,
     inboundMessageId: inbound.id,
     text: trimmed.length > 0 ? trimmed : '您好，正在为您核实，请稍等。',
     degraded,
     templateId,
+    fallbackReason: degradedReason,
+    latencyMs: Date.now() - started,
     context,
     evidence,
   });
@@ -237,10 +243,13 @@ export async function createReplyDraft(
 async function persistDraft(
   deps: ReplyDeps,
   input: {
+    conversationId: string;
     inboundMessageId: string;
     text: string;
     degraded: boolean;
     templateId: string | null;
+    fallbackReason: string | null;
+    latencyMs: number;
     context: ReplyContext;
     evidence: EvidenceRef[];
   },
@@ -249,8 +258,12 @@ async function persistDraft(
     data: {
       orgId: 1n,
       messageId: input.inboundMessageId,
+      conversationId: input.conversationId,
       draftText: input.text.slice(0, 5000),
       degraded: input.degraded,
+      evidenceRefs: input.evidence as never,
+      fallbackReason: input.fallbackReason,
+      latencyMs: input.latencyMs,
       templateId: input.templateId,
       status: 'draft',
       createdBy: input.context.userId,
@@ -266,6 +279,7 @@ async function persistDraft(
     after: {
       degraded: input.degraded,
       template_id: input.templateId,
+      fallback_reason: input.fallbackReason,
       evidence_refs: input.evidence,
       text_len: input.text.length,
     },
@@ -296,6 +310,7 @@ export interface SendResult {
   deduped: boolean;
   contract_unverified: boolean;
   event: Record<string, unknown>;
+  event_seq: number | null;
 }
 
 function assertApproval(input: {
@@ -354,6 +369,7 @@ function mapExistingMessage(message: {
     deduped: true,
     contract_unverified: true,
     event: {},
+    event_seq: null,
   };
 }
 
@@ -387,6 +403,37 @@ export async function sendReply(deps: ReplyDeps, input: SendInput, context: Repl
   });
   if (existing) return mapExistingMessage(existing);
 
+  // 草稿门禁：降级草稿不得进入发送链；非降级草稿必须有可追溯 evidence_refs（audit after）。
+  if (input.draft_id) {
+    const draft = await deps.prisma.replyDraft.findFirst({
+      where: { id: input.draft_id, archivedAt: null },
+    });
+    if (!draft) throw new ApiError('not_found', '草稿不存在');
+    if (draft.conversationId && draft.conversationId !== conversation.id) {
+      throw new ApiError('validation_failed', '草稿不属于当前会话');
+    }
+    const draftMessage = await deps.prisma.message.findFirst({
+      where: { id: draft.messageId, conversationId: conversation.id },
+      select: { id: true },
+    });
+    if (!draftMessage) throw new ApiError('validation_failed', '草稿不属于当前会话');
+    const evidenceRefs = Array.isArray(draft.evidenceRefs) ? draft.evidenceRefs : [];
+    if (draft.degraded) {
+      throw new ApiError('conflict', '降级草稿不能直接发送，请人工核对/改写后再发', {
+        detail: {
+          draft_id: draft.id,
+          next_action: 'manual_edit',
+          fallback_reason: draft.fallbackReason ?? 'degraded',
+        },
+      });
+    }
+    if (evidenceRefs.length === 0) {
+      throw new ApiError('conflict', '草稿缺少可引用证据，不能进入发送链', {
+        detail: { draft_id: draft.id, next_action: 'manual_edit' },
+      });
+    }
+  }
+
   const targetHash = canonicalHash({ conversation_id: conversation.id, text: input.text.trim() });
   const approval = input.approval_id
     ? await deps.prisma.approval.findFirst({ where: { id: input.approval_id, archivedAt: null } })
@@ -409,6 +456,8 @@ export async function sendReply(deps: ReplyDeps, input: SendInput, context: Repl
         orgId: 1n,
         conversationId: conversation.id,
         direction: 'outbound',
+        platform: input.platform,
+        senderRole: 'agent',
         contentType: 'text',
         content: input.text.trim(),
         status: 'sending',
@@ -450,7 +499,7 @@ export async function sendReply(deps: ReplyDeps, input: SendInput, context: Repl
     const updated = await deps.prisma.$transaction(async (tx) => {
       const msg = await tx.message.update({
         where: { id: message!.id },
-        data: { status: 'sent', sentAt },
+        data: { status: 'sent', sentAt, platformSentAt: sentAt },
       });
       await tx.conversation.update({
         where: { id: conversation.id },
@@ -479,7 +528,15 @@ export async function sendReply(deps: ReplyDeps, input: SendInput, context: Repl
           createdBy: context.userId,
         },
       });
-      return { msg, eventPayload };
+      const eventLog = await tx.eventLog.create({
+        data: {
+          topic: 'message.created',
+          payload: eventPayload as Prisma.InputJsonValue,
+          userId: context.userId,
+        },
+        select: { seq: true },
+      });
+      return { msg, eventPayload, eventSeq: Number(eventLog.seq) };
     });
     await deps.audit.record({
       action: 'message.send',
@@ -513,6 +570,7 @@ export async function sendReply(deps: ReplyDeps, input: SendInput, context: Repl
       deduped: false,
       contract_unverified: true,
       event: updated.eventPayload,
+      event_seq: updated.eventSeq,
     };
   } catch (error) {
     await deps.prisma.message.update({

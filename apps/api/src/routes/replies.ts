@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { ok } from '../lib/response.js';
 import { serviceContext } from '../lib/service-context.js';
 import { getM5Services } from '../services/m5.js';
+import { createReplyDraft, sendReply } from '../services/replies.js';
 import { emitRealtime } from '../realtime/hub.js';
 
 const DraftBody = z.object({
@@ -29,7 +30,7 @@ export function registerReplyRoutes(app: FastifyInstance): void {
   app.post('/api/replies/draft', { config: { minRole: 'operator' } }, async (request, reply) => {
     const context = serviceContext(request);
     const body = DraftBody.parse(request.body ?? {});
-    const result = await replies.createReplyDraft(replies, body, context);
+    const result = await createReplyDraft(replies, body, context);
     request.auditLogged = true;
     await emitRealtime(app, {
       type: 'draft.updated',
@@ -49,10 +50,14 @@ export function registerReplyRoutes(app: FastifyInstance): void {
   app.post('/api/replies/send', { config: { minRole: 'operator' } }, async (request) => {
     const context = serviceContext(request);
     const body = SendBody.parse(request.body ?? {});
-    const result = await replies.sendReply(replies, body, context);
+    const result = await sendReply(replies, body, context);
     request.auditLogged = true;
     if (Object.keys(result.event).length > 0) {
-      hub.publish('message.created', result.event);
+      if (result.event_seq !== null) {
+        hub.publishWithSeq(result.event_seq, 'message.created', result.event);
+      } else {
+        hub.publish('message.created', result.event);
+      }
     }
     return ok(request, result);
   });

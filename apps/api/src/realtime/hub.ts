@@ -46,11 +46,12 @@ export class RealtimeHub {
     return this.seq;
   }
 
-  publish(type: RealtimeEventType, payload: Record<string, unknown>): RealtimeEvent {
-    this.seq += 1;
+  publish(type: RealtimeEventType, payload: Record<string, unknown>, explicitSeq?: number): RealtimeEvent {
+    const seq = explicitSeq ?? this.seq + 1;
+    if (seq > this.seq) this.seq = seq;
     const event: RealtimeEvent = {
-      seq: this.seq,
-      eventId: String(this.seq),
+      seq,
+      eventId: String(seq),
       type,
       ts: this.clock().toISOString(),
       payload,
@@ -65,6 +66,11 @@ export class RealtimeHub {
       }
     }
     return event;
+  }
+
+  /** 使用 event_log.seq 作为 SSE id 发布实时事件（DB 重放与实时流同一游标）。 */
+  publishWithSeq(seq: number, type: RealtimeEventType, payload: Record<string, unknown>): RealtimeEvent {
+    return this.publish(type, payload, seq);
   }
 
   subscribe(listener: (event: RealtimeEvent) => void): () => void {
@@ -147,7 +153,17 @@ export async function emitRealtime(
       'events_outbox write failed; SSE event still published',
     );
   }
-  return getRealtimeHub(app).publish(input.type, input.payload);
+  let seq: number | undefined;
+  try {
+    const row = await app.prisma.eventLog.create({
+      data: { topic: input.type, payload: input.payload as never },
+      select: { seq: true },
+    });
+    seq = Number(row.seq);
+  } catch (error) {
+    app.log.warn({ err: error, topic: input.type }, 'event_log write failed; live SSE still published');
+  }
+  return getRealtimeHub(app).publish(input.type, input.payload, seq);
 }
 
 export function renderRealtimeFrame(event: RealtimeEvent, requestId: string): string {

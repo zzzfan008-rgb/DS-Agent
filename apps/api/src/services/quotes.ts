@@ -49,6 +49,7 @@ export interface QuoteResult {
   contract_unverified: boolean;
   quote: Record<string, unknown>;
   event: Record<string, unknown>;
+  event_seq: number | null;
 }
 
 function quotePayload(input: QuoteInput, quoteNo: string, validUntil: string) {
@@ -140,6 +141,7 @@ export async function sendQuote(deps: QuoteDeps, input: QuoteInput, context: Quo
       contract_unverified: true,
       quote: quote as Record<string, unknown>,
       event: {},
+      event_seq: null,
     };
   }
 
@@ -198,7 +200,9 @@ export async function sendQuote(deps: QuoteDeps, input: QuoteInput, context: Quo
         orgId: 1n,
         conversationId: conversation.id,
         direction: 'outbound',
-        contentType: 'product_card',
+        platform: '1688',
+        senderRole: 'agent',
+        contentType: 'quote',
         content: `报价单 ${quoteNo}：${input.sku_ids.length} 个 SKU，起批 ${input.min_order_qty}，有效期至 ${validUntil}`,
         attachments: [quote] as never,
         status: 'sending',
@@ -225,6 +229,7 @@ export async function sendQuote(deps: QuoteDeps, input: QuoteInput, context: Quo
           contract_unverified: true,
           quote,
           event: {},
+          event_seq: null,
         };
       }
     }
@@ -250,7 +255,7 @@ export async function sendQuote(deps: QuoteDeps, input: QuoteInput, context: Quo
     const updated = await deps.prisma.$transaction(async (tx) => {
       const msg = await tx.message.update({
         where: { id: message!.id },
-        data: { status: 'sent', sentAt },
+        data: { status: 'sent', sentAt, platformSentAt: sentAt },
       });
       await tx.conversation.update({ where: { id: conversation.id }, data: { lastMessageAt: sentAt } });
       await tx.approval.update({
@@ -277,7 +282,15 @@ export async function sendQuote(deps: QuoteDeps, input: QuoteInput, context: Quo
           createdBy: context.userId,
         },
       });
-      return { msg, eventPayload };
+      const eventLog = await tx.eventLog.create({
+        data: {
+          topic: 'message.created',
+          payload: eventPayload as Prisma.InputJsonValue,
+          userId: context.userId,
+        },
+        select: { seq: true },
+      });
+      return { msg, eventPayload, eventSeq: Number(eventLog.seq) };
     });
     await deps.audit.record({
       action: 'inquiry.quote',
@@ -308,6 +321,7 @@ export async function sendQuote(deps: QuoteDeps, input: QuoteInput, context: Quo
       contract_unverified: true,
       quote,
       event: updated.eventPayload,
+      event_seq: updated.eventSeq,
     };
   } catch (error) {
     await deps.prisma.message.update({

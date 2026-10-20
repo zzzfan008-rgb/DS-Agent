@@ -16,6 +16,8 @@ const ListQuery = z.object({
 
 const CreateBody = z.object({
   name: z.string().min(1).max(60).optional(),
+  category: z.string().min(1).max(32).optional(),
+  priority: z.number().int().min(0).max(1000).optional(),
   intent: z.string().min(2).max(32),
   text: z.string().min(1).max(2000),
   platform: z.enum(['pdd', '1688']).optional(),
@@ -23,6 +25,9 @@ const CreateBody = z.object({
 });
 
 const PatchBody = z.object({
+  name: z.string().min(1).max(60).optional(),
+  category: z.string().min(1).max(32).optional(),
+  priority: z.number().int().min(0).max(1000).optional(),
   text: z.string().min(1).max(2000).optional(),
   intent: z.string().min(2).max(32).optional(),
   status: z.enum(['draft', 'approved', 'retired']).optional(),

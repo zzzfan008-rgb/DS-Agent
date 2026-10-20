@@ -11,6 +11,7 @@ import type { SessionRecord, SessionStore } from './services/sessions.js';
 import type { MemoryIdempotencyStore } from './plugins/idempotency.js';
 import type { TypertBridgeClient } from './agent/bridge-client.js';
 import type { AgentRunManager } from './agent/run-manager.js';
+import type { KnowledgeService } from './knowledge/service.js';
 
 export interface IdempotencyRequestContext {
   key: string;
@@ -41,6 +42,7 @@ declare module 'fastify' {
     authService: AuthService;
     audit: AuditService;
     registry: RegistryService;
+    knowledge: KnowledgeService;
     agentBridge: TypertBridgeClient;
     agentRuns: AgentRunManager;
     metricsRegistry: MetricsRegistry;

@@ -6,6 +6,7 @@
  * - 凭据按请求传入，禁止缓存/记录明文；
  * - 错误分类：429/408/5xx/超时可降级；400/401/403/404 视为配置/参数错误，不降级。
  */
+import { mockEmbeddings } from './mock-embedding.js';
 import type {
   Capability,
   ModelRow,
@@ -44,6 +45,8 @@ export interface AdapterInvokeRequest {
 
 export interface AdapterResponse {
   text?: string;
+  /** embedding 专用：与输入顺序一一对应的向量（docs/09 §6.2）。 */
+  vectors?: number[][];
   usage?: UsageActual;
   raw?: unknown;
 }
@@ -220,6 +223,29 @@ export class MockAdapter implements ProviderAdapter {
       video: { videoSeconds: seconds, tokensSource: 'provider_usage' },
       embedding: { inputTokens: 1000, tokensSource: 'provider_usage' },
     };
+
+    // embedding mock：从 params.inputs 生成确定性 1024 维向量（M7 知识库管线用）。
+    if (request.purpose === 'embed' || request.model.capability === 'embedding') {
+      const rawInputs = params.inputs ?? params.input;
+      const inputs = Array.isArray(rawInputs)
+        ? rawInputs.filter((item): item is string => typeof item === 'string')
+        : typeof rawInputs === 'string'
+          ? [rawInputs]
+          : [];
+      if (inputs.length === 0) {
+        throw new AdapterError('invalid_request', null, false, 'embedding 请求缺少 inputs');
+      }
+      const dim = request.model.embedDim ?? 1024;
+      const vectors = mockEmbeddings(inputs, dim);
+      const inputTokens = inputs.reduce((sum, text) => sum + Math.max(1, Math.ceil([...text].length / 2)), 0);
+      return {
+        text: `mock:embed:${request.model.externalModelId}`,
+        vectors,
+        usage: { inputTokens, tokensSource: 'provider_usage' },
+        raw: { mock: true, dim, inputs: inputs.length },
+      };
+    }
+
     return {
       text: `mock:${request.purpose}:${request.model.externalModelId}`,
       usage: usageByKind[this.kind],

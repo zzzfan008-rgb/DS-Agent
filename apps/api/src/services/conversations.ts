@@ -63,6 +63,7 @@ export async function simulateInbound(
   unread_count: number;
   deduped: boolean;
   event: Record<string, unknown>;
+  event_seq: number | null;
 }> {
   const now = new Date();
   const sentAt = input.sent_at ? new Date(input.sent_at) : now;
@@ -92,6 +93,7 @@ export async function simulateInbound(
         ...(input.buyer_nick ? { buyerNick: input.buyer_nick } : {}),
         kind: input.kind ?? 'pre_sale',
         status: 'open',
+        bizLine: input.platform === 'pdd' ? 'pdd_retail' : '1688_wholesale',
         relatedProductId: input.related_product_id ?? null,
         firstResponseDueAt: new Date(now.getTime() + 3 * 60 * 1000),
         createdBy: context.userId,
@@ -106,10 +108,13 @@ export async function simulateInbound(
           orgId: 1n,
           conversationId: conversation!.id,
           direction: 'inbound',
+          platform: input.platform,
+          senderRole: 'buyer',
           platformMessageId,
           contentType: 'text',
           content: input.content,
           sentAt,
+          platformSentAt: sentAt,
           status: 'received',
           createdBy: context.userId,
         },
@@ -142,7 +147,15 @@ export async function simulateInbound(
           createdBy: context.userId,
         },
       });
-      return { message, updated, eventPayload };
+      const eventLog = await tx.eventLog.create({
+        data: {
+          topic: 'message.created',
+          payload: eventPayload as Prisma.InputJsonValue,
+          userId: context.userId,
+        },
+        select: { seq: true },
+      });
+      return { message, updated, eventPayload, eventSeq: Number(eventLog.seq) };
     });
 
     await deps.audit.record({
@@ -169,6 +182,7 @@ export async function simulateInbound(
       unread_count: result.updated.unreadCount,
       deduped: false,
       event: result.eventPayload,
+      event_seq: result.eventSeq,
     };
   } catch (error) {
     if (typeof error === 'object' && error !== null && (error as { code?: string }).code === 'P2002') {
@@ -186,6 +200,7 @@ export async function simulateInbound(
             message_id: existing.id,
             deduped: true,
           },
+          event_seq: null,
         };
       }
     }
@@ -299,11 +314,15 @@ export async function getConversation(
     messages: messages.map((message) => ({
       id: message.id,
       direction: message.direction,
+      platform: message.platform,
       text: message.content,
       content_type: message.contentType,
       status: message.status,
       created_at: message.createdAt.toISOString(),
       platform_msg_id: message.platformMessageId,
+      platform_sent_at: message.platformSentAt?.toISOString() ?? null,
+      event_seq: message.eventSeq.toString(),
+      read_at: message.readAt?.toISOString() ?? null,
       attachments: message.attachments,
     })),
     drafts: drafts.map((draft) => ({
@@ -311,10 +330,11 @@ export async function getConversation(
       message_id: draft.messageId,
       text: draft.draftText,
       degraded: draft.degraded,
+      fallback_reason: draft.fallbackReason,
       template_id: draft.templateId,
       status: draft.status,
       created_at: draft.createdAt.toISOString(),
-      evidence_refs: [],
+      evidence_refs: Array.isArray(draft.evidenceRefs) ? draft.evidenceRefs : [],
     })),
     suggested_templates: suggested,
   };
@@ -327,12 +347,19 @@ export async function markConversationRead(
 ) {
   const conversation = await deps.prisma.conversation.findFirst({ where: { id, archivedAt: null } });
   if (!conversation) throw new ApiError('not_found', '会话不存在');
-  const updated = await deps.prisma.conversation.update({
-    where: { id },
-    data: {
-      unreadCount: 0,
-      ...(conversation.firstResponseAt === null ? { firstResponseAt: new Date() } : {}),
-    },
+  const now = new Date();
+  const updated = await deps.prisma.$transaction(async (tx) => {
+    await tx.message.updateMany({
+      where: { conversationId: id, direction: 'inbound', readAt: null, archivedAt: null },
+      data: { readAt: now },
+    });
+    return tx.conversation.update({
+      where: { id },
+      data: {
+        unreadCount: 0,
+        ...(conversation.firstResponseAt === null ? { firstResponseAt: now } : {}),
+      },
+    });
   });
   await deps.audit.record({
     action: 'conversation.read',

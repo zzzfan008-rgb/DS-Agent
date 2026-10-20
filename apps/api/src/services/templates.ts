@@ -30,6 +30,12 @@ export interface TemplateView {
   weight: number;
   approved_at: string | null;
   builtin: boolean;
+  category?: string | null;
+  priority?: number;
+  usage_count?: number;
+  last_used_at?: string | null;
+  effective_from?: string | null;
+  effective_to?: string | null;
 }
 
 const BUILTIN: Array<{ platform: 'pdd' | '1688'; intent: string; text: string }> = [
@@ -53,6 +59,14 @@ function mapRow(row: {
   id: string;
   platform: string;
   intent: string;
+  name: string | null;
+  category: string | null;
+  priority: number;
+  usageCount: number;
+  lastUsedAt: Date | null;
+  approvedAt: Date | null;
+  effectiveFrom: Date | null;
+  effectiveTo: Date | null;
   content: string;
   status: string;
   weight: number;
@@ -61,15 +75,21 @@ function mapRow(row: {
 }): TemplateView {
   return {
     id: row.id,
-    name: deriveName(row),
+    name: row.name ?? deriveName(row),
     intent: row.intent,
     text: row.content,
     platform: row.platform,
     status: row.status,
     version: row.version,
     weight: row.weight,
-    approved_at: row.status === 'approved' ? row.updatedAt.toISOString() : null,
+    approved_at: row.approvedAt?.toISOString() ?? (row.status === 'approved' ? row.updatedAt.toISOString() : null),
     builtin: false,
+    category: row.category,
+    priority: row.priority,
+    usage_count: row.usageCount,
+    last_used_at: row.lastUsedAt?.toISOString() ?? null,
+    effective_from: row.effectiveFrom?.toISOString() ?? null,
+    effective_to: row.effectiveTo?.toISOString() ?? null,
   };
 }
 
@@ -119,8 +139,9 @@ export async function selectFallbackTemplates(
       platform: input.platform,
       status: 'approved',
       intent: { in: [input.intent, 'general'] },
+      OR: [{ effectiveFrom: null }, { effectiveFrom: { lte: new Date() } }],
     },
-    orderBy: [{ weight: 'desc' }, { updatedAt: 'desc' }],
+    orderBy: [{ priority: 'desc' }, { weight: 'desc' }, { updatedAt: 'desc' }],
     take: input.limit,
   });
   if (rows.length > 0) return rows.map(mapRow);
@@ -139,6 +160,8 @@ export async function createTemplate(
   deps: { prisma: PrismaClient; audit: AuditService },
   input: {
     name?: string;
+    category?: string;
+    priority?: number;
     intent: string;
     text: string;
     platform?: 'pdd' | '1688';
@@ -160,6 +183,9 @@ export async function createTemplate(
       orgId: 1n,
       platform: input.platform ?? 'pdd',
       intent: input.intent,
+      name: input.name ?? null,
+      category: input.category ?? null,
+      priority: input.priority ?? 0,
       content: input.text,
       status: 'draft',
       weight: input.weight ?? 100,
@@ -184,7 +210,15 @@ export async function createTemplate(
 export async function patchTemplate(
   deps: { prisma: PrismaClient; audit: AuditService },
   id: string,
-  input: { text?: string; intent?: string; status?: 'draft' | 'approved' | 'retired'; weight?: number },
+  input: {
+    name?: string;
+    category?: string;
+    priority?: number;
+    text?: string;
+    intent?: string;
+    status?: 'draft' | 'approved' | 'retired';
+    weight?: number;
+  },
   context: TemplateContext,
 ): Promise<TemplateView> {
   if (context.role !== 'admin') throw new ApiError('forbidden', '仅 admin 可维护模板');
@@ -201,9 +235,13 @@ export async function patchTemplate(
   const row = await deps.prisma.replyTemplate.update({
     where: { id },
     data: {
+      ...(input.name === undefined ? {} : { name: input.name }),
+      ...(input.category === undefined ? {} : { category: input.category }),
+      ...(input.priority === undefined ? {} : { priority: input.priority }),
       ...(input.text === undefined ? {} : { content: input.text }),
       ...(input.intent === undefined ? {} : { intent: input.intent }),
       ...(input.status === undefined ? {} : { status: input.status }),
+      ...(input.status === 'approved' ? { approvedAt: new Date() } : {}),
       ...(input.weight === undefined ? {} : { weight: input.weight }),
       version: { increment: 1 },
     },

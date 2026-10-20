@@ -102,13 +102,49 @@ export function registerEventRoutes(app: FastifyInstance): void {
 
       res.on('close', cleanup);
       try {
-        const snapshot = await unreadSnapshot(conversations, context.userId, hub.currentSeq);
-        write(snapshotFrame(snapshot as unknown as Record<string, unknown>, hub.currentSeq));
-        const replay = hub.replay(lastEventId);
-        if (replay.resyncReason) {
-          write(resyncFrame(replay.resyncReason, replay.currentSeq));
+        const latest = await app.prisma.eventLog.findFirst({ orderBy: { seq: 'desc' }, select: { seq: true } });
+        const oldest = await app.prisma.eventLog.findFirst({ orderBy: { seq: 'asc' }, select: { seq: true } });
+        const currentSeq = latest ? Number(latest.seq) : hub.currentSeq;
+        const snapshot = await unreadSnapshot(conversations, context.userId, currentSeq);
+        write(snapshotFrame(snapshot as unknown as Record<string, unknown>, currentSeq));
+
+        let resyncReason: string | null = null;
+        const replayEvents: RealtimeEvent[] = [];
+        if (lastEventId && lastEventId !== '') {
+          if (!/^\d{1,18}$/.test(lastEventId)) {
+            resyncReason = 'unknown_id';
+          } else {
+            const last = BigInt(lastEventId);
+            if (!latest) {
+              resyncReason = 'expired';
+            } else if (last > latest.seq) {
+              resyncReason = 'ahead';
+            } else if (oldest && last < oldest.seq - 1n) {
+              resyncReason = 'expired';
+            } else {
+              const rows = await app.prisma.eventLog.findMany({
+                where: { seq: { gt: last } },
+                orderBy: { seq: 'asc' },
+                take: 501,
+              });
+              if (rows.length > 500) {
+                resyncReason = 'expired';
+              } else {
+                for (const row of rows) {
+                  replayEvents.push({
+                    seq: Number(row.seq),
+                    eventId: String(row.seq),
+                    type: row.topic as RealtimeEvent['type'],
+                    ts: row.createdAt.toISOString(),
+                    payload: (row.payload ?? {}) as Record<string, unknown>,
+                  });
+                }
+              }
+            }
+          }
         }
-        for (const event of replay.events) {
+        if (resyncReason) write(resyncFrame(resyncReason, currentSeq));
+        for (const event of replayEvents) {
           if (topicAllowed(event.type)) write(renderRealtimeFrame(event, request.requestId));
         }
         unsubscribe = hub.subscribe((event: RealtimeEvent) => {

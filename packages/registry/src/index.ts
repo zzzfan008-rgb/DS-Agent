@@ -13,6 +13,7 @@ export * from './breaker.js';
 export * from './quota.js';
 export * from './credentials.js';
 export * from './adapters.js';
+export * from './mock-embedding.js';
 export * from './repo.js';
 export * from './gateway.js';
 export type { AuditSink } from './audit.js';
