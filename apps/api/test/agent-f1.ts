@@ -73,7 +73,7 @@ function cookiesFrom(headers: string[]): Record<string, string> {
     const index = first.indexOf('=');
     if (index <= 0) continue;
     const name = first.slice(0, index).trim();
-    if (name === 'dssaas_sid') cookies[name] = first.slice(index + 1);
+    if (name === 'dssaas_sid' || name === 'dssaas_csrf') cookies[name] = first.slice(index + 1);
   }
   return cookies;
 }
@@ -192,7 +192,7 @@ async function main(): Promise<void> {
     const cookieHeader = Object.entries(cookies)
       .map(([name, value]) => `${name}=${value}`)
       .join('; ');
-    const csrf = String(loginBody.data.csrf_token);
+    const csrf = String(loginBody.data.csrf_token ?? cookies.dssaas_csrf ?? '');
 
     const samples: Array<Record<string, any>> = [];
     for (let index = 1; index <= runs; index += 1) {
@@ -276,6 +276,17 @@ async function main(): Promise<void> {
         cost_cents: view?.cost_cents ?? null,
         tool_calls: toolCalls,
         skill_tool_calls: toolCalls.filter((tool) => tool.toLowerCase().includes('skill')).length,
+        ...(process.env.F1_DEBUG_EVENTS === '1'
+          ? {
+              event_sequence: events.map((event) => ({
+                event: event.name,
+                ts: event.data?.ts ?? null,
+                tool: event.data?.payload?.tool ?? null,
+                step: event.data?.payload?.step ?? null,
+                code: event.data?.payload?.code ?? null,
+              })),
+            }
+          : {}),
         output_chars: typeof view?.output?.text === 'string' ? view.output.text.length : 0,
         finished,
       });

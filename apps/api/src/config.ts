@@ -7,8 +7,16 @@
  * - 生产默认 Secure Cookie；开发允许 Secure=false，但启动时打警告（docs/14 §4.2）。
  */
 import { z } from 'zod';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parseAlertThresholds, type AlertThresholds } from './daily/thresholds.js';
 
 export type NodeEnv = 'development' | 'test' | 'production';
+
+/** 仓库根（用于 artifacts 默认目录）；本文件位于 apps/api/src。 */
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+const DEFAULT_RECONCILE_DIR = path.join(REPO_ROOT, 'artifacts', 'reconcile');
+const DEFAULT_DAILY_SNAPSHOT_DIR = path.join(REPO_ROOT, 'artifacts', 'daily');
 
 const envBool = (fallback: boolean) =>
   z.preprocess(
@@ -104,6 +112,22 @@ const EnvSchema = z.object({
   SEED_ADMIN_PASSWORD: z.string().optional(),
   SEED_ADMIN_NAME: z.string().optional(),
   SEED_ADMIN_TOTP_SECRET: z.string().optional(),
+
+  // ---- M8 对账与日报（docs/12 §3.9/§3.11、docs/16 §5）----
+  /** 差异存储：auto = 有 drift_log 用 PG，否则文件；file/postgres 为显式选择。 */
+  RECONCILE_STORE: z.enum(['auto', 'file', 'postgres']).default('auto'),
+  /** 文件存储目录（默认 <repo>/artifacts/reconcile）。 */
+  RECONCILE_DIR: z.string().min(1).optional(),
+  /** 对账平台快照来源：recorded 干跑（录制样本）/ adapter 真实（未核验时硬拒绝）。 */
+  RECONCILE_READER: z.enum(['recorded', 'adapter']).default('recorded'),
+  /** 同步 reader 来源：recorded 干跑 / adapter 真实（未核验时硬拒绝）。 */
+  SYNC_READER: z.enum(['recorded', 'adapter']).default('recorded'),
+  /** `GET /sync/status` 的 stale 判定阈值（秒）；stale 是 UI 提示，不是告警阈值。 */
+  SYNC_STALE_SECONDS: z.coerce.number().int().min(60).default(3600),
+  /** 日报快照目录（默认 <repo>/artifacts/daily）。 */
+  DAILY_SNAPSHOT_DIR: z.string().min(1).optional(),
+  /** 日报告警阈值 JSON；不配置则只报事实不告警（任务要求：不写死数字）。 */
+  DAILY_ALERT_THRESHOLDS: z.string().optional(),
 });
 
 export interface AppConfig {
@@ -164,6 +188,16 @@ export interface AppConfig {
   seedAdminPassword: string | null;
   seedAdminName: string | null;
   seedAdminTotpSecret: string | null;
+
+  /** M8 对账与日报。 */
+  reconcileStore: 'auto' | 'file' | 'postgres';
+  reconcileDir: string;
+  reconcileReader: 'recorded' | 'adapter';
+  syncReader: 'recorded' | 'adapter';
+  syncStaleSeconds: number;
+  dailySnapshotDir: string;
+  /** `null` = 未配置阈值：只报事实、不告警。 */
+  dailyAlertThresholds: AlertThresholds | null;
 }
 
 export class ConfigError extends Error {
@@ -196,6 +230,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   }
   const raw = parsed.data;
   const cookieSecure = raw.COOKIE_SECURE ?? raw.NODE_ENV === 'production';
+  const thresholds = parseAlertThresholds(raw.DAILY_ALERT_THRESHOLDS);
+  if (thresholds.issues.length > 0) {
+    throw new ConfigError(thresholds.issues);
+  }
   return {
     nodeEnv: raw.NODE_ENV,
     host: raw.API_HOST,
@@ -245,6 +283,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     seedAdminPassword: raw.SEED_ADMIN_PASSWORD ?? null,
     seedAdminName: raw.SEED_ADMIN_NAME ?? null,
     seedAdminTotpSecret: raw.SEED_ADMIN_TOTP_SECRET ?? null,
+    reconcileStore: raw.RECONCILE_STORE,
+    reconcileDir: raw.RECONCILE_DIR ?? DEFAULT_RECONCILE_DIR,
+    reconcileReader: raw.RECONCILE_READER,
+    syncReader: raw.SYNC_READER,
+    syncStaleSeconds: raw.SYNC_STALE_SECONDS,
+    dailySnapshotDir: raw.DAILY_SNAPSHOT_DIR ?? DEFAULT_DAILY_SNAPSHOT_DIR,
+    dailyAlertThresholds: thresholds.thresholds,
   };
 }
 

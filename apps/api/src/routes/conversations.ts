@@ -25,6 +25,7 @@ const ListQuery = z.object({
 
 const DetailQuery = z.object({
   messages_after: z.string().uuid().optional(),
+  include_dry_run: z.enum(['0', '1']).optional(),
   limit: z.string().optional(),
 });
 
@@ -70,6 +71,7 @@ export function registerConversationRoutes(app: FastifyInstance): void {
       request,
       await getConversation(conversations, params.id, {
         ...(query.messages_after === undefined ? {} : { messages_after: query.messages_after }),
+        ...(query.include_dry_run === '1' ? { include_dry_run: true } : {}),
         limit: parseLimit(query.limit, 100, 200),
       }),
     );

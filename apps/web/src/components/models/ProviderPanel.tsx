@@ -153,7 +153,7 @@ export function ProviderPanel() {
   return (
     <PanelCard
       title="Provider（供应商账号）"
-      description="只显示凭据掩码与连通性，密钥永不返回。创建后需测试连通性；编辑 PATCH 需要 version，但列表未返回 version（G22），M3 暂不提供编辑。"
+      description="只显示凭据掩码与连通性，密钥永不返回。创建后需测试连通性；编辑 PATCH 需要 version，但列表未返回 version，M3 暂不提供编辑。"
       actions={
         <button type="button" className="buttonPrimary" onClick={() => setDrawerOpen(true)}>
           新建 Provider

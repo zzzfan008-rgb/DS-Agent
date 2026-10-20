@@ -938,7 +938,7 @@ export function CopyWorkbench({ canWrite }: CopyWorkbenchProps) {
                   ) : (
                     <p className={m3.muted}>
                       未调用/无 L2 结果{judgment.short_circuit ? `（${judgment.short_circuit}）` : ''}。
-                      商品草稿的 facts 当前不含 KB 证据，L2 通常不可达（G21）；本页不伪造 L2。
+                      商品草稿的 facts 当前不含知识库证据，L2 通常不可达；本页不伪造 L2。
                     </p>
                   )}
                 </div>
@@ -1092,7 +1092,7 @@ export function CopyWorkbench({ canWrite }: CopyWorkbenchProps) {
       <Drawer
         open={historyOpen}
         title="历史草稿"
-        description="列表接口的 verdict/cost 当前恒为 null/0（G17）；打开后可按正文重新判定。"
+        description="列表接口当前不返回判定/成本（显示 —）；打开后可按正文重新判定。"
         onClose={() => setHistoryOpen(false)}
         width={520}
       >

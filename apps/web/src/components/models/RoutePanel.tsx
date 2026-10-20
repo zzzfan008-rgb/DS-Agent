@@ -282,7 +282,7 @@ export function RoutePanel() {
   return (
     <PanelCard
       title="Route（作用域 / 用途 / 降级链）"
-      description="active 路由必须引用已发布模型且同 scope/purpose/priority 不冲突；scope=role/user 需要 UUID（账号管理未实现，G14）。"
+      description="active 路由必须引用已发布模型且同 scope/purpose/priority 不冲突；scope=role/user 需要 UUID（账号管理未实现）。"
       actions={
         <div className={m3.inlineActions}>
           <select

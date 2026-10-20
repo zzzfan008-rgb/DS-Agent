@@ -35,6 +35,8 @@ export interface PlatformPreview {
   requestPreview: unknown;
   warnings: string[];
   todoIds: string[];
+  /** 平台原文落 MinIO 的键；dry-run 为 null。 */
+  raw_object_key?: string | null;
 }
 
 export interface PlatformWritePort {
@@ -97,6 +99,7 @@ export class AdapterDryRunPort implements PlatformWritePort {
         requestPreview: result.request_preview,
         warnings: result.warnings,
         todoIds: ['TODO-PDD-CONTRACT-VERIFY'],
+        raw_object_key: null,
       };
     }
 
@@ -125,6 +128,7 @@ export class AdapterDryRunPort implements PlatformWritePort {
       },
       warnings: plan.blocked ? ['1688 契约未核验，plan.blocked=true，不发送'] : [],
       todoIds: plan.todoIds,
+      raw_object_key: null,
     };
   }
 }

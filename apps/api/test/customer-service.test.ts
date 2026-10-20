@@ -329,9 +329,16 @@ test('B 级发送：无 approval 428；同 outbound key 只发一次；dry-run c
   const sent = await post('/api/replies/send', body);
   assert.equal(sent.statusCode, 200, sent.body);
   const sentBody = sent.json() as {
-    data: { message_id: string; status: string; deduped: boolean; contract_unverified: boolean };
+    data: {
+      message_id: string;
+      status: string;
+      delivery_mode: string;
+      deduped: boolean;
+      contract_unverified: boolean;
+    };
   };
-  assert.equal(sentBody.data.status, 'sent');
+  assert.equal(sentBody.data.status, 'queued');
+  assert.equal(sentBody.data.delivery_mode, 'dry_run');
   assert.equal(sentBody.data.deduped, false);
   assert.equal(sentBody.data.contract_unverified, true);
   assert.equal(await prisma.message.count({ where: { conversationId: conv.conversation_id, direction: 'outbound' } }), 1);
@@ -396,9 +403,14 @@ test('C 级报价：无 token 409；签发一次性 token 后成功，content_ty
   });
   assert.equal(sent.statusCode, 201, sent.body);
   const body = sent.json() as {
-    data: { status: string; quote: { quote_no: string; items: unknown[]; min_order_qty: number } };
+    data: {
+      status: string;
+      delivery_mode: string;
+      quote: { quote_no: string; items: unknown[]; min_order_qty: number };
+    };
   };
-  assert.equal(body.data.status, 'sent');
+  assert.equal(body.data.status, 'queued');
+  assert.equal(body.data.delivery_mode, 'dry_run');
   assert.equal(body.data.quote.min_order_qty, 2);
   assert.ok(body.data.quote.quote_no.startsWith('Q-'));
   const message = await prisma.message.findFirst({

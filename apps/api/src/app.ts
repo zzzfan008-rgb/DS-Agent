@@ -46,6 +46,9 @@ import { registerTemplateRoutes } from './routes/templates.js';
 import { registerEventRoutes } from './routes/events.js';
 import { registerMediaRoutes } from './routes/media.js';
 import { registerKnowledgeRoutes } from './routes/knowledge.js';
+import { registerSyncRoutes } from './routes/sync.js';
+import { registerReconcileRoutes } from './routes/reconcile.js';
+import { registerDailyRoutes } from './routes/daily.js';
 import { KnowledgeService } from './knowledge/service.js';
 import './types.js';
 
@@ -249,6 +252,9 @@ export async function buildApp(config: AppConfig, options: BuildAppOptions = {})
   registerEventRoutes(app);
   registerMediaRoutes(app);
   registerKnowledgeRoutes(app);
+  registerSyncRoutes(app);
+  registerReconcileRoutes(app);
+  registerDailyRoutes(app);
   registerAgentRoutes(app);
 
   app.addHook('onClose', async () => {

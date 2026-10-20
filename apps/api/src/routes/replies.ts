@@ -22,6 +22,7 @@ const SendBody = z.object({
   draft_id: z.string().uuid().optional(),
   approval_id: z.string().uuid().optional(),
   outbound_idempotency_key: z.string().min(8).max(128),
+  delivery_mode: z.enum(['live', 'dry_run']).optional(),
 });
 
 export function registerReplyRoutes(app: FastifyInstance): void {

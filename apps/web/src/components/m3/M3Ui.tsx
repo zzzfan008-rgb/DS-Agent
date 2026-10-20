@@ -63,7 +63,7 @@ export function PendingAggregate({ label = '待服务端聚合' }: { label?: str
   return (
     <span
       className={styles.pending}
-      title="该字段需后端聚合（t28）；前端不展示推断值，避免把未校验数据当成已校验"
+      title="该字段由后端聚合；前端不展示推断值，避免把未校验数据当成已校验"
     >
       <span className={styles.pendingBar} aria-hidden="true" />
       {label}

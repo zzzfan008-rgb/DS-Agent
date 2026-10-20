@@ -17,6 +17,7 @@
  *   - 不实现 need_input 澄清（业务 preset 也没有提问工具）。
  */
 
+import { appendFileSync } from 'node:fs';
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol';
 import { loadInjectedSkills } from './skill-injection.mjs';
 
@@ -68,6 +69,17 @@ function textOfBlocks(content) {
 
 function numberOrZero(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function debugRecord(config, record) {
+  const file = config?.skillInjection?.debugFile;
+  if (!file) return;
+  try {
+    appendFileSync(file, `${JSON.stringify({ ts: new Date().toISOString(), ...record })}
+`, 'utf8');
+  } catch {
+    // 调试日志失败不影响运行
+  }
 }
 
 function buildPrompt(env, skillText = '') {
@@ -147,6 +159,17 @@ export class BusinessAgentService extends TypertRemoteService {
       // 投影不可用时用配置兜底
     }
 
+    debugRecord(config, {
+      runId: env.runId,
+      intent: env.intent,
+      injection: skillInjection
+        ? { skills: skillInjection.skills, bytes: skillInjection.bytes, tokens: skillInjection.tokens_estimate }
+        : null,
+      injectionError: skillInjectionError,
+      promptChars: buildPrompt(env, skillInjection?.text ?? '').length,
+      promptPreview: buildPrompt(env, skillInjection?.text ?? '').slice(0, 600),
+    });
+
     yield {
       type: 'meta',
       runId: env.runId,
@@ -201,6 +224,13 @@ export class BusinessAgentService extends TypertRemoteService {
         case 'tool/call': {
           const callId = event.data?.callId ?? 'tool';
           if (event.data?.name) toolNames.set(callId, event.data.name);
+          debugRecord(config, {
+            runId: env.runId,
+            event: 'tool/call',
+            callId,
+            name: event.data?.name ?? null,
+            arguments: event.data?.arguments ?? null,
+          });
           push({ kind: 'tool_call', tool: event.data?.name ?? callId, argsSummary: JSON.stringify(event.data?.arguments ?? {}).slice(0, 500) });
           break;
         }

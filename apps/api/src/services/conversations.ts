@@ -252,7 +252,7 @@ export async function listConversations(
 export async function getConversation(
   deps: ConversationDeps,
   id: string,
-  query: { messages_after?: string; limit: number },
+  query: { messages_after?: string; limit: number; include_dry_run?: boolean },
 ) {
   const conversation = await deps.prisma.conversation.findFirst({
     where: { id, orgId: 1n, archivedAt: null },
@@ -271,6 +271,7 @@ export async function getConversation(
     where: {
       conversationId: id,
       archivedAt: null,
+      ...(query.include_dry_run ? {} : { deliveryMode: 'live' }),
       ...(afterSeq ? { eventSeq: { gt: afterSeq } } : {}),
     },
     orderBy: [{ eventSeq: 'asc' }],
@@ -318,6 +319,7 @@ export async function getConversation(
       text: message.content,
       content_type: message.contentType,
       status: message.status,
+      delivery_mode: message.deliveryMode,
       created_at: message.createdAt.toISOString(),
       platform_msg_id: message.platformMessageId,
       platform_sent_at: message.platformSentAt?.toISOString() ?? null,

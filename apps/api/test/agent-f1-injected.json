@@ -1,0 +1,213 @@
+{
+  "injection_estimate": {
+    "skills": [
+      "return-policy@1.3.0",
+      "brand-tone@2.1.0"
+    ],
+    "bytes": 4046,
+    "tokens_estimate": 2529
+  },
+  "summary": {
+    "mode": "injected",
+    "intent": "support.suggest",
+    "runs": 5,
+    "success": 0,
+    "first_delta_ms": {
+      "median": null,
+      "max": null,
+      "min": null
+    },
+    "total_ms": {
+      "median": 5061,
+      "max": 5107
+    },
+    "tokens_in_total": 0,
+    "tokens_out_total": 0,
+    "cost_cents_total": 0,
+    "skill_tool_calls": 0
+  },
+  "samples": [
+    {
+      "index": 1,
+      "run_id": "01a1586e-9c5b-758b-ad16-68084cf57db7",
+      "status": "timeout",
+      "error": {
+        "event_id": "01a1586e-9c5b-758b-ad16-68084cf57db7-000011",
+        "type": "run.error",
+        "seq": 11,
+        "ts": "2026-10-20T08:30:11.511Z",
+        "org_id": 1,
+        "request_id": "f1-injected-1-1792485006412",
+        "payload": {
+          "run_id": "01a1586e-9c5b-758b-ad16-68084cf57db7",
+          "code": "timeout",
+          "message": "首 token 超时（>5000ms）；已中止本次运行，可重试或改用手工模板",
+          "retryable": true,
+          "next_action": "retry_later",
+          "reason": "first_token_timeout"
+        }
+      },
+      "started_ts": "2026-10-20T08:30:06.489Z",
+      "first_delta_ts": null,
+      "first_delta_after_started_ms": null,
+      "total_ms": 5107,
+      "api_first_token_ms": null,
+      "first_token_timeout_ms": 5000,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [
+        "unknown",
+        "unknown"
+      ],
+      "skill_tool_calls": 0,
+      "output_chars": 0,
+      "finished": null
+    },
+    {
+      "index": 2,
+      "run_id": "01a1586e-b053-7b28-ac53-2cf1395c1e65",
+      "status": "timeout",
+      "error": {
+        "event_id": "01a1586e-b053-7b28-ac53-2cf1395c1e65-000007",
+        "type": "run.error",
+        "seq": 7,
+        "ts": "2026-10-20T08:30:16.582Z",
+        "org_id": 1,
+        "request_id": "f1-injected-2-1792485011532",
+        "payload": {
+          "run_id": "01a1586e-b053-7b28-ac53-2cf1395c1e65",
+          "code": "timeout",
+          "message": "首 token 超时（>5000ms）；已中止本次运行，可重试或改用手工模板",
+          "retryable": true,
+          "next_action": "retry_later",
+          "reason": "first_token_timeout"
+        }
+      },
+      "started_ts": "2026-10-20T08:30:11.566Z",
+      "first_delta_ts": null,
+      "first_delta_after_started_ms": null,
+      "total_ms": 5056,
+      "api_first_token_ms": null,
+      "first_token_timeout_ms": 5000,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [
+        "unknown"
+      ],
+      "skill_tool_calls": 0,
+      "output_chars": 0,
+      "finished": null
+    },
+    {
+      "index": 3,
+      "run_id": "01a1586e-c42a-7865-bdcd-dc4f86cd92ab",
+      "status": "timeout",
+      "error": {
+        "event_id": "01a1586e-c42a-7865-bdcd-dc4f86cd92ab-000007",
+        "type": "run.error",
+        "seq": 7,
+        "ts": "2026-10-20T08:30:21.673Z",
+        "org_id": 1,
+        "request_id": "f1-injected-3-1792485016604",
+        "payload": {
+          "run_id": "01a1586e-c42a-7865-bdcd-dc4f86cd92ab",
+          "code": "timeout",
+          "message": "首 token 超时（>5000ms）；已中止本次运行，可重试或改用手工模板",
+          "retryable": true,
+          "next_action": "retry_later",
+          "reason": "first_token_timeout"
+        }
+      },
+      "started_ts": "2026-10-20T08:30:16.658Z",
+      "first_delta_ts": null,
+      "first_delta_after_started_ms": null,
+      "total_ms": 5076,
+      "api_first_token_ms": null,
+      "first_token_timeout_ms": 5000,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [
+        "unknown"
+      ],
+      "skill_tool_calls": 0,
+      "output_chars": 0,
+      "finished": null
+    },
+    {
+      "index": 4,
+      "run_id": "01a1586e-d80b-742b-b37a-7ff9e30c94c5",
+      "status": "timeout",
+      "error": {
+        "event_id": "01a1586e-d80b-742b-b37a-7ff9e30c94c5-000009",
+        "type": "run.error",
+        "seq": 9,
+        "ts": "2026-10-20T08:30:26.749Z",
+        "org_id": 1,
+        "request_id": "f1-injected-4-1792485021694",
+        "payload": {
+          "run_id": "01a1586e-d80b-742b-b37a-7ff9e30c94c5",
+          "code": "timeout",
+          "message": "首 token 超时（>5000ms）；已中止本次运行，可重试或改用手工模板",
+          "retryable": true,
+          "next_action": "retry_later",
+          "reason": "first_token_timeout"
+        }
+      },
+      "started_ts": "2026-10-20T08:30:21.736Z",
+      "first_delta_ts": null,
+      "first_delta_after_started_ms": null,
+      "total_ms": 5061,
+      "api_first_token_ms": null,
+      "first_token_timeout_ms": 5000,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [
+        "unknown",
+        "unknown"
+      ],
+      "skill_tool_calls": 0,
+      "output_chars": 0,
+      "finished": null
+    },
+    {
+      "index": 5,
+      "run_id": "01a1586e-ebe0-754f-824a-fc5d19331b68",
+      "status": "timeout",
+      "error": {
+        "event_id": "01a1586e-ebe0-754f-824a-fc5d19331b68-000007",
+        "type": "run.error",
+        "seq": 7,
+        "ts": "2026-10-20T08:30:31.818Z",
+        "org_id": 1,
+        "request_id": "f1-injected-5-1792485026767",
+        "payload": {
+          "run_id": "01a1586e-ebe0-754f-824a-fc5d19331b68",
+          "code": "timeout",
+          "message": "首 token 超时（>5000ms）；已中止本次运行，可重试或改用手工模板",
+          "retryable": true,
+          "next_action": "retry_later",
+          "reason": "first_token_timeout"
+        }
+      },
+      "started_ts": "2026-10-20T08:30:26.814Z",
+      "first_delta_ts": null,
+      "first_delta_after_started_ms": null,
+      "total_ms": 5054,
+      "api_first_token_ms": null,
+      "first_token_timeout_ms": 5000,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [
+        "unknown"
+      ],
+      "skill_tool_calls": 0,
+      "output_chars": 0,
+      "finished": null
+    }
+  ]
+}

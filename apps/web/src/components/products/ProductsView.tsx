@@ -151,7 +151,7 @@ export function ProductsView({ canWrite, canImport }: ProductsViewProps) {
     <div className={m3.pageStack}>
       <PageHeader
         title="商品库"
-        description="SPU/SKU 主数据、尺码表、面料成分与平台属性。平台态与缺失字段来自后端聚合（t28）；缺什么显示什么，不做前端推断。"
+        description="SPU/SKU 主数据、尺码表、面料成分与平台属性。平台态与缺失字段来自后端聚合；缺什么显示什么，不做前端推断。"
         badges={<span className="badge badgeM1">M3</span>}
         actions={
           <>

@@ -289,7 +289,7 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
   return (
     <PanelCard
       title="Model（模型与参数价格）"
-      description="发布守卫需要：24h 内测试成功、Provider active+ok、凭据 active、params_schema/price 合法。列表未返回 version（G23），M3 暂不提供编辑。"
+      description="发布守卫需要：24h 内测试成功、Provider active+ok、凭据 active、params_schema/price 合法。列表未返回 version，M3 暂不提供编辑。"
       actions={
         <button type="button" className="buttonPrimary" onClick={() => setDrawerOpen(true)}>
           新建 Model

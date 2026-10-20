@@ -23,6 +23,7 @@ const QuoteBody = z.object({
   approval_id: z.string().uuid().optional(),
   outbound_idempotency_key: z.string().min(8).max(128),
   confirm_token: z.string().optional(),
+  delivery_mode: z.enum(['live', 'dry_run']).optional(),
 });
 
 const ConfirmBody = z.object({
@@ -50,6 +51,7 @@ export function registerInquiryRoutes(app: FastifyInstance): void {
         ...(body.approval_id === undefined ? {} : { approval_id: body.approval_id }),
         outbound_idempotency_key: body.outbound_idempotency_key,
         ...(body.confirm_token === undefined ? {} : { confirm_token: body.confirm_token }),
+        ...(body.delivery_mode === undefined ? {} : { delivery_mode: body.delivery_mode }),
       },
       context,
     );

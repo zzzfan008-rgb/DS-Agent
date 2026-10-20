@@ -103,6 +103,7 @@
           skillRoot: D:/DSSAAS/dsh-bundle/skills
           maxSkillBytes: 20000
           maxTotalBytes: 30000
+          debugFile: D:/DSSAAS/dsh-bundle/.dev-home/logs/f1-injection.jsonl
     - id: business-bridge
       name: file:///D:/DSSAAS/dsh-bundle/bridge/business-bridge.mjs
       config:

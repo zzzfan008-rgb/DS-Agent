@@ -62,7 +62,9 @@ export function ProductDetailView({ productId }: ProductDetailViewProps) {
         setDetail(data);
         const versions = [...new Set(data.size_chart.map((row) => row.version_no))].sort((a, b) => b - a);
         setVersion(versions[0] ?? null);
-        const platforms = [...new Set(data.attributes.map((attr) => attr.platform))];
+        const platforms = [...new Set(data.attributes.map((attr) => attr.platform))].sort((a, b) =>
+          a === 'pdd' ? -1 : b === 'pdd' ? 1 : a.localeCompare(b),
+        );
         setPlatformTab(platforms[0] ?? '');
       })
       .catch((caught: unknown) => {
@@ -108,10 +110,11 @@ export function ProductDetailView({ productId }: ProductDetailViewProps) {
     [detail, version],
   );
   const columns = useMemo(() => measurementColumns(currentRows), [currentRows]);
-  const platforms = useMemo(
-    () => (detail ? [...new Set(detail.attributes.map((attr) => attr.platform))] : []),
-    [detail],
-  );
+  const platforms = useMemo(() => {
+    if (!detail) return [];
+    const values = [...new Set(detail.attributes.map((attr) => attr.platform))];
+    return values.sort((a, b) => (a === 'pdd' ? -1 : b === 'pdd' ? 1 : a.localeCompare(b)));
+  }, [detail]);
   const platformAttrs = useMemo(
     () => (detail ? detail.attributes.filter((attr) => attr.platform === platformTab) : []),
     [detail, platformTab],
@@ -387,7 +390,7 @@ export function ProductDetailView({ productId }: ProductDetailViewProps) {
       {tab === 'fabric' ? (
         <SectionCard
           title="面料成分"
-          description="后端已按材质扁平返回，role/note 可能混用（G6）；这里按 note 分组展示，合计非 100 标红。"
+          description="后端已按材质扁平返回，role/note 可能混用；这里按 note 分组展示，合计非 100 标红。"
         >
           {fabricGroups.length === 0 ? (
             <EmptyState title="没有成分数据" description="该商品没有返回 effective 面料成分。" />
@@ -421,7 +424,7 @@ export function ProductDetailView({ productId }: ProductDetailViewProps) {
       {tab === 'attributes' ? (
         <SectionCard
           title={`平台属性映射（${detail.attributes.length}）`}
-          description="只展示后端已返回的映射字段；attr_type / 平台值名称 / 未映射清单当前未返回（G8）。"
+          description="只展示后端已返回的映射字段；属性类型 / 平台值名称 / 未映射清单当前未返回。"
           extra={
             platforms.length > 0 ? (
               <div className={m3.segmented} role="group" aria-label="平台属性平台">

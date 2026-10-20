@@ -39,11 +39,14 @@ export interface QuoteInput {
   approval_id?: string;
   outbound_idempotency_key: string;
   confirm_token?: string;
+  /** 缺省 dry_run：演练不能记为已发送。 */
+  delivery_mode?: 'live' | 'dry_run';
 }
 
 export interface QuoteResult {
   quote_id: string;
-  status: 'sent' | 'sending';
+  status: 'sent' | 'queued' | 'sending';
+  delivery_mode: 'live' | 'dry_run';
   platform_quote_id: string | null;
   deduped: boolean;
   contract_unverified: boolean;
@@ -116,6 +119,7 @@ export async function sendQuote(deps: QuoteDeps, input: QuoteInput, context: Quo
       detail: { field: 'outbound_idempotency_key' },
     });
   }
+  const deliveryMode = input.delivery_mode ?? 'dry_run';
   const conversation = await deps.prisma.conversation.findFirst({
     where: { id: input.conversation_id, orgId: 1n, archivedAt: null },
   });
@@ -135,7 +139,9 @@ export async function sendQuote(deps: QuoteDeps, input: QuoteInput, context: Quo
     const quote = (existing.attachments as unknown[])[0] ?? {};
     return {
       quote_id: existing.id,
-      status: existing.status === 'sent' ? 'sent' : 'sending',
+      status:
+        existing.status === 'sent' || existing.status === 'queued' ? existing.status : 'sending',
+      delivery_mode: existing.deliveryMode === 'dry_run' ? 'dry_run' : 'live',
       platform_quote_id: null,
       deduped: true,
       contract_unverified: true,
@@ -206,6 +212,7 @@ export async function sendQuote(deps: QuoteDeps, input: QuoteInput, context: Quo
         content: `报价单 ${quoteNo}：${input.sku_ids.length} 个 SKU，起批 ${input.min_order_qty}，有效期至 ${validUntil}`,
         attachments: [quote] as never,
         status: 'sending',
+        deliveryMode,
         outboundIdempotencyKey: input.outbound_idempotency_key,
         approvalId: approval.id,
         aiGenerated: false,
@@ -224,6 +231,7 @@ export async function sendQuote(deps: QuoteDeps, input: QuoteInput, context: Quo
         return {
           quote_id: raced.id,
           status: 'sending',
+          delivery_mode: raced.deliveryMode === 'dry_run' ? 'dry_run' : 'live',
           platform_quote_id: null,
           deduped: true,
           contract_unverified: true,
@@ -251,22 +259,33 @@ export async function sendQuote(deps: QuoteDeps, input: QuoteInput, context: Quo
       requestId: context.requestId,
       idempotencyKey: input.outbound_idempotency_key,
     });
+    const live = deliveryMode === 'live';
+    const finalStatus = live ? 'sent' : 'queued';
+    const rawObjectKey = live ? (preview.raw_object_key ?? null) : null;
     const sentAt = deps.now?.() ?? new Date();
     const updated = await deps.prisma.$transaction(async (tx) => {
       const msg = await tx.message.update({
         where: { id: message!.id },
-        data: { status: 'sent', sentAt, platformSentAt: sentAt },
+        data: {
+          status: finalStatus,
+          deliveryMode,
+          ...(live ? { sentAt, platformSentAt: sentAt, rawObjectKey } : {}),
+          ...(live && rawObjectKey === null ? { errorCode: 'raw_object_missing' } : {}),
+        },
       });
       await tx.conversation.update({ where: { id: conversation.id }, data: { lastMessageAt: sentAt } });
-      await tx.approval.update({
-        where: { id: approval.id },
-        data: { status: 'executed', executedAt: sentAt },
-      });
+      if (live) {
+        await tx.approval.update({
+          where: { id: approval.id },
+          data: { status: 'executed', executedAt: sentAt },
+        });
+      }
       const eventPayload = {
         conversation_id: conversation.id,
         message_id: msg.id,
         direction: 'outbound',
-        status: 'sent',
+        status: finalStatus,
+        delivery_mode: deliveryMode,
         kind: 'quote',
         platform: '1688',
         contract_unverified: true,
@@ -302,20 +321,23 @@ export async function sendQuote(deps: QuoteDeps, input: QuoteInput, context: Quo
       after: {
         conversation_id: conversation.id,
         quote_no: quoteNo,
-        status: 'sent',
+        status: finalStatus,
+        delivery_mode: deliveryMode,
+        raw_object_key: rawObjectKey,
         operation_level: 'C',
         approval_id: approval.id,
         contract_unverified: true,
         adapter: preview.adapter,
       },
-      irreversible: true,
+      irreversible: live,
       ip: context.ip,
       userAgent: context.userAgent,
-      meta: { actor_role: context.role, approval_id: approval.id, target_hash: targetHash },
+      meta: { actor_role: context.role, approval_id: approval.id, target_hash: targetHash, delivery_mode: deliveryMode },
     });
     return {
       quote_id: updated.msg.id,
-      status: 'sent',
+      status: finalStatus,
+      delivery_mode: deliveryMode,
       platform_quote_id: null,
       deduped: false,
       contract_unverified: true,

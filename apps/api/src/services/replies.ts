@@ -414,6 +414,7 @@ export async function sendReply(deps: ReplyDeps, input: SendInput, context: Repl
       detail: { field: 'outbound_idempotency_key' },
     });
   }
+  const deliveryMode = input.delivery_mode ?? 'dry_run';
   const conversation = await deps.prisma.conversation.findFirst({
     where: { id: input.conversation_id, orgId: 1n, archivedAt: null },
   });
@@ -524,25 +525,36 @@ export async function sendReply(deps: ReplyDeps, input: SendInput, context: Repl
       requestId: context.requestId,
       idempotencyKey: input.outbound_idempotency_key,
     });
+    const live = deliveryMode === 'live';
     const sentAt = deps.now?.() ?? new Date();
+    const finalStatus = live ? 'sent' : 'queued';
+    const rawObjectKey = live ? (preview.raw_object_key ?? null) : null;
     const updated = await deps.prisma.$transaction(async (tx) => {
       const msg = await tx.message.update({
         where: { id: message!.id },
-        data: { status: 'sent', sentAt, platformSentAt: sentAt },
+        data: {
+          status: finalStatus,
+          deliveryMode,
+          ...(live ? { sentAt, platformSentAt: sentAt, rawObjectKey } : {}),
+          ...(live && rawObjectKey === null ? { errorCode: 'raw_object_missing' } : {}),
+        },
       });
       await tx.conversation.update({
         where: { id: conversation.id },
         data: { lastMessageAt: sentAt },
       });
-      await tx.approval.update({
-        where: { id: approval!.id },
-        data: { status: 'executed', executedAt: sentAt },
-      });
+      if (live) {
+        await tx.approval.update({
+          where: { id: approval!.id },
+          data: { status: 'executed', executedAt: sentAt },
+        });
+      }
       const eventPayload = {
         conversation_id: conversation.id,
         message_id: msg.id,
         direction: 'outbound',
-        status: 'sent',
+        status: finalStatus,
+        delivery_mode: deliveryMode,
         platform: input.platform,
         contract_unverified: true,
         adapter: preview.adapter,
@@ -576,13 +588,15 @@ export async function sendReply(deps: ReplyDeps, input: SendInput, context: Repl
       resourceId: updated.msg.id,
       after: {
         conversation_id: conversation.id,
-        status: 'sent',
+        status: finalStatus,
+        delivery_mode: deliveryMode,
+        raw_object_key: rawObjectKey,
         operation_level: 'B',
         approval_id: approval!.id,
         contract_unverified: true,
         adapter: preview.adapter,
       },
-      irreversible: true,
+      irreversible: live,
       ip: context.ip,
       userAgent: context.userAgent,
       meta: {
@@ -590,11 +604,13 @@ export async function sendReply(deps: ReplyDeps, input: SendInput, context: Repl
         approval_id: approval!.id,
         target_hash: targetHash,
         outbound_idempotency_key: input.outbound_idempotency_key,
+        delivery_mode: deliveryMode,
       },
     });
     return {
       message_id: updated.msg.id,
-      status: 'sent',
+      status: finalStatus,
+      delivery_mode: deliveryMode,
       platform_msg_id: null,
       deduped: false,
       contract_unverified: true,

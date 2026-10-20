@@ -1,0 +1,240 @@
+/**
+ * 对账服务 —— 拉平台快照 + 读本地 listing → 差异引擎 → 幂等落存储 → 审计。
+ *
+ * 不自动修改任何业务数据（任务硬约束）；只输出"待处理清单 + 可执行修复建议"。
+ * 订单/售后维度：本地 `order` / `after_sale` 表尚未建（t37 补），显式返回
+ * `{checked:false, reason:"local order table missing"}`，不伪造"无差异"。
+ */
+
+import type { PrismaClient } from '@dssaas/db';
+import { ApiError } from '../lib/errors.js';
+import { uuidv7 } from '../lib/ids.js';
+import type { AuditService } from '../services/audit.js';
+import { diffSnapshots, countByKind } from './engine.js';
+import type { PlatformSnapshotReader } from './readers.js';
+import type { DriftStore, UpsertResult } from './stores.js';
+import type {
+  DetectedDrift,
+  DriftKind,
+  LocalListingSnapshot,
+  Platform,
+  PlatformSnapshot,
+} from './types.js';
+
+export interface ReconcileRunInput {
+  day: string;
+  requestId: string;
+  actorId: string;
+  /** 平台快照来源；默认 recorded（真实 adapter 未核验，会硬拒绝）。 */
+  mode?: 'recorded' | 'adapter';
+}
+
+export interface ReconcileRunResult {
+  reconcile_id: string;
+  platform: Platform;
+  day: string;
+  started_at: string;
+  finished_at: string;
+  reader_mode: string;
+  snapshot: {
+    source: PlatformSnapshot['source'];
+    verified: boolean;
+    complete: boolean;
+    captured_at: string;
+    note: string;
+  };
+  store: DriftStore['name'];
+  store_note: string;
+  checked: {
+    local_listings: number;
+    platform_items: number;
+    listings: { checked: true };
+    /** 快照不完整时跳过"平台缺失"推断（避免样本不全导致全量误报）。 */
+    local_missing_check: { checked: boolean; reason?: string };
+    orders: { checked: false; reason: string };
+    after_sale: { checked: false; reason: string };
+  };
+  summary: {
+    total: number;
+    by_kind: Record<string, number>;
+    by_severity: Record<string, number>;
+  };
+  persisted: UpsertResult;
+  diffs: DetectedDrift[];
+}
+
+export interface ReconcileServiceOptions {
+  prisma: PrismaClient;
+  store: DriftStore;
+  storeNote: string;
+  reader: PlatformSnapshotReader;
+  audit?: AuditService;
+  now?: () => Date;
+}
+
+function toFiniteNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function parseBindings(raw: unknown): LocalListingSnapshot['skuBindings'] {
+  if (!Array.isArray(raw)) return [];
+  const bindings: LocalListingSnapshot['skuBindings'] = [];
+  for (const entry of raw) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const record = entry as Record<string, unknown>;
+    bindings.push({
+      skuId: typeof record.sku_id === 'string' ? record.sku_id : typeof record.skuId === 'string' ? record.skuId : null,
+      platformSkuId:
+        typeof record.platform_sku_id === 'string'
+          ? record.platform_sku_id
+          : typeof record.platformSkuId === 'string'
+            ? record.platformSkuId
+            : null,
+      priceCents: toFiniteNumber(record.price_cents ?? record.priceCents),
+      stockQty: toFiniteNumber(record.stock_qty ?? record.stockQty),
+    });
+  }
+  return bindings;
+}
+
+export class ReconcileService {
+  private readonly prisma: PrismaClient;
+  private readonly store: DriftStore;
+  private readonly storeNote: string;
+  private readonly reader: PlatformSnapshotReader;
+  private readonly audit: AuditService | undefined;
+  private readonly now: () => Date;
+
+  constructor(options: ReconcileServiceOptions) {
+    this.prisma = options.prisma;
+    this.store = options.store;
+    this.storeNote = options.storeNote;
+    this.reader = options.reader;
+    this.audit = options.audit;
+    this.now = options.now ?? (() => new Date());
+  }
+
+  /** 读本地 listing 快照（只读，最多 5000 条；超出时 detail 里会体现平台侧可能更多）。 */
+  async loadLocalListings(platform: Platform, limit = 5000): Promise<LocalListingSnapshot[]> {
+    const rows = await this.prisma.listing.findMany({
+      where: { orgId: 1n, platform, archivedAt: null },
+      orderBy: { updatedAt: 'desc' },
+      take: limit,
+      select: {
+        id: true,
+        platformItemId: true,
+        status: true,
+        platformState: true,
+        title: true,
+        updatedAt: true,
+        rejectMeta: true,
+        skuBindings: true,
+      },
+    });
+    return rows.map((row) => ({
+      listingId: row.id,
+      platformItemId: row.platformItemId,
+      status: row.status,
+      platformState: row.platformState,
+      title: row.title,
+      updatedAt: row.updatedAt.toISOString(),
+      rejectMeta: row.rejectMeta,
+      skuBindings: parseBindings(row.skuBindings),
+    }));
+  }
+
+  async run(platform: Platform, input: ReconcileRunInput): Promise<ReconcileRunResult> {
+    const startedAt = this.now().toISOString();
+    const snapshot = await this.reader.read(platform, { day: input.day, now: startedAt });
+    if (snapshot.platform !== platform) {
+      throw new ApiError('internal_error', `平台快照与请求不一致：${snapshot.platform} != ${platform}`);
+    }
+    const local = await this.loadLocalListings(platform);
+    const detected = diffSnapshots(local, snapshot, {
+      platform,
+      day: input.day,
+      now: startedAt,
+    });
+
+    const persisted = await this.store.upsert(platform, input.day, detected);
+
+    const byKind: Record<string, number> = countByKind(detected);
+    const bySeverity: Record<string, number> = {};
+    for (const drift of detected) bySeverity[drift.severity] = (bySeverity[drift.severity] ?? 0) + 1;
+
+    const result: ReconcileRunResult = {
+      reconcile_id: uuidv7(this.now().getTime()),
+      platform,
+      day: input.day,
+      started_at: startedAt,
+      finished_at: this.now().toISOString(),
+      reader_mode: this.reader.mode,
+      snapshot: {
+        source: snapshot.source,
+        verified: snapshot.verified,
+        complete: snapshot.complete,
+        captured_at: snapshot.capturedAt,
+        note: snapshot.note,
+      },
+      store: this.store.name,
+      store_note: this.storeNote,
+      checked: {
+        local_listings: local.length,
+        platform_items: snapshot.items.length,
+        listings: { checked: true },
+        /** 快照不完整时，不做"本地 published 但平台不存在"的推断。 */
+        local_missing_check: snapshot.complete
+          ? { checked: true }
+          : { checked: false, reason: '平台快照不完整（recorded 样本），跳过平台缺失推断' },
+        orders: { checked: false, reason: 'local order table missing（t37 补表后接入订单维度）' },
+        after_sale: { checked: false, reason: 'local after_sale table missing（t37 补表后接入售后维度）' },
+      },
+      summary: {
+        total: detected.length,
+        by_kind: byKind,
+        by_severity: bySeverity,
+      },
+      persisted,
+      diffs: detected,
+    };
+
+    if (this.audit) {
+      await this.audit.record({
+        action: 'reconcile.run',
+        actorType: input.actorId ? 'user' : 'system',
+        actorId: input.actorId || null,
+        requestId: input.requestId,
+        resourceType: 'platform',
+        resourceId: null,
+        before: {},
+        after: {
+          reconcile_id: result.reconcile_id,
+          platform,
+          day: input.day,
+          reader_mode: result.reader_mode,
+          store: result.store,
+          total: result.summary.total,
+          by_kind: byKind,
+          persisted,
+        },
+        meta: { platform, day: input.day, reader_mode: result.reader_mode, store: result.store },
+      });
+    }
+
+    return result;
+  }
+
+  /** 日报用：按天/平台统计差异（存储在文件或 drift_log）。 */
+  async count(day: string, platform?: Platform, kind?: DriftKind): Promise<number> {
+    return this.store.count(day, platform, kind);
+  }
+
+  async countByKind(day: string, platform?: Platform): Promise<Record<string, number>> {
+    return this.store.countByKind(day, platform);
+  }
+
+  /** 暴露给测试/验收：读取当天差异（含首次发现时间与 seen_count）。 */
+  async list(day: string, platform?: Platform) {
+    return this.store.list(day, platform);
+  }
+}

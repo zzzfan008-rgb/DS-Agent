@@ -243,6 +243,9 @@ before(async () => {
     DSH_BRIDGE_TOKEN: stub.token,
     DSH_HEALTH_CACHE_MS: '0',
     AGENT_FIRST_TOKEN_TIMEOUT_MS: '1500',
+    // F1 按意图分档后，测试必须显式控制各档；否则 content.draft 会用 8000 默认档。
+    AGENT_FIRST_TOKEN_TIMEOUT_MS_REPLY_DRAFT: '1500',
+    AGENT_FIRST_TOKEN_TIMEOUT_MS_COPY: '1500',
     AGENT_QUEUE_WAIT_MS: '1500',
     LOG_LEVEL: 'silent',
   });
