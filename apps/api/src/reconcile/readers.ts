@@ -45,7 +45,7 @@ export class RecordedPlatformReader implements PlatformSnapshotReader {
 export class AdapterPlatformReader implements PlatformSnapshotReader {
   readonly mode = 'adapter' as const;
 
-  async read(platform: Platform): Promise<PlatformSnapshot> {
+  async read(platform: Platform, _context: SnapshotReadContext): Promise<PlatformSnapshot> {
     throw adapterContractRefusal(platform, '对账读取平台商品快照');
   }
 }

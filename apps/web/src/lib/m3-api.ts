@@ -103,8 +103,7 @@ export async function mutateJson<T>(
     accept: 'application/json',
     ...(options.headers ?? {}),
   };
-  if (!(options.body instanceof FormData)) headers['content-type'] = 'application/json';
-  const csrf = readCookie('dssaas_csrf');
+  if (!(options.body instanceof FormData)) headers['content-type'] = 'application/json';  const csrf = readCookie('dssaas_csrf');
   if (csrf) headers['x-csrf-token'] = csrf;
   headers['idempotency-key'] = options.idempotencyKey ?? newIdempotencyKey();
 
@@ -116,7 +115,9 @@ export async function mutateJson<T>(
       options.body instanceof FormData
         ? options.body
         : options.body === undefined
-          ? undefined
+          ? method === 'DELETE'
+            ? undefined
+            : '{}'
           : JSON.stringify(options.body),
     ...(options.signal ? { signal: options.signal } : {}),
   });

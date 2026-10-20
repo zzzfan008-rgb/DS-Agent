@@ -1,0 +1,5261 @@
+{
+  "injection_estimate": {
+    "skills": [
+      "return-policy@1.3.0",
+      "brand-tone@2.1.0"
+    ],
+    "bytes": 4046,
+    "tokens_estimate": 2529
+  },
+  "summary": {
+    "mode": "injected",
+    "intent": "support.suggest",
+    "runs": 1,
+    "success": 1,
+    "first_delta_ms": {
+      "median": 8141,
+      "max": 8141,
+      "min": 8141
+    },
+    "total_ms": {
+      "median": 12770,
+      "max": 12770
+    },
+    "tokens_in_total": 2754,
+    "tokens_out_total": 1915,
+    "cost_cents_total": 7,
+    "skill_tool_calls": 0
+  },
+  "samples": [
+    {
+      "index": 1,
+      "run_id": "01a15872-5ba1-75f4-a913-3bb96af0b7a2",
+      "status": "succeeded",
+      "error": null,
+      "started_ts": "2026-10-20T08:34:12.077Z",
+      "first_delta_ts": "2026-10-20T08:34:20.218Z",
+      "first_delta_after_started_ms": 8141,
+      "total_ms": 12770,
+      "api_first_token_ms": 8207,
+      "first_token_timeout_ms": 30000,
+      "tokens_in": 2754,
+      "tokens_out": 1915,
+      "cost_cents": 7,
+      "tool_calls": [],
+      "skill_tool_calls": 0,
+      "event_sequence": [
+        {
+          "event": "hello",
+          "ts": "2026-10-20T08:34:12.026Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.started",
+          "ts": "2026-10-20T08:34:12.077Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.step",
+          "ts": "2026-10-20T08:34:12.152Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.218Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.244Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.244Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.244Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.244Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.250Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.258Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.258Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.258Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.284Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.284Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.284Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.297Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.298Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.317Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.317Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.327Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.327Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.347Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.348Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.348Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.357Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.357Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.378Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.378Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.378Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.397Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.407Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.407Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.427Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.427Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.437Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.437Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.457Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.457Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.457Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.470Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.470Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.486Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.498Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.498Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.517Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.517Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.517Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.517Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.539Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.539Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.539Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.539Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.539Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.548Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.548Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.548Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.567Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.567Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.567Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.587Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.587Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.587Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.587Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.587Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.597Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.597Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.597Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.607Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.607Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.647Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.647Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.647Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.647Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.647Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.648Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.648Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.668Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.668Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.668Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.689Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.699Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.699Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.699Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.708Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.708Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.708Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.708Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.708Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.727Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.748Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.748Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.748Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.759Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.759Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.759Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.759Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.759Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.769Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.769Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.787Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.787Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.808Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.817Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.833Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.847Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.847Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.870Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.870Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.886Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.897Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.897Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.897Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.918Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.918Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.918Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.918Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.937Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.937Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.937Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.957Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.968Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.968Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.968Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.979Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.979Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.979Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:20.997Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.019Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.019Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.019Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.041Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.041Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.041Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.041Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.041Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.064Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.064Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.064Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.064Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.079Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.079Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.079Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.079Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.079Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.087Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.087Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.087Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.087Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.107Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.107Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.118Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.118Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.127Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.147Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.162Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.177Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.177Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.197Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.197Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.197Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.197Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.208Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.208Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.208Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.208Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.222Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.222Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.240Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.240Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.248Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.248Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.248Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.267Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.267Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.277Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.277Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.277Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.298Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.307Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.328Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.348Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.348Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.348Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.348Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.348Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.357Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.357Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.357Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.378Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.397Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.397Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.408Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.417Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.417Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.436Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.437Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.568Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.568Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.568Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.568Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.577Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.577Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.587Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.587Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.597Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.611Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.611Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.611Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.629Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.638Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.638Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.658Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.658Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.677Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.677Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.697Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.697Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.697Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.717Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.717Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.728Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.728Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.737Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.737Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.737Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.737Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.747Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.747Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.747Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.750Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.750Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.750Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.751Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.751Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.751Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.751Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.754Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.754Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.754Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.755Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.756Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.756Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.757Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.758Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.758Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.768Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.768Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.768Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.777Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.801Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.801Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.801Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.801Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.801Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.808Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.829Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.830Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.830Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.850Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.851Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.877Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.877Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.890Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.898Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.910Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.965Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.965Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.966Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.966Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.966Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.966Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.966Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.966Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.966Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.967Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.967Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.967Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.967Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.967Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.967Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.988Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.988Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.988Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.988Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.997Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:21.997Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.019Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.019Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.019Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.019Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.043Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.043Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.043Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.043Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.043Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.043Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.047Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.047Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.047Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.057Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.057Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.078Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.078Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.078Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.097Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.107Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.107Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.107Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.107Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.128Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.128Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.128Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.128Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.141Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.141Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.147Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.167Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.168Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.168Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.186Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.228Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.228Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.228Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.228Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.237Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.258Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.258Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.278Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.288Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.288Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.308Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.308Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.318Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.318Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.337Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.337Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.337Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.337Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.357Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.357Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.375Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.375Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.379Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.379Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.379Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.398Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.398Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.398Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.407Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.407Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.407Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.427Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.427Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.438Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.459Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.468Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.468Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.468Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.503Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.503Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.503Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.515Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.515Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.517Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.517Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.517Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.517Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.540Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.540Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.551Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.551Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.552Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.577Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.577Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.577Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.577Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.577Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.587Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.587Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.608Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.608Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.635Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.636Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.636Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.636Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.636Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.657Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.657Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.670Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.670Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.670Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.679Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.698Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.698Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.734Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.734Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.734Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.734Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.734Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.734Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.747Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.747Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.747Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.756Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.767Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.768Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.768Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.768Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.768Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.768Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.768Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.768Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.768Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.787Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.798Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.798Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.798Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.798Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.817Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.817Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.827Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.827Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.853Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.853Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.858Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.877Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.877Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.887Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.887Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.887Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.887Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.907Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.907Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.919Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.919Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.919Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.919Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.926Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.947Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.967Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.978Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:22.997Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.007Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.007Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.027Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.027Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.027Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.027Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.036Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.078Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.078Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.078Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.087Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.087Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.097Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.117Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.127Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.127Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.148Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.148Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.168Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.168Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.168Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.259Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.259Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.259Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.259Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.260Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.260Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.260Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.260Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.260Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.260Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.267Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.268Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.268Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.277Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.277Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.277Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.308Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.308Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.320Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.321Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.321Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.338Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.338Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.338Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.338Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.358Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.358Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.358Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.358Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.358Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.368Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.368Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.387Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.387Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.408Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.408Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.417Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.417Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.427Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.427Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.427Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.427Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.448Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.468Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.468Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.478Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.478Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.487Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.487Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.487Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.507Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.528Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.528Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.528Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.528Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.569Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.569Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.569Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.569Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.569Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.570Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.570Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.570Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.577Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.577Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.608Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.609Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.609Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.609Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.618Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.618Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.618Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.618Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.629Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.629Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.647Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.647Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.657Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.657Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.657Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.677Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.677Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.697Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.707Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.707Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.707Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.707Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.729Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.729Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.730Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.730Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.730Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.730Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.730Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.730Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.730Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.747Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.757Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.757Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.786Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.786Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.786Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.786Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.786Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.787Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.787Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.787Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.787Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.810Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.810Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.818Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.818Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.818Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.818Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.837Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.837Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.847Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.847Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.867Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.877Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.877Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.877Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.877Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.877Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.898Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.917Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.937Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.937Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.937Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.947Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.957Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.957Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.957Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.957Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.978Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.978Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.985Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:23.997Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.032Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.032Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.032Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.032Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.058Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.058Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.058Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.064Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.064Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.064Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.064Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.064Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.064Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.076Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.076Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.076Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.076Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.119Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.119Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.119Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.119Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.128Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.141Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.141Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.141Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.141Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.155Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.156Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.169Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.169Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.169Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.169Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.169Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.169Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.177Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.177Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.177Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.177Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.198Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.208Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.208Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.229Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.229Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.229Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.229Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.229Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.229Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.248Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.248Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.257Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.257Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.257Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.257Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.257Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.257Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.277Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.277Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.277Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.277Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.286Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.287Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.287Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.287Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.287Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.297Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.297Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.317Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.317Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.348Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.349Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.349Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.349Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.349Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.349Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.349Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.349Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.358Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.358Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.358Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.358Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.358Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.377Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.377Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.387Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.387Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.410Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.410Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.410Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.410Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.428Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.428Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.428Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.428Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.437Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.437Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.437Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.458Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.458Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.468Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.468Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.477Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.477Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.477Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.477Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.493Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.505Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.522Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.522Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.522Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.547Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.547Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.547Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.564Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.567Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.567Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.567Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.578Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.578Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.597Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.597Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.597Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.607Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.607Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.630Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.630Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.630Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.651Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.651Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.666Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.666Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.678Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.678Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.678Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.687Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.687Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.707Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.708Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.delta",
+          "ts": "2026-10-20T08:34:24.721Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.step",
+          "ts": "2026-10-20T08:34:24.745Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        },
+        {
+          "event": "run.finished",
+          "ts": "2026-10-20T08:34:24.746Z",
+          "tool": null,
+          "step": null,
+          "code": null
+        }
+      ],
+      "output_chars": 1179,
+      "finished": {
+        "event_id": "01a15872-5ba1-75f4-a913-3bb96af0b7a2-000740",
+        "type": "run.finished",
+        "seq": 740,
+        "ts": "2026-10-20T08:34:24.746Z",
+        "org_id": 1,
+        "request_id": "f1-injected-1-1792485251984",
+        "payload": {
+          "run_id": "01a15872-5ba1-75f4-a913-3bb96af0b7a2",
+          "status": "succeeded",
+          "output": {
+            "text": "## 结论\n\n- **退换问题**现在就可以直接回复：按平台七天无理由规则来表述就行，但运费承担和换码库存这两项不能替客户或业务方作出承诺，需要人工确认。\n- **选码问题暂时不能给具体码数**：本次请求没有附带事实快照块，我也检索不到这件风衣 `effective` 版本的尺码表，因此缺少胸围、肩宽、衣长的具体数值，无法判断松量和尺码区间。如果只按身高和体重就直接报码，就等于猜测，所以我在回复里改为请客户提供围度数据，再由我们对照尺码表核对。\n\n## 可直接发送给客户的回复（PDD · friendly，无需改动即可发送）\n\n> 亲，感谢咨询～两件事分别跟您说清楚：\n>\n> **1）尺码**\n> 这款风衣属于有版型的款式，选码主要看胸围和肩围，只按身高体重容易偏。麻烦您告诉我平时穿的上衣尺码，或者量一下胸围（腋下水平一周，贴身不勒紧）、肩宽（两肩骨端点直线距离），我按店内尺码表给您对应码数，不凭身高体重猜，免得来回换码。\n>\n> **2）退换**\n> 按平台七天无理由规则，自您签收次日起 7 天内、商品完好可以申请退换，前提是不影响二次销售（吊牌、原包装、配件齐全）。换码要看对应码数库存，运费怎么承担按订单实际情况和店铺政策确认，我这边核实后回复您。若收到货有质量问题，麻烦拍照留证发我，我按流程帮您走退换或补偿方案。具体以平台规则和店铺政策为准～\n\n## 拿到尺码表后可直接替换的第二段（对应“1）尺码”）\n\n> 亲，按店内尺码表核对：您 165cm／60kg，胸围、肩宽落在【＿码】区间，建议选【＿码】；如果偏好里面加穿厚毛衣的宽松感，可以往上选一码。您方便的话把胸围发我，我再帮您确认一次。\n\n> 【＿码】须由人工填入：只能填该商品 `size_chart` **effective 版本**中、与客户围度匹配的 `size_code`；如果客户围度正好落在两个码的交界处，按「偏大一码」处理，并说明理由。\n\n## 仍需人工确认的事实（缺这些就不对外承诺）\n\n| 缺什么 | 用途 | 影响 |\n|---|---|---|\n| 该风衣 `size_chart` effective 版本（bust、shoulder、length、袖长、允差） | 判断松量区间、给出码数 | 没有它就不能报码 |\n| 商品 SKU 的 `size_code` 清单 | 确认推荐码是否真实在售 | 可能推荐出不存在的码 |\n| 各码库存 | 回答“能不能换码” | 不能承诺可换 |\n| 店铺退换政策原文条目及版本号 | 引用依据（依据：<文档名> v<版本>） | 现在只能引平台规则 |\n| 退换运费承担规则 | 回答“运费谁出” | 已改为“核实后回复” |\n\n如果补齐尺码表与政策条目，我可以把上面两段合并成一条完整回复，并补上政策依据标注。",
+            "artifacts": [],
+            "partial": false
+          },
+          "tokens": {
+            "in": 2754,
+            "out": 1915
+          },
+          "cost_cents": 7,
+          "duration_ms": 12719
+        }
+      }
+    }
+  ]
+}

@@ -109,12 +109,14 @@ function mergeSeen(
     };
   }
   const identical =
-    existing.seen_count > 0 &&
+    existing.last_detected_at === incoming.detected_at &&
     JSON.stringify(existing.local) === JSON.stringify(incoming.local) &&
     JSON.stringify(existing.platform_value) === JSON.stringify(incoming.platform_value) &&
     existing.detail === incoming.detail &&
     existing.severity === incoming.severity;
   return {
+    // 同一天重复对账会更新 last_detected_at / seen_count，因此默认计为 updated；
+    // 只有"同一时刻同一内容"的重放才算 unchanged。
     state: identical ? 'unchanged' : 'updated',
     record: {
       ...existing,
