@@ -4,6 +4,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -15,6 +16,7 @@ import { MediaPipeline, QuotaExceededError } from '../src/media/pipeline.js';
 import { MockMediaProvider } from '../src/media/provider.js';
 import { renderSizeChart } from '../src/media/render.js';
 import { FsStorage } from '../src/media/storage.js';
+import { S3Storage } from '../src/media/storage.js';
 import type { MediaJobRecord } from '../src/media/types.js';
 
 class FakeClock {

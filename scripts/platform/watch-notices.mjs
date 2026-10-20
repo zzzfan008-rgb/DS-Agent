@@ -437,7 +437,10 @@ async function watchPdd(flags) {
     console.log(`[watch] 使用 fixture：${fixturePath}`);
   } else {
     const body = { ...PDD_SOURCE.request_body, pageSize: positiveInt(flags['page-size'], PDD_SOURCE.request_body.pageSize, { min: 1, max: 1000, name: '--page-size' }) };
-    const json = await withNetworkRetry('PDD 公告列表', () => postJson(PDD_SOURCE.listUrl, body), { retries, retryDelayMs });
+    const json = await withNetworkRetry('PDD 公告列表', () => postJson(PDD_SOURCE.listUrl, body, { timeoutMs }), {
+      retries,
+      retryDelayMs,
+    });
     parser = parseApiPayload(json, PDD_SOURCE);
   }
 
