@@ -18,7 +18,7 @@ import { serviceContext } from '../lib/service-context.js';
 import { PrismaSyncCursorStore } from '../sync/cursor-store.js';
 import { createSyncReaders } from '../sync/readers.js';
 import { PrismaOrderSink } from '../sync/order-sink.js';
-import { PrismaAfterSaleSink } from '../sync/after-sale-sink.js';
+import { PrismaAfterSaleSink, replayPendingAfterSales } from '../sync/after-sale-sink.js';
 import { SyncService } from '../sync/service.js';
 import { SYNC_RESOURCES } from '../sync/types.js';
 
@@ -35,13 +35,33 @@ const StatusQuery = z.object({ platform: z.enum(['pdd', '1688']).optional() });
 export function registerSyncRoutes(app: FastifyInstance): void {
   const store = new PrismaSyncCursorStore(app.prisma);
   const readers = createSyncReaders(app.config.syncReader);
+  const afterSaleSink = new PrismaAfterSaleSink(app.prisma);
   const service = new SyncService({
     store,
     readers,
     // t43：orders 真实落库（orders + order_items）；t49：after_sale 真实落库。
     sinks: {
       orders: new PrismaOrderSink(app.prisma),
-      after_sale: new PrismaAfterSaleSink(app.prisma),
+      after_sale: afterSaleSink,
+    },
+    // t50：orders 写入新订单后，自动把 pending 的售后重新关联落库（不推进 after_sale 游标）。
+    replayPendingAfterOrders: async (platform, context) => {
+      const outcome = await replayPendingAfterSales(readers.after_sale, afterSaleSink, platform, context.now, {
+        maxItems: app.config.afterSaleRetryMaxItems,
+      });
+      if (outcome.degraded) {
+        app.log.warn(
+          { platform, scanned: outcome.scanned, maxItems: app.config.afterSaleRetryMaxItems },
+          'after_sale pending 重放超过上限，已降级为只处理前 N 条（AFTER_SALE_RETRY_MAX_ITEMS）',
+        );
+      }
+      return {
+        created: outcome.created,
+        updated: outcome.updated,
+        skipped: outcome.skipped,
+        pending: outcome.pending,
+        degraded: outcome.degraded,
+      };
     },
   });
 
@@ -74,6 +94,7 @@ export function registerSyncRoutes(app: FastifyInstance): void {
         skipped: result.stats.skipped,
         pending: result.stats.pending ?? 0,
         pending_reasons: result.stats.pending_reasons ?? {},
+        ...(result.after_sale_retry === undefined ? {} : { after_sale_retry: result.after_sale_retry }),
         cursor: result.cursor,
         resumed_from: result.resumed_from,
       },
@@ -94,6 +115,7 @@ export function registerSyncRoutes(app: FastifyInstance): void {
       resumed_from: result.resumed_from,
       cursor: result.cursor,
       finished_at: result.finished_at,
+      ...(result.after_sale_retry === undefined ? {} : { after_sale_retry: result.after_sale_retry }),
     });
   });
 

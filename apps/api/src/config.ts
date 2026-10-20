@@ -124,6 +124,11 @@ const EnvSchema = z.object({
   SYNC_READER: z.enum(['recorded', 'adapter']).default('recorded'),
   /** `GET /sync/status` 的 stale 判定阈值（秒）；stale 是 UI 提示，不是告警阈值。 */
   SYNC_STALE_SECONDS: z.coerce.number().int().min(60).default(3600),
+  /**
+   * orders 同步后自动重放 pending 售后的单次上限（t50）。
+   * 大店量级下 orders 是高频操作，每次全量读 after_sale 会放大延迟；超限降级为只处理前 N 条并打 WARNING。
+   */
+  AFTER_SALE_RETRY_MAX_ITEMS: z.coerce.number().int().min(1).max(1_000_000).default(5000),
   /** 日报快照目录（默认 <repo>/artifacts/daily）。 */
   DAILY_SNAPSHOT_DIR: z.string().min(1).optional(),
   /** 日报告警阈值 JSON；不配置则只报事实不告警（任务要求：不写死数字）。 */
@@ -195,6 +200,8 @@ export interface AppConfig {
   reconcileReader: 'recorded' | 'adapter';
   syncReader: 'recorded' | 'adapter';
   syncStaleSeconds: number;
+  /** t50：orders 同步后重放 pending 售后的单次上限。 */
+  afterSaleRetryMaxItems: number;
   dailySnapshotDir: string;
   /** `null` = 未配置阈值：只报事实、不告警。 */
   dailyAlertThresholds: AlertThresholds | null;
@@ -288,6 +295,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     reconcileReader: raw.RECONCILE_READER,
     syncReader: raw.SYNC_READER,
     syncStaleSeconds: raw.SYNC_STALE_SECONDS,
+    afterSaleRetryMaxItems: raw.AFTER_SALE_RETRY_MAX_ITEMS,
     dailySnapshotDir: raw.DAILY_SNAPSHOT_DIR ?? DEFAULT_DAILY_SNAPSHOT_DIR,
     dailyAlertThresholds: thresholds.thresholds,
   };

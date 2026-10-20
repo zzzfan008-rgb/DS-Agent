@@ -1,9 +1,12 @@
 /**
  * 同步服务 —— 游标推进、租约、失败计数、状态查询（docs/12 §3.9）。
  *
- * t43 起：`orders` 走**真实落库**（`orders` + `order_items`，幂等键 `(platform, platform_order_id)`），
- * 其余 resource 仍只推进游标（等对应表/契约就绪）。目标是把"断点续跑"的机制做对：
+ * t43 起：`orders` 走**真实落库**（`orders` + `order_items`，幂等键 `(platform, platform_order_id)`）；
+ * t49 起：`after_sale` 也真实落库。目标是把"断点续跑"的机制做对：
  *   getOrCreate → 抢占租约 → 逐页读取 → sink 落库（可选）→ 每页 checkpoint → 完成/失败
+ *
+ * t50：`orders` 成功落库后**自动**重放 `after_sale` 的 pending 关联（不推进 after_sale 游标）。
+ * 不依赖人记得补跑 —— "等别人记得"的机制等于没有机制。
  *
  * 失败的语义：保留最后一次成功游标；`consecutive_failures` 累加，≥5 置 `error` 并供告警读取。
  */
@@ -23,11 +26,33 @@ import type {
   SyncStatusResult,
 } from './types.js';
 
+/**
+ * pending 重放结果（t50）。
+ *
+ * 语义：`after_sale` 先到、`orders` 后到时，之前因缺订单而 pending 的售后会在
+ * **orders 同步成功后**被自动重新关联。这里回报"这次救回了多少"。
+ */
+export interface PendingReplayResult {
+  created: number;
+  updated: number;
+  skipped: number;
+  /** 仍然 pending 的条数（订单还是没到）。 */
+  pending: number;
+}
+
 export interface SyncServiceOptions {
   store: SyncCursorStore;
   readers: Record<SyncResource, SyncReader>;
-  /** 可选落库端口：目前只有 orders 提供（`PrismaOrderSink`）。 */
+  /** 可选落库端口：`orders`（`PrismaOrderSink`）与 `after_sale`（`PrismaAfterSaleSink`）。 */
   sinks?: Partial<Record<SyncResource, SyncSink>>;
+  /**
+   * `orders` 成功落库后自动触发的 pending 重放（t50）。
+   *
+   * 只在该次 orders 同步**真的写入了新订单**（`created > 0`）时调用：
+   * 没有新订单，pending 的售后不可能被救回，跳过可以省一次全量读。
+   * 实现方**不得推进 after_sale 游标** —— 这是"重放关联"，不是"再同步一遍"。
+   */
+  replayPendingAfterOrders?: (platform: Platform, context: { now: Date }) => Promise<PendingReplayResult>;
   now?: () => Date;
   leaseMs?: number;
   maxPages?: number;
@@ -44,6 +69,9 @@ export class SyncService {
   private readonly store: SyncCursorStore;
   private readonly readers: Record<SyncResource, SyncReader>;
   private readonly sinks: Partial<Record<SyncResource, SyncSink>>;
+  private readonly replayPendingAfterOrders:
+    | ((platform: Platform, context: { now: Date }) => Promise<PendingReplayResult>)
+    | undefined;
   private readonly now: () => Date;
   private readonly leaseMs: number;
   private readonly maxPages: number;
@@ -52,6 +80,7 @@ export class SyncService {
     this.store = options.store;
     this.readers = options.readers;
     this.sinks = options.sinks ?? {};
+    this.replayPendingAfterOrders = options.replayPendingAfterOrders;
     this.now = options.now ?? (() => new Date());
     this.leaseMs = options.leaseMs ?? 5 * 60 * 1000;
     this.maxPages = options.maxPages ?? 10;
@@ -137,6 +166,28 @@ export class SyncService {
         this.now(),
       );
 
+      // t50：orders 真的有新订单落库 → 自动重放 after_sale 的 pending 关联。
+      // 失败不回滚本次同步（订单已经落库成功），只记 `after_sale_retry.error`，
+      // 由调用方/日报看到；否则一次重放异常会把"订单同步成功"误报成失败。
+      let afterSaleRetry: SyncRunResult['after_sale_retry'];
+      if (
+        this.replayPendingAfterOrders &&
+        resource === 'orders' &&
+        totals.created + totals.updated > 0
+      ) {
+        try {
+          afterSaleRetry = await this.replayPendingAfterOrders(platform, { now: this.now() });
+        } catch (error) {
+          afterSaleRetry = {
+            created: 0,
+            updated: 0,
+            skipped: 0,
+            pending: 0,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+      }
+
       return {
         sync_id: uuidv7(startedAt.getTime()),
         platform,
@@ -152,6 +203,7 @@ export class SyncService {
         resumed_from: resumedFrom,
         cursor: finished.cursor,
         lease_owner: input.owner,
+        ...(afterSaleRetry === undefined ? {} : { after_sale_retry: afterSaleRetry }),
       };
     } catch (error) {
       const code = error instanceof ApiError ? error.code : 'upstream_5xx';

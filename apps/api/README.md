@@ -34,6 +34,10 @@ pnpm --filter @dssaas/api typecheck
 `after_sale` 在本地缺对应订单时无法落库（`order_id` NOT NULL + FK RESTRICT），计入 `{order_missing:N}` 而非丢弃，
 对账的 `after_sale_platform_only` 会继续把它报出来。
 
+**pending 会被自动救回（t50）**：`orders` 同步写入新订单后，服务会自动重放 `after_sale` 的 pending 关联
+（不推进 after_sale 游标），响应里给出 `after_sale_retry{created,updated,skipped,pending,degraded}`。
+pending 清单**不持久化** —— 它的唯一事实源是平台侧数据，持久化就是第二份真相。
+
 ### 每日任务
 
 ```bash
@@ -56,6 +60,7 @@ pnpm --filter @dssaas/api daily:report -- --date=2026-10-20
 | `RECONCILE_READER` | `recorded` | 平台快照来源：录制样本 / 真实 adapter |
 | `SYNC_READER` | `recorded` | 同步 reader 来源 |
 | `SYNC_STALE_SECONDS` | `3600` | `/sync/status` 的 stale 提示阈值（非告警阈值） |
+| `AFTER_SALE_RETRY_MAX_ITEMS` | `5000` | orders 同步后重放 pending 售后的单次上限；超限降级为只处理前 N 条并打 WARNING |
 | `DAILY_SNAPSHOT_DIR` | `<repo>/artifacts/daily` | 日报快照目录 |
 | `DAILY_ALERT_THRESHOLDS` | 未配置 | JSON；`value > threshold` 触发，`0` = 出现即告警。`drift_by_kind` 的 key 必须是已知差异类型（拼错会启动失败）。**`after_sale_platform_only` 必须配 `0`** —— 见下方告警建议 |
 

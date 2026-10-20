@@ -39,7 +39,7 @@ import { RecordedPlatformReader, AdapterPlatformReader } from '../src/reconcile/
 import { MemorySyncCursorStore, PrismaSyncCursorStore, MAX_CONSECUTIVE_FAILURES } from '../src/sync/cursor-store.js';
 import { createSyncReaders, AdapterSyncReader } from '../src/sync/readers.js';
 import { MemoryOrderSink } from '../src/sync/order-sink.js';
-import { MemoryAfterSaleSink } from '../src/sync/after-sale-sink.js';
+import { MemoryAfterSaleSink, replayPendingAfterSales } from '../src/sync/after-sale-sink.js';
 import { SyncService } from '../src/sync/service.js';
 import { todayBusinessDay, addDays } from '../src/lib/day.js';
 import { uuidv7 } from '../src/lib/ids.js';
@@ -1293,15 +1293,17 @@ test('POST /api/sync/pdd orders：真实落库 orders+order_items，幂等（第
 });
 
 test('POST /api/sync/pdd after_sale：真实落库 after_sale，幂等；缺订单的售后计入 pending 不丢', async () => {
-  // 先同步 orders（after_sale 需要本地有订单才能落库）。
-  const ordersSync = await fixture.app.inject({
-    method: 'POST',
-    url: '/api/sync/pdd',
-    headers: { ...fixture.operator, ...IDEM('sync-as-orders'), 'content-type': 'application/json' },
-    payload: { resource: 'orders' },
-  });
-  assert.equal(ordersSync.statusCode, 202, ordersSync.body);
+  // 本用例要验证「售后先到、订单后到」的真实时序，所以先把 pdd 的售后/订单/游标清干净，
+  // 避免受前面用例（已经同步过 pdd 订单）影响 —— 那种情况下 created=0，按设计不会触发重放。
+  await prisma.afterSale.deleteMany({ where: { platform: 'pdd' } });
+  const staleOrders = await prisma.order.findMany({ where: { platform: 'pdd' }, select: { id: true } });
+  if (staleOrders.length > 0) {
+    await prisma.orderItem.deleteMany({ where: { orderId: { in: staleOrders.map((row) => row.id) } } });
+    await prisma.order.deleteMany({ where: { id: { in: staleOrders.map((row) => row.id) } } });
+  }
+  await prisma.syncCursor.deleteMany({ where: { platform: 'pdd' } });
 
+  // 第一步：售后先到，本地还没有订单 → 全部 pending（真实走 after_sale sink）
   const first = await fixture.app.inject({
     method: 'POST',
     url: '/api/sync/pdd',
@@ -1325,10 +1327,25 @@ test('POST /api/sync/pdd after_sale：真实落库 after_sale，幂等；缺订�
   assert.equal(body.dry_run, false, 'after_sale 已有 sink，不得再标 dry_run');
   assert.equal(body.pages, 1);
   assert.equal(body.stats.pulled, 3);
-  assert.equal(body.stats.created, 2, '两笔有订单的售后落库');
-  assert.equal(body.stats.pending, 1, '缺订单的售后计入 pending');
-  assert.deepEqual(body.stats.pending_reasons, { order_missing: 1 });
+  assert.equal(body.stats.created, 0, '订单还没到，一笔都落不了库');
+  assert.equal(body.stats.pending, 3, '三笔售后全部 pending');
+  assert.deepEqual(body.stats.pending_reasons, { order_missing: 3 });
   assert.equal(body.cursor, 'ck-aftersale-1');
+
+  // 第二步：订单后到 → t50 自动重放，救回 9001/9002；9004 的订单不存在，保持 pending
+  const ordersSync = await fixture.app.inject({
+    method: 'POST',
+    url: '/api/sync/pdd',
+    headers: { ...fixture.operator, ...IDEM('sync-as-orders'), 'content-type': 'application/json' },
+    payload: { resource: 'orders' },
+  });
+  assert.equal(ordersSync.statusCode, 202, ordersSync.body);
+  const ordersBody = JSON.parse(ordersSync.body).data as {
+    after_sale_retry?: { created: number; pending: number; skipped: number };
+  };
+  assert.ok(ordersBody.after_sale_retry, 'orders 写入新订单后必须自动触发 pending 重放');
+  assert.equal(ordersBody.after_sale_retry!.created, 2, '重放直接救回两笔有订单的售后');
+  assert.equal(ordersBody.after_sale_retry!.pending, 1, '缺订单的那笔仍 pending');
 
   const rows = await prisma.afterSale.findMany({
     where: { platform: 'pdd' },
@@ -1457,6 +1474,200 @@ test('POST /api/sync/pdd stock：无 sink → 只推进游标，dry_run=true', a
     { created: 0, updated: 0, skipped: 0 },
   );
   assert.equal(body.cursor, 'ck-stock-1');
+});
+
+// ---------------------------------------------------------------- t50：orders 后到自动重放
+
+test('t50 ①：售后先到、订单后到 → 订单同步后售后自动落库，pending 清零', async () => {
+  const sink = new MemoryAfterSaleSink();
+  const orderSink = new MemoryOrderSink();
+  const readers = createSyncReaders('recorded');
+  let replayCalls = 0;
+  const service = new SyncService({
+    store: new MemorySyncCursorStore(),
+    readers,
+    sinks: { orders: orderSink, after_sale: sink },
+    replayPendingAfterOrders: async (platform, ctx) => {
+      replayCalls += 1;
+      // 内存版：把已落库订单同步进 after_sale sink 的 knownOrders（模拟 Prisma 版查 orders 表）
+      for (const order of orderSink.orders.values()) sink.knownOrders.add(order.order_id);
+      const outcome = await replayPendingAfterSales(readers.after_sale, sink, platform, ctx.now);
+      return {
+        created: outcome.created,
+        updated: outcome.updated,
+        skipped: outcome.skipped,
+        pending: outcome.pending,
+        degraded: outcome.degraded,
+      };
+    },
+  });
+
+  // 第一步：售后先到，本地还没有任何订单 → 3 笔全部 pending
+  const firstAfterSale = await service.run('1688', 'after_sale', { owner: 'w1' });
+  assert.equal(firstAfterSale.stats.created, 0);
+  assert.equal(firstAfterSale.stats.pending, 3);
+  assert.equal(sink.rows.size, 0);
+
+  // 第二步：订单后到 → 自动重放，命中 1004/1005 两笔
+  const orders = await service.run('1688', 'orders', { owner: 'w2' });
+  assert.equal(replayCalls, 1, 'orders 写入新订单后必须自动触发一次重放');
+  assert.equal(orders.after_sale_retry?.created, 2, '重放救回两笔有订单的售后');
+  assert.equal(orders.after_sale_retry?.pending, 1, '9004 的订单仍不存在，保持 pending');
+  assert.equal(sink.rows.size, 2);
+  assert.ok(sink.rows.has('1688|ALI-AS-9001'));
+  assert.ok(sink.rows.has('1688|ALI-AS-9002'));
+  assert.ok(!sink.rows.has('1688|ALI-AS-9004'));
+});
+
+test('t50 ②：售后先到、订单永不到 → 保持 pending，after_sale_platform_only 持续报差异', async () => {
+  const sink = new MemoryAfterSaleSink();
+  const orderSink = new MemoryOrderSink();
+  const readers = createSyncReaders('recorded');
+  const service = new SyncService({
+    store: new MemorySyncCursorStore(),
+    readers,
+    sinks: { orders: orderSink, after_sale: sink },
+    replayPendingAfterOrders: async (platform, ctx) => {
+      for (const order of orderSink.orders.values()) sink.knownOrders.add(order.order_id);
+      const outcome = await replayPendingAfterSales(readers.after_sale, sink, platform, ctx.now);
+      return {
+        created: outcome.created,
+        updated: outcome.updated,
+        skipped: outcome.skipped,
+        pending: outcome.pending,
+        degraded: outcome.degraded,
+      };
+    },
+  });
+
+  await service.run('1688', 'after_sale', { owner: 'w1' });
+  const orders = await service.run('1688', 'orders', { owner: 'w2' });
+  // 重放跑了，但 9004 的订单（ALI-ORDER-9999）永远不在录制订单里
+  assert.equal(orders.after_sale_retry?.pending, 1);
+  assert.ok(!sink.rows.has('1688|ALI-AS-9004'));
+
+  // 对账仍然报它（本地无记录）—— 风险不会因为 pending 而消失
+  const localAfterSales: LocalAfterSaleSnapshot[] = [...sink.rows.values()]
+    .filter((row): row is typeof row & { orderId: string } => row.orderId !== null)
+    .map((row) => ({
+      afterSaleId: `local-${row.after_sale_id}`,
+      platformAfterSaleId: row.after_sale_id,
+      platformOrderId: row.orderId,
+      status: row.status,
+      amountCents: row.amount_cents,
+    }));
+  // 注意：sync reader 的售后是 9001/9002/9004（9004 挂 ALI-ORDER-9999）；
+  // reconcile 录制样本是 9001/9002/9003（9003 挂 ALI-ORDER-1003）。
+  // 这里用 sync reader 的平台快照来对齐 9004，验证"订单永不到 → 持续报"。
+  const syncSnapshot: PlatformSnapshot = {
+    platform: '1688',
+    capturedAt: '2026-10-20T02:00:00.000Z',
+    source: 'recorded',
+    verified: false,
+    complete: false,
+    ordersComplete: false,
+    afterSalesComplete: false,
+    note: 't50 ②：用 sync reader 的售后集验证 pending 持续可见',
+    items: [],
+    orders: [],
+    afterSales: [
+      { platformAfterSaleId: 'ALI-AS-9001', platformOrderId: 'ALI-ORDER-1004', kind: 'refund_only', status: 'open', amountCents: 5000 },
+      { platformAfterSaleId: 'ALI-AS-9002', platformOrderId: 'ALI-ORDER-1005', kind: 'return_refund', status: 'closed', amountCents: 15800 },
+      { platformAfterSaleId: 'ALI-AS-9004', platformOrderId: 'ALI-ORDER-9999', kind: 'refund_only', status: 'refunding', amountCents: 8000 },
+    ],
+  };
+  const drifts = diffAfterSales(localAfterSales, syncSnapshot, {
+    platform: '1688',
+    day: DAY,
+    now: '2026-10-20T02:30:00.000Z',
+  });
+  assert.deepEqual(
+    drifts.map((drift) => drift.subject.platform_after_sale_id),
+    ['ALI-AS-9004'],
+    '订单永不到时，after_sale_platform_only 必须持续报',
+  );
+  assert.equal(drifts[0]!.kind, 'after_sale_platform_only');
+  assert.equal(drifts[0]!.severity, 'high');
+});
+
+test('t50 ③：重复触发幂等 —— 不重复落库、pending 不变', async () => {
+  const sink = new MemoryAfterSaleSink();
+  const orderSink = new MemoryOrderSink();
+  const readers = createSyncReaders('recorded');
+  let replayCalls = 0;
+  const service = new SyncService({
+    store: new MemorySyncCursorStore(),
+    readers,
+    sinks: { orders: orderSink, after_sale: sink },
+    replayPendingAfterOrders: async (platform, ctx) => {
+      replayCalls += 1;
+      for (const order of orderSink.orders.values()) sink.knownOrders.add(order.order_id);
+      const outcome = await replayPendingAfterSales(readers.after_sale, sink, platform, ctx.now);
+      return {
+        created: outcome.created,
+        updated: outcome.updated,
+        skipped: outcome.skipped,
+        pending: outcome.pending,
+        degraded: outcome.degraded,
+      };
+    },
+  });
+
+  await service.run('1688', 'after_sale', { owner: 'w1' });
+  const firstOrders = await service.run('1688', 'orders', { owner: 'w2' });
+  assert.equal(firstOrders.after_sale_retry?.created, 2);
+  const sizeAfterFirst = sink.rows.size;
+
+  // 第二次 orders 同步：录制 reader 游标已到末尾，pulled=0、created=0 → **不触发重放**
+  const secondOrders = await service.run('1688', 'orders', { owner: 'w3' });
+  assert.equal(secondOrders.stats.created, 0);
+  assert.equal(secondOrders.after_sale_retry, undefined, '没有新订单时不触发重放（省一次全量读）');
+  assert.equal(replayCalls, 1, '重放只跑了一次');
+  assert.equal(sink.rows.size, sizeAfterFirst, '不得重复落库');
+
+  // 即使强制再触发一次，也只会 skipped（靠 (platform, after_sale_id) 幂等）
+  const forced = await replayPendingAfterSales(readers.after_sale, sink, '1688', new Date());
+  assert.equal(forced.created, 0);
+  assert.equal(forced.updated, 0);
+  assert.equal(forced.skipped, 2, '已落库的两笔全部 skipped');
+  assert.equal(forced.pending, 1, 'pending 仍是那笔缺订单的');
+  assert.equal(sink.rows.size, sizeAfterFirst);
+});
+
+test('t50：重放超过 AFTER_SALE_RETRY_MAX_ITEMS → 降级只处理前 N 条并标记 degraded', async () => {
+  const sink = new MemoryAfterSaleSink();
+  sink.knownOrders.add('ALI-ORDER-1004');
+  sink.knownOrders.add('ALI-ORDER-1005');
+  const readers = createSyncReaders('recorded');
+  const outcome = await replayPendingAfterSales(readers.after_sale, sink, '1688', new Date(), { maxItems: 2 });
+  assert.equal(outcome.scanned, 3);
+  assert.equal(outcome.degraded, true, '超过上限必须显式标记降级');
+  assert.equal(outcome.created, 2, '只处理前 2 条（9001/9002 都命中订单）');
+  assert.equal(sink.rows.size, 2);
+
+  // 上限足够时不做降级
+  const sink2 = new MemoryAfterSaleSink();
+  sink2.knownOrders.add('ALI-ORDER-1004');
+  const full = await replayPendingAfterSales(readers.after_sale, sink2, '1688', new Date(), { maxItems: 100 });
+  assert.equal(full.degraded, false);
+  assert.equal(full.scanned, 3);
+});
+
+test('t50：重放失败不回滚已成功的 orders 同步（只记 error）', async () => {
+  const readers = createSyncReaders('recorded');
+  const service = new SyncService({
+    store: new MemorySyncCursorStore(),
+    readers,
+    sinks: { orders: new MemoryOrderSink(), after_sale: new MemoryAfterSaleSink() },
+    replayPendingAfterOrders: async () => {
+      throw new Error('boom: after_sale reader 不可用');
+    },
+  });
+  const orders = await service.run('1688', 'orders', { owner: 'w1' });
+  assert.equal(orders.status, 'succeeded', '订单已经落库成功，不能因为重放异常误报失败');
+  assert.equal(orders.stats.created, 5);
+  assert.match(orders.after_sale_retry?.error ?? '', /boom/);
+  assert.equal(orders.after_sale_retry?.created, 0);
 });
 
 // ---------------------------------------------------------------- 集成：日报

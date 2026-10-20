@@ -16,7 +16,7 @@ import type { Prisma, PrismaClient } from '@dssaas/db';
 import { ApiError } from '../lib/errors.js';
 import { uuidv7 } from '../lib/ids.js';
 import type { Platform } from '../reconcile/types.js';
-import type { SyncSink, SyncSinkContext, SyncSinkResult } from './types.js';
+import type { SyncReader, SyncSink, SyncSinkContext, SyncSinkResult } from './types.js';
 
 /** 与 `ck_after_sale_kind` 一致（DB 硬约束）。 */
 const AFTER_SALE_KINDS = new Set(['refund_only', 'return_refund', 'exchange']);
@@ -249,6 +249,67 @@ export class MemoryAfterSaleSink implements SyncSink {
     }
     return result;
   }
+}
+
+/** 重放上限默认值：超过就降级为"只处理 pending 那部分"，避免大店量级把 orders 同步拖慢。 */
+export const DEFAULT_AFTER_SALE_RETRY_MAX_ITEMS = 5000;
+
+export interface PendingReplayOptions {
+  /** 单次重放最多处理多少条售后（默认 {@link DEFAULT_AFTER_SALE_RETRY_MAX_ITEMS}）。 */
+  maxItems?: number;
+}
+
+export interface PendingReplayOutcome {
+  created: number;
+  updated: number;
+  skipped: number;
+  /** 重放后仍然 pending 的条数（订单还是没到）。 */
+  pending: number;
+  /** 售后总数超过 `maxItems` → 只处理了前 N 条，`degraded=true`。 */
+  degraded: boolean;
+  /** 本次读取到的售后总条数。 */
+  scanned: number;
+}
+
+/**
+ * pending 重放（t50）：`orders` 同步成功后，把因缺订单而 pending 的售后重新关联落库。
+ *
+ * 关键设计：
+ * - **不推进 after_sale 游标**：这是"重放关联"而非"再同步一遍"；推进游标会让后续增量漏数据；
+ * - **不持久化 pending 清单**：pending 的唯一事实源是"平台侧这笔售后挂在哪张订单上"，
+ *   持久化一份就是第二份真相，会和平台漂移；每次从 reader 重新读全量即可；
+ * - **幂等**：落库仍走 `(platform, platform_after_sale_id)` 唯一索引，重复触发只会 skipped；
+ * - **上限**：超过 `maxItems` 时只处理前 N 条并置 `degraded=true`，由调用方打 WARNING。
+ */
+export async function replayPendingAfterSales(
+  reader: SyncReader,
+  sink: SyncSink,
+  platform: Platform,
+  now: Date,
+  options: PendingReplayOptions = {},
+): Promise<PendingReplayOutcome> {
+  const maxItems = options.maxItems ?? DEFAULT_AFTER_SALE_RETRY_MAX_ITEMS;
+  // 从 cursor=null 读全量：pending 的那笔可能在任何历史页里，增量读会漏。
+  const page = await reader.read({
+    platform,
+    resource: 'after_sale',
+    cursor: null,
+    since: null,
+    pageSize: Math.max(1, maxItems),
+    pageIndex: 0,
+  });
+  const scanned = page.items.length;
+  const degraded = scanned > maxItems;
+  const items = degraded ? page.items.slice(0, maxItems) : page.items;
+  const result = await sink.apply(items, { platform, now });
+  return {
+    created: result.created,
+    updated: result.updated,
+    skipped: result.skipped,
+    pending: result.pending ?? 0,
+    degraded,
+    scanned,
+  };
 }
 
 export type { Platform };

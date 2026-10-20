@@ -99,6 +99,21 @@ export interface SyncRunResult {
   resumed_from: string | null;
   cursor: string | null;
   lease_owner: string;
+  /**
+   * t50：`orders` 同步后自动重放 `after_sale` pending 关联的结果。
+   *
+   * 只有 `resource='orders'` 且本次真的写入了新订单时才出现。
+   * 重放失败不回滚本次同步，而是返回 `{error}`（订单已经落库成功，不能因为重放异常误报失败）。
+   */
+  after_sale_retry?: {
+    created: number;
+    updated: number;
+    skipped: number;
+    pending: number;
+    /** 超过 `AFTER_SALE_RETRY_MAX_ITEMS` 时降级为增量，这里为 true。 */
+    degraded?: boolean;
+    error?: string;
+  };
 }
 
 export interface SyncStatusItem {
