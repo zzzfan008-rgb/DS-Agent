@@ -646,11 +646,13 @@ model Listing {
   orgId              BigInt    @default(1) @map("org_id")
   platform           String
   productId          String    @map("product_id") @db.Uuid
+  platformCategoryId String?   @map("platform_category_id") @db.Uuid
   platformItemId     String?   @map("platform_item_id")
   platformShopId     String?   @map("platform_shop_id")
   status             String    @default("draft")
   platformState      String?   @map("platform_state")
   title              String?
+  mainImageId        String?   @map("main_image_id") @db.Uuid
   categoryExternalId String?   @map("category_external_id")
   skuBindings        Json      @default("[]") @map("sku_bindings")
   priceTiers         Json      @default("[]") @map("price_tiers")
@@ -871,6 +873,7 @@ model KillSwitch {
   scopeType  String    @map("scope_type")
   scopeKey   String    @default("*") @map("scope_key")
   action     String
+  mode       String    @default("block")
   enabled    Boolean   @default(true)
   reason     String
   enabledBy  String    @map("enabled_by") @db.Uuid
@@ -983,4 +986,162 @@ model KbQueryLog {
   createdBy          String?  @map("created_by") @db.Uuid
 
   @@map("kb_query_log")
+}
+
+// =============================================================
+// 4.10 支撑表（docs/12 §9.2；docs/21 §17-6）
+// 公共字段按 docs/06 §0.6 补齐；金额列一律 int4（docs/21 §17-4）。
+// =============================================================
+
+/// listing_snapshot — 上架快照（docs/12 §9.2）。snapshot_hash 唯一，用于写前/写后对账。
+model ListingSnapshot {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  orgId        BigInt    @default(1) @map("org_id")
+  listingId    String    @map("listing_id") @db.Uuid
+  snapshotHash String    @map("snapshot_hash")
+  capturedAt   DateTime  @default(now()) @map("captured_at") @db.Timestamptz
+  source       String    @default("pre_write")
+  fields       Json      @default("{}")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy    String?   @map("created_by") @db.Uuid
+  version      Int       @default(1)
+  archivedAt   DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("listing_snapshot")
+}
+
+/// listing_write_log — 写入门留痕（docs/12 §9.2，P0）。禁止伪回滚的物理依据。
+model ListingWriteLog {
+  id                   String    @id @default(uuid(7)) @db.Uuid
+  orgId                BigInt    @default(1) @map("org_id")
+  listingId            String    @map("listing_id") @db.Uuid
+  approvalId           String?   @map("approval_id") @db.Uuid
+  workflowRunId        String?   @map("workflow_run_id") @db.Uuid
+  level                String
+  action               String
+  payloadHash          String    @map("payload_hash")
+  idempotencyKey       String    @map("idempotency_key")
+  restoredFromSnapshot Boolean   @default(false) @map("restored_from_snapshot")
+  platformResponse     Json      @default("{}") @map("platform_response")
+  occurredAt           DateTime  @default(now()) @map("occurred_at") @db.Timestamptz
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy            String?   @map("created_by") @db.Uuid
+  version              Int       @default(1)
+  archivedAt           DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("listing_write_log")
+}
+
+/// reply_draft — 客服回复草稿（docs/12 §9.2）。degraded=true 表示走降级模板。
+model ReplyDraft {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  orgId      BigInt    @default(1) @map("org_id")
+  messageId  String    @map("message_id") @db.Uuid
+  draftText  String    @map("draft_text")
+  degraded   Boolean   @default(false)
+  templateId String?   @map("template_id") @db.Uuid
+  status     String    @default("draft")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy  String?   @map("created_by") @db.Uuid
+  version    Int       @default(1)
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("reply_draft")
+}
+
+/// reply_template — 话术模板（docs/12 §9.2）。weight 用于同 intent 多模板选择。
+model ReplyTemplate {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  orgId      BigInt    @default(1) @map("org_id")
+  platform   String
+  intent     String
+  content    String
+  status     String    @default("draft")
+  weight     Int       @default(100)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy  String?   @map("created_by") @db.Uuid
+  version    Int       @default(1)
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("reply_template")
+}
+
+/// idempotency_key — 写操作幂等键（docs/11 §5.3；docs/12 §9.2）。
+model IdempotencyKey {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  orgId            BigInt    @default(1) @map("org_id")
+  scope            String
+  key              String
+  requestHash      String    @map("request_hash")
+  status           String    @default("in_flight")
+  responseSnapshot Json      @default("{}") @map("response_snapshot")
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy        String?   @map("created_by") @db.Uuid
+  version          Int       @default(1)
+  archivedAt       DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("idempotency_key")
+}
+
+/// cost_ledger — 成本台账（docs/10 §9.2；docs/12 §9.2）。amount_cents 为 int4 整数分。
+model CostLedger {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  orgId       BigInt    @default(1) @map("org_id")
+  kind        String
+  modelId     String?   @map("model_id") @db.Uuid
+  refType     String    @map("ref_type")
+  refId       String    @map("ref_id") @db.Uuid
+  tokens      Int       @default(0)
+  seconds     Decimal   @default(0) @db.Decimal(10, 3)
+  amountCents Int       @default(0) @map("amount_cents")
+  occurredAt  DateTime  @default(now()) @map("occurred_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy   String?   @map("created_by") @db.Uuid
+  version     Int       @default(1)
+  archivedAt  DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("cost_ledger")
+}
+
+/// events_outbox — 事务外事件投递（docs/12 §9.2）。dispatcher 扫 published_at IS NULL。
+model EventsOutbox {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  orgId       BigInt    @default(1) @map("org_id")
+  topic       String
+  aggregateId String?   @map("aggregate_id") @db.Uuid
+  payload     Json      @default("{}")
+  publishedAt DateTime? @map("published_at") @db.Timestamptz
+  attempts    Int       @default(0)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy   String?   @map("created_by") @db.Uuid
+  version     Int       @default(1)
+  archivedAt  DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("events_outbox")
+}
+
+/// workflow_dead_letter — 死信（docs/11 §4.4；docs/12 §9.2）。
+model WorkflowDeadLetter {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  orgId         BigInt    @default(1) @map("org_id")
+  workflowRunId String    @map("workflow_run_id") @db.Uuid
+  reason        String
+  payload       Json      @default("{}")
+  replayable    Boolean   @default(true)
+  replayedAt    DateTime? @map("replayed_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy     String?   @map("created_by") @db.Uuid
+  version       Int       @default(1)
+  archivedAt    DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("workflow_dead_letter")
 }
