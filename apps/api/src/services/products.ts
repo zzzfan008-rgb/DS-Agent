@@ -70,6 +70,8 @@ export interface ProductCreateInput {
   attributes?: Record<string, unknown>;
   skus: SkuInput[];
   fabric: FabricInput;
+  /** DB 触发器要求 SKU 尺码必须已存在于 effective size_chart，因此创建 SKU 前必须先落尺码表。 */
+  size_chart?: SizeChartPutInput;
 }
 
 export interface SizeChartPutInput {
@@ -217,6 +219,52 @@ async function createProductTransaction(
     },
     select: { id: true },
   });
+
+  if (!input.size_chart) {
+    throw new ApiError('validation_failed', '创建 SKU 前必须先提供 size_chart（DB 触发器要求尺码已生效）', {
+      detail: { field: 'size_chart' },
+    });
+  }
+  const chartValidation = validateSizeChart(
+    {
+      version_no: input.size_chart.version_no ?? 1,
+      size_system: input.size_chart.size_system ?? 'alpha',
+      unit: 'cm',
+      effective_from: input.size_chart.effective_from,
+      effective_to: input.size_chart.effective_to ?? null,
+      source: input.size_chart.source ?? 'import',
+      ...(input.size_chart.fit_note ? { fit_note: input.size_chart.fit_note } : {}),
+      sizes: input.size_chart.items,
+    },
+    { categoryCode: input.category_code },
+  );
+  assertValid(chartValidation, '尺码表');
+  const chart = chartValidation.value!;
+  const chartChecksum = checksumOf(chart.sizes);
+  for (const size of chart.sizes) {
+    await tx.sizeChart.create({
+      data: {
+        orgId: 1n,
+        productId: product.id,
+        versionNo: input.size_chart.version_no ?? 1,
+        status: 'effective',
+        sizeSystem: chart.size_system,
+        skuSizeCode: String(size.sku_size_code),
+        sizeOrder: Number(size.size_order),
+        measurements: size.measurements as Prisma.InputJsonValue,
+        recommendHeightMin: (size.recommend_height_min as number | undefined) ?? null,
+        recommendHeightMax: (size.recommend_height_max as number | undefined) ?? null,
+        recommendWeightMin: (size.recommend_weight_min as number | undefined) ?? null,
+        recommendWeightMax: (size.recommend_weight_max as number | undefined) ?? null,
+        fitNote: chart.fit_note ?? null,
+        source: chart.source,
+        effectiveFrom: new Date(chart.effective_from),
+        effectiveTo: chart.effective_to ? new Date(chart.effective_to) : null,
+        checksum: chartChecksum,
+        createdBy: context.userId,
+      },
+    });
+  }
 
   for (const sku of skus) {
     await tx.productSku.create({
@@ -778,7 +826,8 @@ export function parseCsv(text: string): CsvTable {
 }
 
 const REQUIRED_CSV_HEADERS = [
-  'spu_code', 'name', 'category_code', 'color_id', 'size_code', 'price_cents', 'fabric_materials',
+  'spu_code', 'name', 'category_code', 'color_id', 'size_code', 'price_cents',
+  'fabric_materials', 'measurements',
 ];
 
 export interface ImportResult {
@@ -828,9 +877,24 @@ export async function importProductsCsv(
         ...(value.lead_time_days ? { lead_time_days: Number(value.lead_time_days) } : {}),
         ...(value.weight_g ? { weight_g: Number(value.weight_g) } : {}),
       };
+      let measurements: Record<string, number>;
+      try {
+        measurements = JSON.parse(value.measurements!) as Record<string, number>;
+      } catch {
+        throw new ApiError('validation_failed', 'measurements 必须是 JSON 对象');
+      }
+      const chartItem = {
+        sku_size_code: value.size_code!,
+        measurements,
+        ...(value.recommend_height_min ? { recommend_height_min: Number(value.recommend_height_min) } : {}),
+        ...(value.recommend_height_max ? { recommend_height_max: Number(value.recommend_height_max) } : {}),
+        ...(value.recommend_weight_min ? { recommend_weight_min: Number(value.recommend_weight_min) } : {}),
+        ...(value.recommend_weight_max ? { recommend_weight_max: Number(value.recommend_weight_max) } : {}),
+      };
       const existing = groups.get(spu);
       if (existing) {
         existing.skus.push(sku);
+        existing.size_chart!.items.push(chartItem);
       } else {
         groups.set(spu, {
           spu_code: spu,
@@ -848,6 +912,13 @@ export async function importProductsCsv(
             role: (value.fabric_role as FabricInput['role']) || 'main',
             source: 'import',
           },
+          size_chart: {
+            version_no: 1,
+            size_system: (value.size_system as SizeChartPutInput['size_system']) ?? 'alpha',
+            effective_from: value.effective_from || new Date().toISOString().slice(0, 10),
+            source: 'import',
+            items: [chartItem],
+          },
         });
       }
     } catch (error) {
@@ -864,6 +935,19 @@ export async function importProductsCsv(
     try {
       validateSkuInput(input.skus);
       validateFabric(input.fabric);
+      const chartValidation = validateSizeChart(
+        {
+          version_no: input.size_chart?.version_no ?? 1,
+          size_system: input.size_chart?.size_system ?? 'alpha',
+          unit: 'cm',
+          effective_from: input.size_chart?.effective_from ?? new Date().toISOString().slice(0, 10),
+          effective_to: input.size_chart?.effective_to ?? null,
+          source: input.size_chart?.source ?? 'import',
+          sizes: input.size_chart?.items ?? [],
+        },
+        { categoryCode: input.category_code },
+      );
+      assertValid(chartValidation, '尺码表');
     } catch (error) {
       failures.push({
         row: 0,

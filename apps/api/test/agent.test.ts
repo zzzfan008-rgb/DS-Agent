@@ -19,7 +19,10 @@ import {
   login,
   prisma,
   sessionHeaders,
+  testConfig,
 } from './helpers.js';
+import { TypertBridgeClient } from '../src/agent/bridge-client.js';
+import type { AgentRunEnvelope } from '../src/agent/types.js';
 import { startDshHostStub, type StubHandle } from './support/dsh-host-stub.js';
 
 interface Session {
@@ -394,6 +397,85 @@ test('回放：Last-Event-ID 续传只补缺口，且不重复', async () => {
   }
   assert.equal(new Set(business.map((event) => event.id)).size, business.length);
   assert.equal(business.at(-1)!.event, 'run.finished');
+});
+
+test('桥接重连：首事件前指数退避重试，首事件后不重试', async () => {
+  const config = testConfig({
+    DSH_BRIDGE_URL: 'http://bridge.invalid',
+    DSH_BRIDGE_TOKEN: 'unit-test-token-0123456789abcdef',
+    DSH_CONNECT_TIMEOUT_MS: '200',
+    DSH_HEALTH_CACHE_MS: '0',
+  });
+  const envelope: AgentRunEnvelope = {
+    runId: randomUUID(),
+    requestId: 'req_unit_reconnect',
+    userId: operatorUserId,
+    role: 'operator',
+    intent: 'content.draft',
+    context: { page: 'copy_workbench' },
+    input: { text: '重连用例' },
+    facts: { snapshotId: null, hash: null, version: 0 },
+    bundle: { preset: 'clothing-ops', skills: [], manifestHash: 'test' },
+    limits: { timeoutMs: 2000, maxOutputTokens: 100, maxToolCalls: 1, maxCostCents: 1 },
+  };
+  const frame = [
+    'event: meta',
+    'data: {"runId":"r1","modelId":"fake-model"}',
+    '',
+    'event: delta',
+    'data: {"text":"hi"}',
+    '',
+    'event: final',
+    'data: {"output":{"text":"hi"},"durationMs":1}',
+    '',
+    '',
+  ].join('\n');
+
+  let calls = 0;
+  const flakyFetch = (async () => {
+    calls += 1;
+    if (calls < 3) throw new TypeError('fetch failed');
+    return new Response(frame, {
+      status: 200,
+      headers: { 'content-type': 'text/event-stream' },
+    });
+  }) as unknown as typeof fetch;
+  const client = new TypertBridgeClient(config, {
+    fetchImpl: flakyFetch,
+    sleep: async () => undefined,
+  });
+  const eventTypes: string[] = [];
+  for await (const event of client.run(envelope, new AbortController().signal, { reconnectAttempts: 2 })) {
+    eventTypes.push(event.type);
+  }
+  assert.equal(calls, 3, '应在首事件前重试 2 次');
+  assert.deepEqual(eventTypes, ['meta', 'delta', 'final']);
+
+  // 首事件之后断流：不重试，抛 dsh_unavailable（避免重复输出）。
+  let afterCalls = 0;
+  const brokenFetch = (async () => {
+    afterCalls += 1;
+    const encoder = new TextEncoder();
+    return new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode('event: delta\ndata: {"text":"a"}\n\n'));
+          setTimeout(() => controller.error(new Error('socket hang up')), 10);
+        },
+      }),
+      { status: 200, headers: { 'content-type': 'text/event-stream' } },
+    );
+  }) as unknown as typeof fetch;
+  const client2 = new TypertBridgeClient(config, {
+    fetchImpl: brokenFetch,
+    sleep: async () => undefined,
+  });
+  await assert.rejects(async () => {
+    for await (const _event of client2.run(envelope, new AbortController().signal, { reconnectAttempts: 2 })) {
+      // 消费首个 delta 后流断开
+    }
+  }, /事件流中断/);
+  assert.equal(afterCalls, 1, '首事件后不得重试');
 });
 
 test('取消：运行中 POST cancel → 200 cancelled，SSE 以 partial run.finished 收尾', async () => {

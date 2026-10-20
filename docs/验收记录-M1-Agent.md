@@ -5,7 +5,7 @@
 | 任务 | t3 · DSH 驱动层：常驻 Host 与流式调用（agent-host） |
 | 日期 | 2026-10-20 |
 | 依据 | `docs/17-交互入口与Agent驱动规范.md`（§0、§2–§4、§6、§10、§11）、`docs/00` §五、`docs/12` §3.12/§7/§8、`docs/14` §4.3/§8/§9、`docs/16` §7.3、`docs/21` §12/§13、`docs/04` §2.1/§3.3 |
-| 结论 | **PASS（M1 驱动层）**：api 侧 Typert 桥接客户端、`POST /agent/run` SSE 透传、并发/排队、取消、三层超时、失败降级与 `dsh-bundle` seed 均已落工作区并有自动化证据；18/18 用例通过。**Host 侧 `business-bridge` 插件按 docs/17 状态属 M3**，本任务用独立进程的**协议桩**（严格实现同一 wire）完成流式验收，边界见 §8。 |
+| 结论 | **PASS（M1 驱动层）**：api 侧 Typert 桥接客户端、`POST /agent/run` SSE 透传、并发/排队、取消、三层超时、失败降级与 `dsh-bundle` seed 均已落工作区并有自动化证据；19/19 用例通过。**Host 侧 `business-bridge` 插件按 docs/17 状态属 M3**，本任务用独立进程的**协议桩**（严格实现同一 wire）完成流式验收，边界见 §8。 |
 | 证据 | `apps/api/test/agent-run.log`、`apps/api/test/agent-smoke-stream.log`、`apps/api/test/agent-smoke-host-down.log`、本节命令输出 |
 
 > 口径：本任务只交付 **api 侧驱动 + dsh-bundle seed 配置**，不实现 Host 内插件、不接模型供应商、
@@ -32,7 +32,7 @@ apps/api/src/types.ts               # Fastify 装饰器类型：agentBridge / ag
 apps/api/src/routes/health.ts       # /api/health 聚合 dsh_host + agent 队列统计
 
 apps/api/test/
-├─ agent.test.ts                    # 18 条自动化验收用例（真实 Postgres + 真实 HTTP + Host 桩）
+├─ agent.test.ts                    # 19 条自动化验收用例（真实 Postgres + 真实 HTTP + Host 桩）
 ├─ agent-smoke.ts                   # 验收冒烟：真实 HTTP + SSE；stream / host-down 两种模式
 ├─ support/dsh-host-stub.ts         # 本地 Host 协议桩（在 API 测试内/独立进程复用）
 ├─ support/dsh-host-stub-cli.ts     # 桩 CLI（独立进程，端口 43180）
@@ -128,6 +128,10 @@ seq 单调；`resync` 只在 Last-Event-ID 落后于缓冲窗口时发出。
 | 取消（排队中） | 移出队列 | `cancelled`，不执行 |
 | 取消幂等 | 终态重复取消 | 200 + 当前状态 |
 
+重连语义由单测直接验证（`test/agent.test.ts`「桥接重连」）：`fetch` 前两次连接失败、第三次成功
+→ 客户端共尝试 3 次并收到 `meta→delta→final`；首事件之后断流 → **不重试**，抛
+`dsh_unavailable`（避免重复输出）。
+
 ### 2.6 失败映射（api 对外统一错误码）
 
 | Host/桥接 | api 对外 | 可读性 |
@@ -176,7 +180,7 @@ EXIT=0
 > （`EPERM: rename query_engine-windows.dll.node`，并发 agent 正在跑 Prisma 生成）；
 > `@dssaas/api` 本身通过。该错误与本次改动无关，见 §8 D10。
 
-### 3.2 自动化用例：18/18
+### 3.2 自动化用例：19/19
 
 ```console
 $ TEST_DATABASE_URL='postgresql://dssaas:***@<test-host>:55434/dssaas_agent_test?schema=public' \
@@ -186,6 +190,7 @@ $ TEST_DATABASE_URL='postgresql://dssaas:***@<test-host>:55434/dssaas_agent_test
 ✔ 隔离：跨用户查询 404，admin 可查；未登录 SSE 401
 ✔ 流式：hello→run.started→步骤/工具/增量→run.finished，事件 id 单调且终态唯一
 ✔ 回放：Last-Event-ID 续传只补缺口，且不重复
+✔ 桥接重连：首事件前指数退避重试，首事件后不重试
 ✔ 取消：运行中 POST cancel → 200 cancelled，SSE 以 partial run.finished 收尾
 ✔ 错误映射：Host 返回 error 事件 → run.error(upstream_5xx)，run 状态 failed
 ✔ 超时：整次运行 timeout_ms 强制 abort → status=timeout
@@ -199,7 +204,7 @@ $ TEST_DATABASE_URL='postgresql://dssaas:***@<test-host>:55434/dssaas_agent_test
 ✔ 审计：agent.accept / agent.run / agent.cancel / agent.overload 均落库且链完整
 ✔ 指标与健康：agent_runs_total / agent_cost_cents_total 暴露；dsh_host=ok
 ✔ 审计标识：run 的 actor 为用户、resource 为 run_id，meta 含 bundle/model/session
-ℹ tests 18  ℹ pass 18  ℹ fail 0
+ℹ tests 19  ℹ pass 19  ℹ fail 0
 EXIT=0
 ```
 

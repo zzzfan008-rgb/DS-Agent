@@ -43,6 +43,16 @@ export function mergeJudgments(
 
   const l1Severity = l1HighestSeverity(l1);
   if (!l2) {
+    if (options.noEvidence) {
+      return {
+        verdict: 'escalate',
+        severity: maxSeverity(l1Severity, 'high'),
+        reason: '无可用证据，升级 L3 人工',
+        repair_hint: '补充知识库政策/依据后再判',
+        evidence_refs: [],
+        short_circuit: 'NO_EVIDENCE',
+      };
+    }
     const verdict =
       l1Severity === 'blocker'
         ? 'reject'

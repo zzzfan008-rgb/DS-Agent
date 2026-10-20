@@ -122,7 +122,7 @@ export async function createContentDraft(
   });
 
   await deps.audit.record({
-    action: 'content.draft.create',
+    action: 'content_draft.create',
     actorType: 'user',
     actorId: context.userId,
     requestId: context.requestId,

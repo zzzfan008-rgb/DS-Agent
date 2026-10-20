@@ -60,19 +60,6 @@ const Fabric = z.object({
   effective_from: z.string().optional(),
 });
 
-const ProductCreate = z.object({
-  spu_code: z.string().regex(/^[A-Z0-9][A-Z0-9-]{3,39}$/),
-  name: z.string().min(1).max(120),
-  category_code: z.string().regex(/^[A-Z][0-9]{4}(\.[0-9]{1,3})?$/),
-  fit: z.enum(['slim', 'regular', 'loose', 'oversize']).optional(),
-  description: z.string().max(2000).optional(),
-  brand: z.string().max(60).optional(),
-  season: z.enum(['spring', 'summer', 'autumn', 'winter', 'all']).optional(),
-  attributes: z.record(z.string(), z.unknown()).optional(),
-  skus: z.array(Sku).min(1).max(200),
-  fabric: Fabric,
-});
-
 const SizeChartPut = z.object({
   items: z
     .array(
@@ -94,6 +81,20 @@ const SizeChartPut = z.object({
   size_system: z.enum(['alpha', 'numeric', 'height_weight', 'one_size']).optional(),
   source: z.enum(['import', 'erp', 'manual', 'platform_sync', 'supplier']).optional(),
   fit_note: z.string().max(200).optional(),
+});
+
+const ProductCreate = z.object({
+  spu_code: z.string().regex(/^[A-Z0-9][A-Z0-9-]{3,39}$/),
+  name: z.string().min(1).max(120),
+  category_code: z.string().regex(/^[A-Z][0-9]{4}(\.[0-9]{1,3})?$/),
+  fit: z.enum(['slim', 'regular', 'loose', 'oversize']).optional(),
+  description: z.string().max(2000).optional(),
+  brand: z.string().max(60).optional(),
+  season: z.enum(['spring', 'summer', 'autumn', 'winter', 'all']).optional(),
+  attributes: z.record(z.string(), z.unknown()).optional(),
+  skus: z.array(Sku).min(1).max(200),
+  fabric: Fabric,
+  size_chart: SizeChartPut.optional(),
 });
 
 const FabricPut = z.object({

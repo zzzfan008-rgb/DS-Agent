@@ -119,7 +119,10 @@ async function createMockModel(kind: 'text' = 'text') {
 }
 
 before(async () => {
-  app = await buildTestApp({ DSSAAS_MODEL_CREDENTIALS: JSON.stringify({ mock_cred: 'sk-mock' }) });
+  app = await buildTestApp({
+    DSSAAS_MODEL_CREDENTIALS: JSON.stringify({ mock_cred: 'sk-mock' }),
+    LOG_LEVEL: 'error',
+  });
   admin = await createUser({
     email: 'admin.t8@test.local',
     password: ADMIN_PASSWORD,
@@ -154,6 +157,19 @@ before(async () => {
       },
     ],
     fabric: { materials: [{ material: '棉', percent: 100 }] },
+    size_chart: {
+      effective_from: '2026-10-01',
+      items: [
+        {
+          sku_size_code: 'M',
+          measurements: { 胸围: 104, 衣长: 69 },
+          recommend_height_min: 165,
+          recommend_height_max: 172,
+          recommend_weight_min: 60,
+          recommend_weight_max: 67,
+        },
+      ],
+    },
   });
   assert.equal(created.statusCode, 201, created.body);
   productId = (created.json() as { data: { id: string } }).data.id;
@@ -190,8 +206,8 @@ test('商品创建：color_id 归一 BK-0101、size 归一为 XXL；CSV 导入�
   assert.equal(sku?.sizeCode, 'M');
 
   const csv = [
-    'spu_code,name,category_code,fit,color_id,color_name,size_code,price_cents,stock_qty,fabric_materials',
-    'TST-IMP-001,导入测试款,A0101,regular,bk0101,黑色,2XL,9900,10,"[{""material"":""涤纶"",""percent"":100}]"',
+    'spu_code,name,category_code,fit,color_id,color_name,size_code,price_cents,stock_qty,fabric_materials,measurements',
+    'TST-IMP-001,导入测试款,A0101,regular,bk0101,黑色,2XL,9900,10,"[{""material"":""涤纶"",""percent"":100}]","{""胸围"":104,""衣长"":69}"',
   ].join('\n');
   const imported = await post('/api/products/import', { csv, dry_run: false });
   assert.equal(imported.statusCode, 201, imported.body);
@@ -246,8 +262,8 @@ test('非法尺码表/成分合计≠100 被拒，且不落库', async () => {
 test('CSV 非法成分不写入任何商品', async () => {
   const before = await prisma.product.count();
   const badCsv = [
-    'spu_code,name,category_code,color_id,size_code,price_cents,fabric_materials',
-    'TST-BAD-001,坏数据款,A0101,BK-0102,M,9900,"[{""material"":""棉"",""percent"":99}]"',
+    'spu_code,name,category_code,color_id,size_code,price_cents,fabric_materials,measurements',
+    'TST-BAD-001,坏数据款,A0101,BK-0102,M,9900,"[{""material"":""棉"",""percent"":99}]","{""胸围"":104,""衣长"":69}"',
   ].join('\n');
   const response = await post('/api/products/import', { csv: badCsv });
   assert.equal(response.statusCode, 422);
@@ -286,7 +302,7 @@ test('文案草稿生成：写入 facts 信封 + model_call_id，可再判 L1 pa
   assert.ok(body.data.l1.evaluated > 0);
 });
 
-test('L1 blocker：百度最低价+价格不符 → reject 短路，rule_hits 可追溯', async () => {
+test('L1 blocker：全网最低价+价格不符 → reject 短路，rule_hits 可追溯', async () => {
   const facts = factEnvelope(12900);
   const response = await post('/api/judgments', {
     subject_type: 'listing',
