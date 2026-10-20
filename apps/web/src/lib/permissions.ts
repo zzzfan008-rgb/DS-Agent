@@ -8,7 +8,10 @@
 export const PERMISSIONS = {
   dashboardRead: 'dashboard.read',
   productRead: 'product.read',
+  productWrite: 'product.write',
+  productImport: 'product.import',
   contentRead: 'content.read',
+  contentWrite: 'content.write',
   mediaRead: 'media.read',
   conversationRead: 'conversation.read',
   inquiryRead: 'inquiry.read',
@@ -16,9 +19,12 @@ export const PERMISSIONS = {
   kbRead: 'kb.read',
   auditRead: 'audit.read',
   usersWrite: 'users.write',
+  providerWrite: 'provider.write',
   modelWrite: 'model.write',
   modelRead: 'model.read',
+  routeWrite: 'route.write',
   routeRead: 'route.read',
+  metricsRead: 'metrics.read',
   killSwitchRead: 'kill_switch.read',
 } as const;
 

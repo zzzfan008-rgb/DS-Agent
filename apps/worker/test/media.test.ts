@@ -262,3 +262,87 @@ test('配额超限：拒绝并给可读错误，不产生资产/费用', async (
   assert.equal(repo.ledgers.length, 0);
   assert.equal(repo.assets.size, 0);
 });
+
+test('S3Storage：path-style 桶/键、SigV4 头、get/list/delete', async (t) => {
+  const objects = new Map<string, Buffer>();
+  let lastAuth = '';
+  let lastPath = '';
+  const server = createServer((req, res) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
+    req.on('end', () => {
+      const url = new URL(req.url ?? '/', 'http://localhost');
+      const segments = url.pathname.split('/').filter(Boolean).map((segment) => decodeURIComponent(segment));
+      const bucket = segments.shift() ?? '';
+      const key = segments.join('/');
+      lastAuth = String(req.headers.authorization ?? '');
+      lastPath = url.pathname;
+      if (req.method === 'PUT' && key === '') {
+        res.writeHead(200);
+        res.end();
+        return;
+      }
+      if (req.method === 'PUT') {
+        objects.set(`${bucket}/${key}`, Buffer.concat(chunks));
+        res.writeHead(200);
+        res.end();
+        return;
+      }
+      if (req.method === 'GET' && url.searchParams.get('list-type') === '2') {
+        const prefix = url.searchParams.get('prefix') ?? '';
+        const keys = [...objects.keys()]
+          .filter((object) => object.startsWith(`${bucket}/`))
+          .map((object) => object.slice(bucket.length + 1))
+          .filter((objectKey) => objectKey.startsWith(prefix));
+        const xml = `<?xml version="1.0"?><ListBucketResult>${keys
+          .map((objectKey) => `<Contents><Key>${objectKey}</Key></Contents>`)
+          .join('')}</ListBucketResult>`;
+        res.writeHead(200, { 'content-type': 'application/xml' });
+        res.end(xml);
+        return;
+      }
+      if (req.method === 'GET') {
+        const body = objects.get(`${bucket}/${key}`);
+        if (!body) {
+          res.writeHead(404);
+          res.end();
+          return;
+        }
+        res.writeHead(200);
+        res.end(body);
+        return;
+      }
+      if (req.method === 'HEAD') {
+        res.writeHead(objects.has(`${bucket}/${key}`) ? 200 : 404);
+        res.end();
+        return;
+      }
+      if (req.method === 'DELETE') {
+        objects.delete(`${bucket}/${key}`);
+        res.writeHead(204);
+        res.end();
+        return;
+      }
+      res.writeHead(400);
+      res.end();
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+  t.after(() => server.close());
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('测试 HTTP 服务未监听');
+  const storage = new S3Storage({
+    endpoint: `http://127.0.0.1:${address.port}`,
+    accessKey: 'test',
+    secretKey: 'secret',
+  });
+  const body = Buffer.from('hello s3');
+  await storage.put('media', 'scene/1/abc/source.png', body);
+  assert.match(lastAuth, /^AWS4-HMAC-SHA256 Credential=test\//);
+  assert.equal(lastPath, '/media/scene/1/abc/source.png');
+  assert.equal(await storage.exists('media', 'scene/1/abc/source.png'), true);
+  assert.deepEqual(await storage.get('media', 'scene/1/abc/source.png'), body);
+  assert.deepEqual(await storage.list('media', 'scene/1/'), ['scene/1/abc/source.png']);
+  await storage.delete('media', 'scene/1/abc/source.png');
+  assert.equal(await storage.exists('media', 'scene/1/abc/source.png'), false);
+});

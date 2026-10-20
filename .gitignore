@@ -28,6 +28,8 @@ data/*
 # 黄金集是受版本控制的测试数据（t15）；data/ 其余内容仍忽略
 !data/golden/
 backups/
+# M6 媒体样例产物（可由 apps/worker/scripts/media-demo.ts 重新生成）
+artifacts/
 
 # Prisma 本地产物
 packages/db/prisma/*.db

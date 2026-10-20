@@ -1,0 +1,20 @@
+{
+  "schema_version": "drift-ticket-index-v1",
+  "updated_at": "2026-10-20T08:16:38.960Z",
+  "tickets": [
+    {
+      "ticket_id": "drift-20261020-pdd-999001",
+      "platform": "pdd",
+      "notice_id": "999001",
+      "link_hash": "69de25d011c73b9c5cae6b384878697a7f4a286aa3f51019fb593e48b0d77808",
+      "title": "【测试】订单接口新增保密发货标签字段（契约漂移演练）",
+      "severity": "P0",
+      "status": "regression_passed",
+      "synthetic": true,
+      "file": "docs/变更工单/2026-10-20-pdd-测试订单接口新增保密发货标签字段契约漂移演练.md",
+      "created_at": "2026-10-20T08:15:48.385Z",
+      "due_at": "2026-10-23T08:15:48.385Z",
+      "last_regression_at": "2026-10-20T08:16:38.960Z"
+    }
+  ]
+}

@@ -11,6 +11,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import {
   REPO_ROOT,
@@ -39,6 +40,47 @@ function commandsFor(ticketData) {
     for (const pkg of packages) commands.push(`pnpm --filter ${pkg} test`);
   }
   return commands.map((command) => String(command)).filter((command) => command.trim() !== '');
+}
+
+/**
+ * 解析可用的 pnpm 可执行文件。
+ *
+ * 背景：本机 PATH 中可能同时存在 DSH 运行时的 pnpm shim（其内部 link 可能已被清理）
+ * 与全局 npm/pnpm；`shell:true` 会优先命中前者并报 MODULE_NOT_FOUND。
+ * 这里显式探测 `-v` 可用的候选，避免把环境问题误判为 adapter 回归失败。
+ */
+function resolvePnpmCommand(explicitPath) {
+  const candidates = [];
+  if (explicitPath) candidates.push(path.resolve(explicitPath));
+  if (process.env.PNPM_EXEC_PATH) candidates.push(process.env.PNPM_EXEC_PATH);
+  if (process.platform === 'win32' && process.env.APPDATA) {
+    candidates.push(path.join(process.env.APPDATA, 'npm', 'pnpm.cmd'));
+    candidates.push(path.join(process.env.APPDATA, 'npm', 'pnpm.exe'));
+  }
+  for (const dir of String(process.env.PATH ?? '').split(path.delimiter)) {
+    if (!dir) continue;
+    for (const name of process.platform === 'win32' ? ['pnpm.cmd', 'pnpm.exe', 'pnpm'] : ['pnpm']) {
+      candidates.push(path.join(dir, name));
+    }
+  }
+  const seen = new Set();
+  for (const candidate of candidates) {
+    if (!candidate || seen.has(candidate) || !existsSync(candidate)) continue;
+    seen.add(candidate);
+    const probe = spawnSync(`"${candidate}"`, ['-v'], {
+      shell: true,
+      encoding: 'utf8',
+      timeout: 20_000,
+      windowsHide: true,
+    });
+    if (probe.status === 0) return candidate;
+  }
+  return null;
+}
+
+function withPnpm(command, pnpmPath) {
+  if (!pnpmPath) return command;
+  return command.replace(/^pnpm(?:\.cmd|\.exe)?(?=\s|$)/, `"${pnpmPath}"`);
 }
 
 async function discoverTickets(flags) {
@@ -149,6 +191,7 @@ async function main() {
   --ticket-dir <dir>         默认 docs/变更工单
   --platform <pdd|1688>      过滤平台
   --command <cmd>            覆盖工单内的回归命令（演练/排查；只运行这一条）
+  --pnpm <path>              显式指定可用的 pnpm（默认自动探测 APPDATA/npm 与 PATH）
   --include-synthetic        扫描时包含 synthetic 演练工单（默认跳过）
   --timeout-ms <n>           单条命令超时，默认 600000
   --json                     输出机器可读摘要（不回显子进程输出）
@@ -162,6 +205,12 @@ async function main() {
   const timeoutMs = positiveInt(flags['timeout-ms'], 600_000, { min: 1000, max: 3_600_000, name: '--timeout-ms' });
   const json = Boolean(flags.json);
   const ticketDir = path.resolve(flags['ticket-dir'] ?? TICKETS_DIR);
+  const pnpmPath = resolvePnpmCommand(flags.pnpm);
+  if (!pnpmPath) {
+    console.error('[regression] 未找到可用的 pnpm（--pnpm 可显式指定）；命令可能因环境问题失败');
+  } else if (!json) {
+    console.log(`[regression] pnpm=${pnpmPath}`);
+  }
   const files = await discoverTickets(flags);
   if (files.length === 0) {
     if (json) console.log(JSON.stringify({ ok: true, tickets: [], message: '无待回归工单' }, null, 2));
@@ -182,7 +231,9 @@ async function main() {
       summary.errors.push({ file: relToRepo(file), error: '工单缺少 frontmatter' });
       continue;
     }
-    const commands = flags.command ? [String(flags.command)] : commandsFor(ticket.data);
+    const commands = (flags.command ? [String(flags.command)] : commandsFor(ticket.data)).map((command) =>
+      withPnpm(command, pnpmPath),
+    );
     if (commands.length === 0) {
       summary.ok = false;
       summary.errors.push({ file: relToRepo(file), error: '工单未声明 regression_commands / regression_packages' });
