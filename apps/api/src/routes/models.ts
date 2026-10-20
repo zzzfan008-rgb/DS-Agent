@@ -157,6 +157,7 @@ export function registerModelRoutes(app: FastifyInstance): void {
           status: item.model.status,
           price: item.model.price,
           price_version: item.model.priceVersion,
+          version: item.model.version,
           rate_limit: item.model.rateLimit,
           published_at: item.model.publishedAt?.toISOString() ?? null,
           visible: item.visible,

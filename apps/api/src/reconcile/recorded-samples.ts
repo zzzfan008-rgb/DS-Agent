@@ -25,7 +25,9 @@ export const RECORDED_PLATFORM_SNAPSHOTS: Record<'pdd' | '1688', PlatformSnapsho
     source: 'recorded',
     verified: false,
     complete: true,
-    note: '合成样本：覆盖 6 类差异；非 1688 真实报文（TODO-1688-001/012）',
+    ordersComplete: true,
+    afterSalesComplete: true,
+    note: '合成样本：覆盖 6 类商品差异 + 5 类订单差异 + 2 类售后差异；非 1688 真实报文（TODO-1688-001/012）',
     items: [
       {
         itemId: 'ALI-2026-0001',
@@ -70,6 +72,78 @@ export const RECORDED_PLATFORM_SNAPSHOTS: Record<'pdd' | '1688', PlatformSnapsho
         skus: [{ platformSkuId: 'ALI-SKU-0006', priceCents: 9900, stockQty: 50 }],
       },
     ],
+    // 订单样本：1001 基线；1003 平台有本地无；1004 金额不符；1005 状态（退款）不符；1006 明细不符。
+    orders: [
+      {
+        platformOrderId: 'ALI-ORDER-1001',
+        status: 'paid',
+        totalCents: 31600,
+        paidCents: 31600,
+        refundStatus: 'none',
+        platformCreatedAt: '2026-10-18T02:00:00.000Z',
+        items: [
+          {
+            platformSkuRef: 'ALI-SKU-0001',
+            qty: 2,
+            unitPriceCents: 15800,
+            amountCents: 31600,
+          },
+        ],
+      },
+      {
+        platformOrderId: 'ALI-ORDER-1003',
+        status: 'shipped',
+        totalCents: 15800,
+        paidCents: 15800,
+        refundStatus: 'none',
+        platformCreatedAt: '2026-10-19T02:00:00.000Z',
+        items: [{ platformSkuRef: 'ALI-SKU-0001', qty: 1, unitPriceCents: 15800, amountCents: 15800 }],
+      },
+      {
+        platformOrderId: 'ALI-ORDER-1004',
+        status: 'paid',
+        totalCents: 30000,
+        paidCents: 30000,
+        refundStatus: 'none',
+        platformCreatedAt: '2026-10-19T03:00:00.000Z',
+        items: [{ platformSkuRef: 'ALI-SKU-0002', qty: 2, unitPriceCents: 15000, amountCents: 30000 }],
+      },
+      {
+        platformOrderId: 'ALI-ORDER-1005',
+        status: 'refunded',
+        totalCents: 15800,
+        paidCents: 15800,
+        refundStatus: 'refunded',
+        platformCreatedAt: '2026-10-19T04:00:00.000Z',
+        items: [{ platformSkuRef: 'ALI-SKU-0003', qty: 1, unitPriceCents: 15800, amountCents: 15800 }],
+      },
+      {
+        platformOrderId: 'ALI-ORDER-1006',
+        status: 'paid',
+        totalCents: 31600,
+        paidCents: 31600,
+        refundStatus: 'none',
+        platformCreatedAt: '2026-10-19T05:00:00.000Z',
+        items: [{ platformSkuRef: 'ALI-SKU-0001', qty: 2, unitPriceCents: 15800, amountCents: 31600 }],
+      },
+    ],
+    // 售后样本：9001 退款金额不符；9002 平台已关闭而本地仍 open。
+    afterSales: [
+      {
+        platformAfterSaleId: 'ALI-AS-9001',
+        platformOrderId: 'ALI-ORDER-1004',
+        kind: 'refund_only',
+        status: 'open',
+        amountCents: 5000,
+      },
+      {
+        platformAfterSaleId: 'ALI-AS-9002',
+        platformOrderId: 'ALI-ORDER-1005',
+        kind: 'return_refund',
+        status: 'closed',
+        amountCents: 15800,
+      },
+    ],
   },
   pdd: {
     platform: 'pdd',
@@ -77,7 +151,11 @@ export const RECORDED_PLATFORM_SNAPSHOTS: Record<'pdd' | '1688', PlatformSnapsho
     source: 'recorded',
     verified: false,
     complete: false,
-    note: '合成样本：M8 无 PDD 契约录制，返回空且不完整快照（不据此推断平台缺商品；真实接通条件见验收文档 §7）',
+    ordersComplete: false,
+    afterSalesComplete: false,
+    note: '合成样本：M8 无 PDD 契约录制，返回空且不完整快照（不据此推断平台缺商品/缺订单；真实接通条件见验收文档 §7）',
     items: [],
+    orders: [],
+    afterSales: [],
   },
 };

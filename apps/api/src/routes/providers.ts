@@ -93,6 +93,7 @@ export function registerProviderRoutes(app: FastifyInstance): void {
           checked_at: provider.lastCheckAt?.toISOString() ?? null,
         },
         balance_cents: provider.balanceCents,
+        version: provider.version,
       })),
     });
   });

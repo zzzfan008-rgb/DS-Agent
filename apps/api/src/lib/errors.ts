@@ -111,13 +111,19 @@ export class ApiError extends Error {
   constructor(
     code: ErrorCode,
     message?: string,
-    options: { detail?: unknown; headers?: Record<string, string>; cause?: unknown } = {},
+    options: {
+      detail?: unknown;
+      headers?: Record<string, string>;
+      cause?: unknown;
+      /** 少数端点契约要求 400（如金额小数）；缺省按错误码表。 */
+      httpStatus?: number;
+    } = {},
   ) {
     const def = ERROR_DEFS[code];
     super(message ?? def.message, options.cause === undefined ? undefined : { cause: options.cause });
     this.name = 'ApiError';
     this.code = code;
-    this.httpStatus = def.http;
+    this.httpStatus = options.httpStatus ?? def.http;
     this.retryable = def.retryable;
     this.nextAction = def.nextAction;
     this.detail = options.detail;
@@ -177,7 +183,7 @@ export function toApiError(error: unknown): ApiError {
       return new ApiError('unsupported_media_type');
     case 'FST_ERR_CTP_INVALID_JSON_BODY':
     case 'FST_ERR_CTP_EMPTY_JSON_BODY':
-      return new ApiError('validation_failed', '请求体不是合法 JSON');
+      return new ApiError('validation_failed', '请求体不是合法 JSON', { httpStatus: 400 });
     case 'FST_ERR_VALIDATION':
       return new ApiError('validation_failed', '请求参数校验失败', { detail: candidate.validation });
     default:

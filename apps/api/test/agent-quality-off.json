@@ -1,0 +1,485 @@
+{
+  "mode": "off",
+  "model": "deepseek-flash",
+  "scenario_file": "D:/DSSAAS/data/golden/customer-scenarios.json",
+  "generated_at": "2026-10-20T08:52:54.168Z",
+  "samples": [
+    {
+      "id": "S01",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-001",
+      "question": "我身高 175cm、体重 72kg，这款 T 恤选哪个码？",
+      "expected": {
+        "size": "XL",
+        "note": "XL 建议 170–180cm / 64–78kg"
+      },
+      "forbidden": [
+        "L 码最合适",
+        "XXL",
+        "M 码"
+      ],
+      "status": "succeeded",
+      "output": "**结论：建议选 XL 码。** 你的身高处于 L 和 XL 的交界处，体重与 XL 码区间重合得更多，而且按「卡边界建议大一码」的原则，XL 是更稳妥的选择。\n\n**依据**\n\n依据商品 GOLD-SPU-001 的尺码表：\n\n| 尺码 | 建议身高 | 建议体重 | 胸围 | 衣长 | 肩宽 | 袖长 |",
+      "total_ms": 4143,
+      "first_delta_ms": 950,
+      "tokens_in": 3322,
+      "tokens_out": 611,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "S02",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-002",
+      "question": "身高 158、体重 48，衬衫穿 S 还是 M？",
+      "expected": {
+        "size": "S",
+        "note": "S 建议 150–160cm / 42–52kg"
+      },
+      "forbidden": [
+        "M 码最合适",
+        "L 码"
+      ],
+      "status": "succeeded",
+      "output": "**结论：建议选 S，M 码作为备选（前提是先确认实际胸围）。** 按尺码表，158cm/48kg 在 S 码的建议身高 150–160cm、体重 42–52kg 范围内；M 码对应的身高 155–165cm、体重 46–56kg 范围，你处在下沿：按体重选 M 偏小，按身高选 M 合适，但 S 与 M 的身高范围重叠。",
+      "total_ms": 4047,
+      "first_delta_ms": 1007,
+      "tokens_in": 3290,
+      "tokens_out": 593,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "S03",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-003",
+      "question": "178cm、75kg，POLO 选什么尺码？",
+      "expected": {
+        "size": "XL",
+        "note": "XL 建议 170–180cm / 64–78kg"
+      },
+      "forbidden": [
+        "L 码最合适",
+        "XXL"
+      ],
+      "status": "succeeded",
+      "output": "**结论：推荐 XL 码**（GOLD-SPU-003 男装POLO衫，现有尺码 M/L/XL，页面上限为 XL，**没有 2XL**，因此无法再往大一码推荐）。\n\n**可直接发送给客户的回复（约 150 字，未超出 180 字上限）**",
+      "total_ms": 4662,
+      "first_delta_ms": 850,
+      "tokens_in": 3274,
+      "tokens_out": 716,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "S04",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-004",
+      "question": "155cm、45kg，牛仔裤选 26 还是 27？",
+      "expected": {
+        "size": "26",
+        "note": "26 建议 150–160cm / 42–50kg"
+      },
+      "forbidden": [
+        "27 码最合适",
+        "28 码"
+      ],
+      "status": "succeeded",
+      "output": "**结论：先试 26 码，27 码作为备选，但需要先确认腰围。**\n\n客户身高 155cm、体重 45kg，按尺码表的建议区间：\n- **26 码**：建议身高 150–160cm、体重 42–50kg，正好落在区间内；腰围 66cm、臀围 90cm、裤长 98cm、大腿围 52cm。优先选 26 码。",
+      "total_ms": 4266,
+      "first_delta_ms": 821,
+      "tokens_in": 3344,
+      "tokens_out": 646,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "S05",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-005",
+      "question": "170cm、62kg，半身裙选 28 还是 29？",
+      "expected": {
+        "size": "29",
+        "note": "29 建议 162–172cm / 54–65kg"
+      },
+      "forbidden": [
+        "28 码最合适",
+        "27 码"
+      ],
+      "status": "succeeded",
+      "output": "**结论：建议选 29 码（前提：页面这件单品实际为长裤，不是半身裙）**\n\n**依据（事实快照 尺码表 effective 版本）**\n\n| 尺码 | 建议身高 | 建议体重 | 腰围 | 臀围 | 裤长 |\n|---|---|---|---|---|---|\n| 27 | 155–165cm | 46–55kg | 68 | 94 | 97 |",
+      "total_ms": 3792,
+      "first_delta_ms": 849,
+      "tokens_in": 3281,
+      "tokens_out": 611,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "F01",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-001",
+      "question": "这件 T 恤什么成分？怎么洗？",
+      "expected": {
+        "composition": "棉 100%",
+        "care": "棉可机洗 30℃ 以下，避免高温烘干"
+      },
+      "forbidden": [
+        "聚酯纤维",
+        "氨纶",
+        "真丝"
+      ],
+      "status": "succeeded",
+      "output": "**结论：** 这件 T 恤的成分是棉 100%。洗护建议：在 30℃ 以下用中性洗涤剂机洗，深浅色分开洗，不可漂白，悬挂阴干，低温熨烫；首次洗涤建议单独冷水洗，不要高温烘干。\n\n---\n\n**可直接发送的客服回复（约 120 字，未超过 180 字上限）**\n\n> 亲，这件是棉 100% 的纯棉圆领短袖，260g 重磅款。",
+      "total_ms": 4250,
+      "first_delta_ms": 1813,
+      "tokens_in": 634,
+      "tokens_out": 433,
+      "cost_cents": 2,
+      "tool_calls": [
+        "skill"
+      ],
+      "error": null
+    },
+    {
+      "id": "F02",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-002",
+      "question": "衬衫的成分比例是多少？会缩水吗？",
+      "expected": {
+        "composition": "棉 60% / 聚酯纤维 40%"
+      },
+      "forbidden": [
+        "棉 100%",
+        "棉 80%",
+        "聚酯 60%"
+      ],
+      "status": "succeeded",
+      "output": "**结论（草稿，可直接发送，约 155 字）**\n\n> 您好，这件衬衫为棉 60%、聚酯纤维 40%。缩水情况：商品当前没有洗护标注和缩水率检测数据，我不能给您确切承诺，建议按「≤30℃ 轻柔机洗或手洗、不要高温烘干、阴干」处理，这类混纺面料按此方式洗护，缩水风险会低很多。若洗涤后出现明显缩水，请保留洗涤记录和照片，我们按售后政策复核处理。",
+      "total_ms": 3297,
+      "first_delta_ms": 833,
+      "tokens_in": 3289,
+      "tokens_out": 382,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "F03",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-003",
+      "question": "POLO 的氨纶含量多少？有弹性吗？",
+      "expected": {
+        "composition": "棉 95% / 氨纶 5%"
+      },
+      "forbidden": [
+        "氨纶 10%",
+        "氨纶 20%",
+        "棉 100%"
+      ],
+      "status": "succeeded",
+      "output": "**结论：这款 POLO 衫含氨纶 5%（棉 95%、氨纶 5%），面料有一定弹性；但事实快照中没有“弹性等级、弹力回弹率、洗后变形”的检测或工艺依据，因此不能承诺“高弹”或“不变形”。**\n\n## 可直接发送的客服回复（约 120 字，未超 180 字上限）",
+      "total_ms": 3986,
+      "first_delta_ms": 826,
+      "tokens_in": 3276,
+      "tokens_out": 505,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "F04",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-004",
+      "question": "牛仔裤含棉多少？能不能机洗？",
+      "expected": {
+        "composition": "棉 98% / 氨纶 2%"
+      },
+      "forbidden": [
+        "棉 100%",
+        "聚酯纤维 50%"
+      ],
+      "status": "succeeded",
+      "output": "**结论（可直接回复客户，共 118 字，未超过 180 字上限）**\n\n> 亲，这款高腰直筒牛仔长裤含棉 98%、氨纶 2%，可以机洗。建议 30℃ 以下用中性洗涤剂机洗，深浅色分开，首次建议在冷水中单独洗；不可漂白，避免高温烘干和高温熨烫，悬挂晾干即可。（依据：商品成分 棉 98% / 氨纶 2%）\n\n**依据**",
+      "total_ms": 5608,
+      "first_delta_ms": 2175,
+      "tokens_in": 661,
+      "tokens_out": 511,
+      "cost_cents": 2,
+      "tool_calls": [
+        "skill"
+      ],
+      "error": null
+    },
+    {
+      "id": "F05",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-007",
+      "question": "连衣裙是什么面料？洗护要注意什么？",
+      "expected": {
+        "composition": "粘纤 100%",
+        "care": "粘纤建议手洗/低温，不拧干"
+      },
+      "forbidden": [
+        "聚酯纤维 100%",
+        "棉 100%",
+        "可高温烘干"
+      ],
+      "status": "succeeded",
+      "output": "结论：这款裙子的面料是**粘纤 100%**（成分来自事实快照）；但**洗护注意事项缺少事实依据**——事实快照和知识库检索结果里都没有这件商品的洗护标注（水洗方式、熨烫温度、是否可干洗），我不能按行业惯例补写，需要你确认吊牌或检测资料上的洗护标识。\n\n## 可直接发送的客服回复（含建议，正文 176 字，未超 180 字）",
+      "total_ms": 4120,
+      "first_delta_ms": 755,
+      "tokens_in": 3259,
+      "tokens_out": 525,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "A01",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-001",
+      "question": "收到衣服发现破洞，签收 2 天，能退吗？运费谁出？",
+      "expected": {
+        "eligible": "质量问题可退换",
+        "freight": "卖家承担",
+        "window": "7 天内"
+      },
+      "forbidden": [
+        "运费买家承担",
+        "不能退",
+        "15 天"
+      ],
+      "status": "succeeded",
+      "output": "**结论：可以退换，运费由卖家承担。** 该商品属于质量问题（破洞），签收仅 2 天，仍在 7 天窗口内。\n\n**依据**\n- 店铺客服政策摘要 v1（知识库 policy/return-policy）规定：质量问题（破损、色差、起球等）拍照留证后可退换，**运费由卖家承担**。\n- 同一来源的退货窗口规定：签收次日起 7 天内（本单第 2 天，符合要求）。",
+      "total_ms": 3845,
+      "first_delta_ms": 928,
+      "tokens_in": 3328,
+      "tokens_out": 535,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "A02",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-002",
+      "question": "尺码买小了想换大一码，运费谁承担？",
+      "expected": {
+        "eligible": "可换码",
+        "freight": "买家承担"
+      },
+      "forbidden": [
+        "运费卖家承担",
+        "不能换",
+        "免费换码"
+      ],
+      "status": "succeeded",
+      "output": "**结论**：按本店客服政策摘要，尺码买小属于“尺码不合适”，可以换码，但换码运费由买家承担；换码能否办理，取决于该尺码是否有库存，这一点需要人工确认。\n\n## 可直接发送的客服回复（179 字，未超过 180 字上限）\n\n> 您好，尺码不合适可以换码。",
+      "total_ms": 4437,
+      "first_delta_ms": 733,
+      "tokens_in": 3288,
+      "tokens_out": 686,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "A03",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-003",
+      "question": "签收 10 天了，不喜欢还能七天无理由退吗？",
+      "expected": {
+        "eligible": "超过 7 天不能直接无理由",
+        "action": "建议联系平台/人工复核"
+      },
+      "forbidden": [
+        "可以无理由退",
+        "15 天内可退",
+        "一定可以退"
+      ],
+      "status": "succeeded",
+      "output": "**结论：这种情况已超出七天无理由的范围，无法按七天无理由办理退货。**客户签收已经满 10 天，而退货窗口是签收次日起 7 天，按政策已经不符合。我们不应承诺可以办理，建议按“超时 → 转人工复核”处理，同时给出一个不违反规则的回应方式。\n\n**依据**\n- 店铺政策：签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售，才可申请七天无理由；",
+      "total_ms": 5090,
+      "first_delta_ms": 1654,
+      "tokens_in": 3275,
+      "tokens_out": 533,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "A04",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-004",
+      "question": "吊牌剪了还能退吗？",
+      "expected": {
+        "eligible": "影响二次销售/吊牌缺失通常不支持无理由",
+        "action": "转人工/按平台规则"
+      },
+      "forbidden": [
+        "一定可以退",
+        "无条件是退",
+        "7 天内都能退"
+      ],
+      "status": "succeeded",
+      "output": "**结论：按现有政策摘要，吊牌已剪属于「吊牌/包装不完整」，一般不满足无理由退货的完好条件；但能否通融需人工确认，客服不要直接说「不能退」，也不要说「肯定能退」。**\n\n政策依据：客服政策摘要 v1（知识库 policy/return-policy）—— 签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售，可申请退货。",
+      "total_ms": 4128,
+      "first_delta_ms": 1111,
+      "tokens_in": 3339,
+      "tokens_out": 530,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "A05",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-005",
+      "question": "1688 批发的裙子能按七天无理由退吗？",
+      "expected": {
+        "eligible": "1688 批发按平台/协议，不直接套用零售七天无理由",
+        "action": "转人工确认"
+      },
+      "forbidden": [
+        "一定可以退",
+        "七天无理由",
+        "卖家承担运费"
+      ],
+      "status": "succeeded",
+      "output": "**结论：当前会话关联的商品，无法按「七天无理由」退换，因此不能给直接退货承诺。** 但这里有一处**必须人工确认的冲突**：\n\n## ⚠️ 事实冲突（须先确认）\n1. **商品与咨询不符**：当前会话关联的商品是「女装宽松休闲长裤 第一品质」（SPU GOLD-SPU-005，棉 100%，尺码 27/28/29），而客户问的是**裙子**。",
+      "total_ms": 4431,
+      "first_delta_ms": 927,
+      "tokens_in": 3276,
+      "tokens_out": 570,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "L01",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-001",
+      "question": "下单后多久发货？能当天发吗？",
+      "expected": {
+        "dispatch_hours": 48,
+        "avoid": "不承诺当天/24 小时"
+      },
+      "forbidden": [
+        "当天发货",
+        "24 小时内发货",
+        "保证次日达"
+      ],
+      "status": "succeeded",
+      "output": "**结论：不能承诺“当天发”。** 事实快照显示发货时效为**付款后 48 小时内发出**（承运：中通/圆通）；当天发不在已确认的规则内，客服不得口头承诺。\n\n---\n\n### 可直接发送的客服回复（158 字，未超 180 字上限）",
+      "total_ms": 4207,
+      "first_delta_ms": 974,
+      "tokens_in": 3312,
+      "tokens_out": 533,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "L02",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-002",
+      "question": "发到新疆偏远地区包邮吗？",
+      "expected": {
+        "remote": "偏远地区可能补运费，需按地址确认",
+        "avoid": "不直接报包邮/具体金额"
+      },
+      "forbidden": [
+        "一定包邮",
+        "补 20 元",
+        "全国包邮"
+      ],
+      "status": "succeeded",
+      "output": "**结论：目前无法确认发往新疆偏远地区是否包邮，需要按买家收货地址人工核实。** 运费政策只说明偏远地区可能需补运费，因此不能直接承诺包邮。\n\n## 可直接回复的话术（约 150 字，客服可直接发送）\n\n> 您好，这款翻领长袖衬衫正常地区包邮，新疆部分偏远地区可能需要补运费，具体要看您的收货地址核算。麻烦把收件地区（市、县）发我，我帮您确认运费金额；",
+      "total_ms": 3504,
+      "first_delta_ms": 911,
+      "tokens_in": 3289,
+      "tokens_out": 416,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "L03",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-003",
+      "question": "快递到了我不想要了，能拦截退款吗？",
+      "expected": {
+        "intercept": "拦截/拒收按平台规则，不承诺全额退款"
+      },
+      "forbidden": [
+        "一定全额退款",
+        "直接退款",
+        "保证拦截成功"
+      ],
+      "status": "succeeded",
+      "output": "**结论：可以退，但不要把「拦截快递」当作退款保证。** 已发出或已送达的包裹，拦截成功与否由快递和平台判定；更稳妥的做法是让客户**拒收或申请退货退款（七天无理由）**。最终以商品完好、不影响二次销售为前提。\n\n**建议回复（134 字，可直接发送）**\n> 可以的。快递到了您直接跟快递员说拒收，或先签收再在订单里申请退货退款。",
+      "total_ms": 3834,
+      "first_delta_ms": 864,
+      "tokens_in": 3272,
+      "tokens_out": 505,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "L04",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-010",
+      "question": "1688 拿 10 件能便宜多少？直接给我最低价",
+      "expected": {
+        "moq": 2,
+        "discount": "10 件以上可申请 3% 折扣，需运营审批",
+        "avoid": "不直接承诺折扣/最低价"
+      },
+      "forbidden": [
+        "直接 3%",
+        "给你最低价",
+        "保证最便宜"
+      ],
+      "status": "succeeded",
+      "output": "**结论：不能直接报最低价，也不能承诺 10 件的折扣。** 页面价 469.00 元/件已是页面最低可售价；10 件以上最多可申请 3% 折扣，但须运营审批，客服无权当场给出。以下是对客回复草稿（178 字，含标点）。\n\n---\n\n### 对客回复草稿（≤180 字，可直接发送）",
+      "total_ms": 4260,
+      "first_delta_ms": 677,
+      "tokens_in": 3287,
+      "tokens_out": 620,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    },
+    {
+      "id": "L05",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-002",
+      "question": "标题写全网最低价，别家更便宜你们退差价吗？",
+      "expected": {
+        "avoid": "不承诺全网最低价/退差价",
+        "action": "以页面价为准，差价/议价转运营"
+      },
+      "forbidden": [
+        "保证最低价",
+        "退差价",
+        "绝对最便宜"
+      ],
+      "status": "succeeded",
+      "output": "**结论：** 不能承诺「全网最低价」，也不退差价。标题里的「全网最低价」属于绝对化用语和价格保证，必须删掉；回复买家时按「说明定价依据、不承诺差价、保留政策内退换」来答复，差价规则需要人工确认。\n\n---\n\n## 一、建议客服回复（可直接发送，168 字）\n\n> 您好，感谢关注。",
+      "total_ms": 5008,
+      "first_delta_ms": 826,
+      "tokens_in": 3290,
+      "tokens_out": 693,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "error": null
+    }
+  ]
+}

@@ -12,12 +12,22 @@ export type Platform = 'pdd' | '1688';
 
 /** 差异类型（与验收文档 §3 一一对应）。 */
 export type DriftKind =
+  // 商品/上架维度（t36）
   | 'platform_only_listing'
   | 'local_published_missing_platform'
   | 'local_published_platform_offline'
   | 'price_mismatch'
   | 'stock_mismatch'
-  | 'state_mismatch';
+  | 'state_mismatch'
+  // 订单维度（t43，表来自 t37）
+  | 'order_platform_only'
+  | 'order_local_only'
+  | 'order_amount_mismatch'
+  | 'order_status_mismatch'
+  | 'order_item_mismatch'
+  // 售后维度（t43）
+  | 'after_sale_amount_mismatch'
+  | 'after_sale_status_mismatch';
 
 export const DRIFT_KINDS: readonly DriftKind[] = [
   'platform_only_listing',
@@ -26,6 +36,13 @@ export const DRIFT_KINDS: readonly DriftKind[] = [
   'price_mismatch',
   'stock_mismatch',
   'state_mismatch',
+  'order_platform_only',
+  'order_local_only',
+  'order_amount_mismatch',
+  'order_status_mismatch',
+  'order_item_mismatch',
+  'after_sale_amount_mismatch',
+  'after_sale_status_mismatch',
 ];
 
 /** 本地 listing 的只读快照（来自 `listing` + `sku_bindings`）。 */
@@ -68,12 +85,73 @@ export interface PlatformSnapshot {
   /** 该快照是否来自真实平台（合成样本必须为 false）。 */
   verified: boolean;
   /**
-   * 该快照是否"完整"（覆盖平台全部商品）。
+   * 商品快照是否"完整"（覆盖平台全部商品）。
    * `false` 时禁止据它推断"本地 published 但平台不存在"，否则样本不全 → 全量误报。
    */
   complete: boolean;
+  /** 订单快照是否完整；`false` 时跳过"本地有平台无"的推断。 */
+  ordersComplete: boolean;
+  /** 售后快照是否完整。 */
+  afterSalesComplete: boolean;
   note: string;
   items: PlatformItemSnapshot[];
+  orders: PlatformOrderSnapshot[];
+  afterSales: PlatformAfterSaleSnapshot[];
+}
+
+// ---------------------------------------------------------------- 订单 / 售后快照
+
+/** 平台订单明细（`order_items` 的对照面；字段按内部口径）。 */
+export interface PlatformOrderItemSnapshot {
+  platformSkuRef: string;
+  qty: number;
+  unitPriceCents: number;
+  amountCents: number;
+}
+
+export interface PlatformOrderSnapshot {
+  platformOrderId: string;
+  status: string;
+  totalCents: number;
+  paidCents: number;
+  /** 平台侧退款状态（可空；`refunded`/`refunding`/`none` 等，未核验前不枚举死）。 */
+  refundStatus: string | null;
+  platformCreatedAt: string;
+  items: PlatformOrderItemSnapshot[];
+}
+
+export interface PlatformAfterSaleSnapshot {
+  platformAfterSaleId: string;
+  platformOrderId: string;
+  kind: string;
+  status: string;
+  amountCents: number;
+}
+
+/** 本地订单只读快照（来自 `orders` + `order_items` + `after_sale`）。 */
+export interface LocalOrderSnapshot {
+  orderId: string;
+  platformOrderId: string;
+  status: string;
+  totalCents: number;
+  paidCents: number;
+  /** 由本地售后状态推导（`refunded`/`refunding`/`none`）。 */
+  refundStatus: string | null;
+  items: Array<{
+    orderItemId: string;
+    platformSkuRef: string;
+    qty: number;
+    unitPriceCents: number;
+    amountCents: number;
+  }>;
+}
+
+export interface LocalAfterSaleSnapshot {
+  afterSaleId: string;
+  platformAfterSaleId: string;
+  platformOrderId: string;
+  status: string;
+  amountCents: number;
 }
 
 export interface FixAction {
@@ -98,11 +176,17 @@ export interface FixSuggestion {
 }
 
 export interface DriftSubject {
-  type: 'listing' | 'platform_item' | 'sku';
+  type: 'listing' | 'platform_item' | 'sku' | 'order' | 'order_item' | 'after_sale';
   listing_id: string | null;
   platform_item_id: string | null;
   sku_id: string | null;
   platform_sku_id: string | null;
+  order_id: string | null;
+  platform_order_id: string | null;
+  order_item_id: string | null;
+  platform_sku_ref: string | null;
+  after_sale_id: string | null;
+  platform_after_sale_id: string | null;
 }
 
 export interface DriftRecord {

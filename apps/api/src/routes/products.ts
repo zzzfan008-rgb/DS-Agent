@@ -97,6 +97,30 @@ const ProductCreate = z.object({
   size_chart: SizeChartPut.optional(),
 });
 
+/** 金额必须是整数分；前端契约要求这类类型错误 400，而非通用 422。 */
+function parseProductCreate(body: unknown) {
+  const result = ProductCreate.safeParse(body);
+  if (result.success) return result.data;
+  const centIssue = result.error.issues.some(
+    (issue) =>
+      issue.code === 'invalid_type' &&
+      issue.path.some((part) => typeof part === 'string' && part.endsWith('_cents')),
+  );
+  if (centIssue) {
+    throw new ApiError('validation_failed', '金额字段必须是整数分', {
+      httpStatus: 400,
+      detail: {
+        issues: result.error.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          message: issue.message,
+          code: issue.code,
+        })),
+      },
+    });
+  }
+  throw result.error;
+}
+
 const FabricPut = z.object({
   items: z
     .array(
@@ -156,7 +180,7 @@ export function registerProductRoutes(app: FastifyInstance): void {
 
   app.post('/api/products', { config: { minRole: 'operator' } }, async (request, reply) => {
     const context = serviceContext(request);
-    const body = ProductCreate.parse(request.body ?? {});
+    const body = parseProductCreate(request.body ?? {});
     const created = await createProduct(deps, body, context);
     request.auditLogged = true;
     reply.code(201);

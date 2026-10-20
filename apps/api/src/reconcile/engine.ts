@@ -1,19 +1,17 @@
 /**
- * 对账差异引擎（纯函数）—— 输入本地 listing 快照 + 平台商品快照，输出差异清单。
+ * 对账差异引擎（纯函数）—— 输入本地快照 + 平台快照，输出差异清单。
  *
- * 六类差异（验收要求 5 类，实际覆盖 6 类）：
- * 1. `platform_only_listing`：平台有商品、本地没有 listing；
- * 2. `local_published_missing_platform`：本地 published，但平台快照里没有该商品（删除/下架到不可见）；
- * 3. `local_published_platform_offline`：本地 published，平台态为下架；
- * 4. `price_mismatch`：同一平台 SKU 的价格不一致；
- * 5. `stock_mismatch`：同一平台 SKU 的库存不一致；
- * 6. `state_mismatch`：平台驳回/违规下架，本地仍以为在架。
+ * 维度：
+ * - 商品/上架（6 类）：platform_only_listing / local_published_missing_platform /
+ *   local_published_platform_offline / price_mismatch / stock_mismatch / state_mismatch；
+ * - 订单（5 类，t43）：order_platform_only / order_local_only / order_amount_mismatch /
+ *   order_status_mismatch（含退款状态）/ order_item_mismatch（数量或单价）；
+ * - 售后（2 类，t43）：after_sale_amount_mismatch / after_sale_status_mismatch。
  *
  * 设计约束：
  * - **只读**：函数无副作用，不碰数据库；
  * - **不猜**：任一侧为 `null` 的值不比较（未知 ≠ 不一致）；
- * - **可复现**：`drift_key` 只由 `platform + kind + listing_id + platform_item_id + platform_sku_id`
- *   决定（不含 day，day 是存储维度），同一天重复对账得到同一 key。
+ * - **可复现**：`drift_key` 由 platform + kind + 5 个对象 id 决定（不含 day）。
  */
 
 import { createHash } from 'node:crypto';
@@ -22,8 +20,12 @@ import {
   type DiffOptions,
   type DriftKind,
   type FixSuggestion,
+  type LocalAfterSaleSnapshot,
   type LocalListingSnapshot,
+  type LocalOrderSnapshot,
+  type PlatformAfterSaleSnapshot,
   type PlatformItemSnapshot,
+  type PlatformOrderSnapshot,
   type PlatformSnapshot,
   DRIFT_KINDS,
   isLocallyLive,
@@ -39,11 +41,20 @@ export interface DriftKeyParts {
   listingId: string | null;
   platformItemId: string | null;
   platformSkuId: string | null;
+  /** t43：订单维度（平台订单号）。 */
+  platformOrderId?: string | null;
+  /** t43：售后维度（平台售后单号）。 */
+  platformAfterSaleId?: string | null;
 }
 
 /**
- * 去重键 = `dk_` + sha256(`platform|kind|listing_id|platform_item_id|platform_sku_id`)[0..31]。
- * 空值以空串参与；不含 day（存储层用 `(day, platform, drift_key)` 唯一）。
+ * 去重键 = `dk_` + sha256(
+ *   `platform|kind|listing_id|platform_item_id|platform_sku_id|platform_order_id|platform_after_sale_id`
+ * )[0..31]。
+ *
+ * - 空值以空串参与；不含 day（存储层用 `(platform, day, drift_key)` 唯一）；
+ * - t43 在**末尾追加**订单/售后两个字段，商品维度历史 key 不变（追加空串不改变既有字段顺序语义，
+ *   但哈希值会变化 —— 这是一次显式的键规则版本变更，已在验收记录 §4.4 登记）。
  */
 export function buildDriftKey(parts: DriftKeyParts): string {
   const canonical = [
@@ -52,6 +63,8 @@ export function buildDriftKey(parts: DriftKeyParts): string {
     parts.listingId ?? '',
     parts.platformItemId ?? '',
     parts.platformSkuId ?? '',
+    parts.platformOrderId ?? '',
+    parts.platformAfterSaleId ?? '',
   ].join('|');
   return `dk_${createHash('sha256').update(canonical, 'utf8').digest('hex').slice(0, 32)}`;
 }
@@ -195,6 +208,169 @@ const SUGGESTIONS: Record<DriftKind, FixSuggestion> = {
     doc_refs: ['docs/12 §3.6', 'docs/11 §6.2', 'docs/02 §4.3'],
     auto_fixable: false,
   },
+  // ---------------- 订单维度（t43） ----------------
+  order_platform_only: {
+    summary: '平台有订单、本地没有：先只读核对，再人工补录或确认是否为测试单（不自动落库）',
+    actions: [
+      {
+        kind: 'read',
+        action: 'order.detail',
+        level: null,
+        requires_approval: false,
+        endpoint: null,
+        note: '真实平台订单详情依赖 adapter 契约（未核验时硬拒绝）',
+      },
+      {
+        kind: 'manual',
+        action: 'order.adopt',
+        level: 'manual',
+        requires_approval: false,
+        endpoint: null,
+        note: '人工补录订单/明细，或标记为测试单；补录后再次对账确认',
+      },
+    ],
+    doc_refs: ['docs/12 §3.9', 'docs/06 §4.5（t37 orders）'],
+    auto_fixable: false,
+  },
+  order_local_only: {
+    summary: '本地有订单、平台没有：核对平台是否删除/测试单，确认后登记止损或归档（不自动删单）',
+    actions: [
+      {
+        kind: 'read',
+        action: 'order.detail',
+        level: null,
+        requires_approval: false,
+        endpoint: null,
+        note: '平台侧查不到时需人工核对后台，禁止直接删除本地订单',
+      },
+      {
+        kind: 'manual',
+        action: 'order.archive_or_ticket',
+        level: 'B',
+        requires_approval: true,
+        endpoint: null,
+        note: '确认后归档本地订单或建补偿工单；订单删除属不可逆，必须人工',
+      },
+    ],
+    doc_refs: ['docs/12 §3.9', 'docs/11 §6.2'],
+    auto_fixable: false,
+  },
+  order_amount_mismatch: {
+    summary: '订单金额与平台不一致：先对账实收/优惠/运费，再走财务核对或工单（不自动改金额）',
+    actions: [
+      {
+        kind: 'read',
+        action: 'order.detail',
+        level: null,
+        requires_approval: false,
+        endpoint: null,
+        note: '核对 total/paid/freight/discount 四项，避免只看一个数字',
+      },
+      {
+        kind: 'manual',
+        action: 'finance.reconcile_ticket',
+        level: 'B',
+        requires_approval: true,
+        endpoint: null,
+        note: '金额差异涉及结算，人工核对后建工单；不得自动改单',
+      },
+    ],
+    doc_refs: ['docs/12 §3.9', 'docs/06 §4.5（t37 orders）'],
+    auto_fixable: false,
+  },
+  order_status_mismatch: {
+    summary: '订单状态（含退款状态）与平台不一致：核对平台真实状态后人工修正或登记差异',
+    actions: [
+      {
+        kind: 'read',
+        action: 'order.detail',
+        level: null,
+        requires_approval: false,
+        endpoint: null,
+        note: '需同时看订单状态与退款状态（refunding/refunded）',
+      },
+      {
+        kind: 'manual',
+        action: 'order.status_fix',
+        level: 'B',
+        requires_approval: true,
+        endpoint: null,
+        note: '状态回写影响履约与售后，必须人工确认；禁止自动覆盖',
+      },
+    ],
+    doc_refs: ['docs/12 §3.9', 'docs/06 §4.5（t37 orders）'],
+    auto_fixable: false,
+  },
+  order_item_mismatch: {
+    summary: '订单明细的数量或单价与平台不一致：核对 SKU/数量/单价后人工修正并留证',
+    actions: [
+      {
+        kind: 'read',
+        action: 'order.detail',
+        level: null,
+        requires_approval: false,
+        endpoint: null,
+        note: '按 platform_sku_ref 对齐明细，逐个比较 qty/unit_price/amount',
+      },
+      {
+        kind: 'manual',
+        action: 'order.item_fix',
+        level: 'B',
+        requires_approval: true,
+        endpoint: null,
+        note: '明细影响发货与结算，人工处理后重新对账',
+      },
+    ],
+    doc_refs: ['docs/12 §3.9', 'docs/06 §4.5（t37 order_items）'],
+    auto_fixable: false,
+  },
+  // ---------------- 售后维度（t43） ----------------
+  after_sale_amount_mismatch: {
+    summary: '售后退款金额与平台不一致：人工核对退款流水，禁止自动改金额或重复退款',
+    actions: [
+      {
+        kind: 'read',
+        action: 'after_sale.detail',
+        level: null,
+        requires_approval: false,
+        endpoint: null,
+        note: '核对平台退款金额与本地 amount_cents',
+      },
+      {
+        kind: 'manual',
+        action: 'finance.refund_check',
+        level: 'C',
+        requires_approval: true,
+        endpoint: null,
+        note: '涉及资金，必须人工复核；禁止任何自动退款/改金额',
+      },
+    ],
+    doc_refs: ['docs/12 §3.9', 'docs/06 §4.5（t37 after_sale）'],
+    auto_fixable: false,
+  },
+  after_sale_status_mismatch: {
+    summary: '售后状态与平台不一致（如平台已关闭、本地仍 open）：核对后人工关闭或重开',
+    actions: [
+      {
+        kind: 'read',
+        action: 'after_sale.detail',
+        level: null,
+        requires_approval: false,
+        endpoint: null,
+        note: '平台 closed 与本地 open 同时存在时，以平台为准人工核对',
+      },
+      {
+        kind: 'manual',
+        action: 'after_sale.status_fix',
+        level: 'B',
+        requires_approval: true,
+        endpoint: null,
+        note: '状态变更影响客服考核与退款流程，人工确认后执行',
+      },
+    ],
+    doc_refs: ['docs/12 §3.9', 'docs/06 §4.5（t37 after_sale）'],
+    auto_fixable: false,
+  },
 };
 
 export function suggestionFor(kind: DriftKind): FixSuggestion {
@@ -211,18 +387,42 @@ function baseRecord(
     platformItemId: string | null;
     platformSkuId: string | null;
     skuId: string | null;
+    orderId?: string | null;
+    platformOrderId?: string | null;
+    orderItemId?: string | null;
+    platformSkuRef?: string | null;
+    afterSaleId?: string | null;
+    platformAfterSaleId?: string | null;
     local: Record<string, unknown> | null;
     platformValue: Record<string, unknown> | null;
     detail: string;
   },
 ): DetectedDrift {
+  const orderId = input.orderId ?? null;
+  const platformOrderId = input.platformOrderId ?? null;
+  const platformSkuRef = input.platformSkuRef ?? null;
+  const afterSaleId = input.afterSaleId ?? null;
+  const platformAfterSaleId = input.platformAfterSaleId ?? null;
   const drift_key = buildDriftKey({
     platform: options.platform,
     kind: input.kind,
     listingId: input.listingId,
     platformItemId: input.platformItemId,
     platformSkuId: input.platformSkuId,
+    platformOrderId,
+    platformAfterSaleId,
   });
+  const subjectType: DetectedDrift['subject']['type'] = platformAfterSaleId
+    ? 'after_sale'
+    : platformOrderId && platformSkuRef
+      ? 'order_item'
+      : platformOrderId
+        ? 'order'
+        : input.platformSkuId
+          ? 'sku'
+          : input.listingId
+            ? 'listing'
+            : 'platform_item';
   return {
     drift_key,
     platform: options.platform,
@@ -230,11 +430,17 @@ function baseRecord(
     kind: input.kind,
     severity: input.severity,
     subject: {
-      type: input.platformSkuId ? 'sku' : input.listingId ? 'listing' : 'platform_item',
+      type: subjectType,
       listing_id: input.listingId,
       platform_item_id: input.platformItemId,
       sku_id: input.skuId,
       platform_sku_id: input.platformSkuId,
+      order_id: orderId,
+      platform_order_id: platformOrderId,
+      order_item_id: input.orderItemId ?? null,
+      platform_sku_ref: platformSkuRef,
+      after_sale_id: afterSaleId,
+      platform_after_sale_id: platformAfterSaleId,
     },
     local: input.local,
     platform_value: input.platformValue,
@@ -403,6 +609,315 @@ export function diffSnapshots(
     );
   }
 
+  const deduped = new Map<string, DetectedDrift>();
+  for (const drift of drifts) {
+    if (!deduped.has(drift.drift_key)) deduped.set(drift.drift_key, drift);
+  }
+  return finalizeDrifts([...deduped.values()]);
+}
+
+// ---------------------------------------------------------------- 订单维度（t43）
+
+function orderSummary(order: LocalOrderSnapshot): Record<string, unknown> {
+  return {
+    order_id: order.orderId,
+    platform_order_id: order.platformOrderId,
+    status: order.status,
+    refund_status: order.refundStatus,
+    total_cents: order.totalCents,
+    paid_cents: order.paidCents,
+    item_count: order.items.length,
+  };
+}
+
+function platformOrderSummary(order: PlatformOrderSnapshot): Record<string, unknown> {
+  return {
+    platform_order_id: order.platformOrderId,
+    status: order.status,
+    refund_status: order.refundStatus,
+    total_cents: order.totalCents,
+    paid_cents: order.paidCents,
+    platform_created_at: order.platformCreatedAt,
+    item_count: order.items.length,
+  };
+}
+
+/**
+ * 订单差异：平台有本地无 / 本地有平台无 / 金额不符 / 状态不符（含退款状态）/ 明细不符。
+ * 金额取 `total_cents + paid_cents` 一起比较（只看一个数字容易漏运费/优惠差异）。
+ */
+export function diffOrders(
+  localOrders: readonly LocalOrderSnapshot[],
+  snapshot: PlatformSnapshot,
+  options: DiffOptions,
+): DetectedDrift[] {
+  const drifts: DetectedDrift[] = [];
+  const localByOrder = new Map(localOrders.map((order) => [order.platformOrderId, order]));
+  const platformOrders = new Map(snapshot.orders.map((order) => [order.platformOrderId, order]));
+
+  for (const order of snapshot.orders) {
+    const local = localByOrder.get(order.platformOrderId);
+    if (!local) {
+      drifts.push(
+        baseRecord(options, {
+          kind: 'order_platform_only',
+          severity: 'high',
+          listingId: null,
+          platformItemId: null,
+          platformSkuId: null,
+          skuId: null,
+          platformOrderId: order.platformOrderId,
+          local: null,
+          platformValue: platformOrderSummary(order),
+          detail: `平台订单 ${order.platformOrderId} 在本地不存在（金额 ${order.paidCents} 分，状态 ${order.status}）`,
+        }),
+      );
+      continue;
+    }
+
+    if (local.totalCents !== order.totalCents || local.paidCents !== order.paidCents) {
+      drifts.push(
+        baseRecord(options, {
+          kind: 'order_amount_mismatch',
+          severity: 'high',
+          listingId: null,
+          platformItemId: null,
+          platformSkuId: null,
+          skuId: null,
+          orderId: local.orderId,
+          platformOrderId: order.platformOrderId,
+          local: orderSummary(local),
+          platformValue: platformOrderSummary(order),
+          detail:
+            `平台订单 ${order.platformOrderId} 金额不一致：` +
+            `total ${local.totalCents}→${order.totalCents} 分，paid ${local.paidCents}→${order.paidCents} 分`,
+        }),
+      );
+    }
+
+    const statusDiff = local.status !== order.status;
+    const refundDiff =
+      local.refundStatus !== null &&
+      order.refundStatus !== null &&
+      local.refundStatus !== order.refundStatus;
+    if (statusDiff || refundDiff) {
+      drifts.push(
+        baseRecord(options, {
+          kind: 'order_status_mismatch',
+          severity: 'high',
+          listingId: null,
+          platformItemId: null,
+          platformSkuId: null,
+          skuId: null,
+          orderId: local.orderId,
+          platformOrderId: order.platformOrderId,
+          local: orderSummary(local),
+          platformValue: platformOrderSummary(order),
+          detail:
+            `平台订单 ${order.platformOrderId} 状态不一致：` +
+            `订单状态 ${local.status}→${order.status}${statusDiff ? '（不符）' : '（一致）'}，` +
+            `退款状态 ${local.refundStatus ?? 'null'} vs ${order.refundStatus ?? 'null'}`,
+        }),
+      );
+    }
+
+    const localItems = new Map(local.items.map((item) => [item.platformSkuRef, item]));
+    const platformRefs = new Set<string>();
+    for (const item of order.items) {
+      platformRefs.add(item.platformSkuRef);
+      const localItem = localItems.get(item.platformSkuRef);
+      if (!localItem) {
+        drifts.push(
+          baseRecord(options, {
+            kind: 'order_item_mismatch',
+            severity: 'medium',
+            listingId: null,
+            platformItemId: null,
+            platformSkuId: null,
+            skuId: null,
+            orderId: local.orderId,
+            platformOrderId: order.platformOrderId,
+            platformSkuRef: item.platformSkuRef,
+            local: null,
+            platformValue: { platform_sku_ref: item.platformSkuRef, qty: item.qty, unit_price_cents: item.unitPriceCents },
+            detail: `平台订单 ${order.platformOrderId} 的明细 ${item.platformSkuRef} 在本地缺失（数量 ${item.qty}）`,
+          }),
+        );
+        continue;
+      }
+      if (
+        localItem.qty !== item.qty ||
+        localItem.unitPriceCents !== item.unitPriceCents ||
+        localItem.amountCents !== item.amountCents
+      ) {
+        drifts.push(
+          baseRecord(options, {
+            kind: 'order_item_mismatch',
+            severity: 'medium',
+            listingId: null,
+            platformItemId: null,
+            platformSkuId: null,
+            skuId: null,
+            orderId: local.orderId,
+            platformOrderId: order.platformOrderId,
+            orderItemId: localItem.orderItemId,
+            platformSkuRef: item.platformSkuRef,
+            local: {
+              order_item_id: localItem.orderItemId,
+              qty: localItem.qty,
+              unit_price_cents: localItem.unitPriceCents,
+              amount_cents: localItem.amountCents,
+            },
+            platformValue: {
+              platform_sku_ref: item.platformSkuRef,
+              qty: item.qty,
+              unit_price_cents: item.unitPriceCents,
+              amount_cents: item.amountCents,
+            },
+            detail:
+              `平台订单 ${order.platformOrderId} 明细 ${item.platformSkuRef} 不一致：` +
+              `qty ${localItem.qty}→${item.qty}，单价 ${localItem.unitPriceCents}→${item.unitPriceCents} 分，` +
+              `金额 ${localItem.amountCents}→${item.amountCents} 分`,
+          }),
+        );
+      }
+    }
+    for (const localItem of local.items) {
+      if (platformRefs.has(localItem.platformSkuRef)) continue;
+      drifts.push(
+        baseRecord(options, {
+          kind: 'order_item_mismatch',
+          severity: 'medium',
+          listingId: null,
+          platformItemId: null,
+          platformSkuId: null,
+          skuId: null,
+          orderId: local.orderId,
+          platformOrderId: order.platformOrderId,
+          orderItemId: localItem.orderItemId,
+          platformSkuRef: localItem.platformSkuRef,
+          local: { order_item_id: localItem.orderItemId, qty: localItem.qty, unit_price_cents: localItem.unitPriceCents },
+          platformValue: null,
+          detail: `本地订单 ${order.platformOrderId} 的明细 ${localItem.platformSkuRef} 在平台快照中不存在`,
+        }),
+      );
+    }
+  }
+
+  if (snapshot.ordersComplete !== false) {
+    for (const local of localOrders) {
+      if (platformOrders.has(local.platformOrderId)) continue;
+      drifts.push(
+        baseRecord(options, {
+          kind: 'order_local_only',
+          severity: 'high',
+          listingId: null,
+          platformItemId: null,
+          platformSkuId: null,
+          skuId: null,
+          orderId: local.orderId,
+          platformOrderId: local.platformOrderId,
+          local: orderSummary(local),
+          platformValue: null,
+          detail: `本地订单 ${local.platformOrderId} 在平台快照中不存在（状态 ${local.status}，实收 ${local.paidCents} 分）`,
+        }),
+      );
+    }
+  }
+
+  return finalizeDrifts(drifts);
+}
+
+// ---------------------------------------------------------------- 售后维度（t43）
+
+/**
+ * 售后差异：退款金额不符、售后状态不符（平台已关闭而本地仍 open 必须报出）。
+ * 仅比对两侧都存在的售后单；平台独有/本地独有的售后单不在本轮范围（避免重复退款类误报）。
+ */
+export function diffAfterSales(
+  localAfterSales: readonly LocalAfterSaleSnapshot[],
+  snapshot: PlatformSnapshot,
+  options: DiffOptions,
+): DetectedDrift[] {
+  const drifts: DetectedDrift[] = [];
+  const localBy = new Map(localAfterSales.map((row) => [row.platformAfterSaleId, row]));
+  const platformByOrder = new Map(snapshot.orders.map((order) => [order.platformOrderId, order]));
+
+  for (const afterSale of snapshot.afterSales) {
+    const local = localBy.get(afterSale.platformAfterSaleId);
+    if (!local) continue;
+    const order = platformByOrder.get(afterSale.platformOrderId) ?? null;
+
+    if (local.amountCents !== afterSale.amountCents) {
+      drifts.push(
+        baseRecord(options, {
+          kind: 'after_sale_amount_mismatch',
+          severity: 'high',
+          listingId: null,
+          platformItemId: null,
+          platformSkuId: null,
+          skuId: null,
+          afterSaleId: local.afterSaleId,
+          platformAfterSaleId: afterSale.platformAfterSaleId,
+          platformOrderId: afterSale.platformOrderId,
+          local: { amount_cents: local.amountCents, status: local.status, platform_order_id: local.platformOrderId },
+          platformValue: {
+            amount_cents: afterSale.amountCents,
+            status: afterSale.status,
+            platform_order_id: afterSale.platformOrderId,
+            order_status: order?.status ?? null,
+          },
+          detail: `平台售后 ${afterSale.platformAfterSaleId} 退款金额 ${afterSale.amountCents} 分，本地 ${local.amountCents} 分`,
+        }),
+      );
+    }
+
+    const localClosed = local.status === 'closed' || local.status === 'cancelled';
+    const platformClosed = afterSale.status === 'closed' || afterSale.status === 'cancelled';
+    if (local.status !== afterSale.status) {
+      drifts.push(
+        baseRecord(options, {
+          kind: 'after_sale_status_mismatch',
+          severity: platformClosed && !localClosed ? 'high' : 'medium',
+          listingId: null,
+          platformItemId: null,
+          platformSkuId: null,
+          skuId: null,
+          afterSaleId: local.afterSaleId,
+          platformAfterSaleId: afterSale.platformAfterSaleId,
+          platformOrderId: afterSale.platformOrderId,
+          local: { status: local.status, amount_cents: local.amountCents },
+          platformValue: { status: afterSale.status, amount_cents: afterSale.amountCents },
+          detail:
+            `平台售后 ${afterSale.platformAfterSaleId} 状态不一致：` +
+            `平台 ${afterSale.status}，本地 ${local.status}` +
+            (platformClosed && !localClosed ? '（平台已关闭，本地仍 open）' : ''),
+        }),
+      );
+    }
+  }
+
+  return finalizeDrifts(drifts);
+}
+
+/** 全维度对账（商品 + 订单 + 售后），供服务层直接调用。 */
+export function diffAll(
+  local: {
+    listings: readonly LocalListingSnapshot[];
+    orders: readonly LocalOrderSnapshot[];
+    afterSales: readonly LocalAfterSaleSnapshot[];
+  },
+  snapshot: PlatformSnapshot,
+  options: DiffOptions,
+): DetectedDrift[] {
+  return finalizeDrifts([
+    ...diffSnapshots(local.listings, snapshot, options),
+    ...diffOrders(local.orders, snapshot, options),
+    ...diffAfterSales(local.afterSales, snapshot, options),
+  ]);
+}
+
+function finalizeDrifts(drifts: readonly DetectedDrift[]): DetectedDrift[] {
   const deduped = new Map<string, DetectedDrift>();
   for (const drift of drifts) {
     if (!deduped.has(drift.drift_key)) deduped.set(drift.drift_key, drift);

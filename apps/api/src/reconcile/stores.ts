@@ -266,7 +266,17 @@ export class FileDriftStore implements DriftStore {
   }
 }
 
-/** Postgres 实现（`drift_log` 就绪后使用；表缺失时抛带 DDL 的错误）。 */
+/**
+ * Postgres 实现 —— 适配 t37 落地的 `drift_log` 实际列：
+ * `id, org_id, platform, day, drift_key, kind, severity, detail(jsonb), detected_at, fixed_at, ...`。
+ *
+ * 为什么把 `subject/local/platform_value/suggestion/status/first_detected_at/last_detected_at/seen_count`
+ * 放进 `detail` jsonb：t37 的 `detail` 是唯一承载"差异内容"的 jsonb 列（schema 不改），
+ * 而幂等判据（首次发现时间、已见次数、状态）必须随之保存 —— 具体键约定见验收记录 §4。
+ *
+ * 幂等：唯一索引 `uq_drift_day (platform, day, drift_key) WHERE archived_at IS NULL`
+ * → `ON CONFLICT (platform, day, drift_key) WHERE archived_at IS NULL`。
+ */
 export class PgDriftStore implements DriftStore {
   readonly name = 'postgres' as const;
 
@@ -281,7 +291,7 @@ export class PgDriftStore implements DriftStore {
     );
     const reg = rows[0]?.reg ?? null;
     return reg === null
-      ? { ok: false, reason: 'drift_log 表不存在（docs/18 §4 要求，t37 补建；当前回退文件存储）' }
+      ? { ok: false, reason: 'drift_log 表不存在（需先执行 t37 迁移 20261020250000_orders_drift_after_sale）' }
       : { ok: true, reason: null };
   }
 
@@ -295,6 +305,21 @@ export class PgDriftStore implements DriftStore {
     }
   }
 
+  /** 把 DriftRecord 的扩展字段打包进 `detail` jsonb（t37 表结构只有 detail 承载内容）。 */
+  private detailPayload(drift: DetectedDrift): string {
+    return JSON.stringify({
+      text: drift.detail,
+      subject: drift.subject,
+      local: drift.local,
+      platform_value: drift.platform_value,
+      suggestion: drift.suggestion,
+      status: 'open',
+      first_detected_at: drift.detected_at,
+      last_detected_at: drift.detected_at,
+      seen_count: 1,
+    });
+  }
+
   async upsert(platform: Platform, day: string, drifts: readonly DetectedDrift[]): Promise<UpsertResult> {
     await this.ensure();
     const states: Array<'inserted' | 'updated' | 'unchanged'> = [];
@@ -302,18 +327,22 @@ export class PgDriftStore implements DriftStore {
       if (!DRIFT_KINDS.includes(drift.kind)) throw new TypeError(`未知差异类型：${String(drift.kind)}`);
       const rows = await this.prisma.$queryRawUnsafe<Array<{ inserted: boolean }>>(
         `INSERT INTO drift_log
-           (id, org_id, platform, day, drift_key, kind, severity, subject, local_value, platform_value,
-            detail, suggestion, status, first_detected_at, last_detected_at, seen_count, detected_at)
-         VALUES ($1::uuid, $2, $3, $4::date, $5, $6, $7, $8::jsonb, $9::jsonb, $10::jsonb,
-                 $11, $12::jsonb, 'open', $13::timestamptz, $13::timestamptz, 1, $13::timestamptz)
-         ON CONFLICT (org_id, day, platform, drift_key) DO UPDATE
-           SET last_detected_at = EXCLUDED.last_detected_at,
-               seen_count = drift_log.seen_count + 1,
-               local_value = EXCLUDED.local_value,
-               platform_value = EXCLUDED.platform_value,
-               detail = EXCLUDED.detail,
-               severity = EXCLUDED.severity,
-               suggestion = EXCLUDED.suggestion,
+           (id, org_id, platform, day, drift_key, kind, severity, detail, detected_at)
+         VALUES ($1::uuid, $2, $3, $4::date, $5, $6, $7, $8::jsonb, $9::timestamptz)
+         ON CONFLICT (platform, day, drift_key) WHERE archived_at IS NULL DO UPDATE
+           SET severity = EXCLUDED.severity,
+               kind = EXCLUDED.kind,
+               detail = jsonb_build_object(
+                 'text', EXCLUDED.detail->>'text',
+                 'subject', EXCLUDED.detail->'subject',
+                 'local', EXCLUDED.detail->'local',
+                 'platform_value', EXCLUDED.detail->'platform_value',
+                 'suggestion', EXCLUDED.detail->'suggestion',
+                 'status', COALESCE(drift_log.detail->>'status', 'open'),
+                 'first_detected_at', COALESCE(drift_log.detail->>'first_detected_at', EXCLUDED.detail->>'first_detected_at'),
+                 'last_detected_at', EXCLUDED.detail->>'last_detected_at',
+                 'seen_count', (COALESCE((drift_log.detail->>'seen_count')::int, 0) + 1)
+               ),
                updated_at = now()
          RETURNING (xmax = 0) AS inserted`,
         uuidv7(),
@@ -323,11 +352,7 @@ export class PgDriftStore implements DriftStore {
         drift.drift_key,
         drift.kind,
         drift.severity,
-        JSON.stringify(drift.subject),
-        drift.local === null ? null : JSON.stringify(drift.local),
-        drift.platform_value === null ? null : JSON.stringify(drift.platform_value),
-        drift.detail,
-        JSON.stringify(drift.suggestion),
+        this.detailPayload(drift),
         drift.detected_at,
       );
       states.push(rows[0]?.inserted === true ? 'inserted' : 'updated');
@@ -338,11 +363,10 @@ export class PgDriftStore implements DriftStore {
   async list(day: string, platform?: Platform): Promise<DriftRecord[]> {
     await this.ensure();
     const rows = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
-      `SELECT platform, day::text AS day, drift_key, kind, severity, subject, local_value, platform_value,
-              detail, suggestion, status,
-              first_detected_at, last_detected_at, seen_count, detected_at
+      `SELECT platform, day::text AS day, drift_key, kind, severity, detail, detected_at
          FROM drift_log
-        WHERE org_id = $1 AND day = $2::date ${platform ? 'AND platform = $3' : ''}
+        WHERE org_id = $1 AND day = $2::date AND archived_at IS NULL
+          ${platform ? 'AND platform = $3' : ''}
         ORDER BY drift_key`,
       ...(platform ? [this.orgId, day, platform] : [this.orgId, day]),
     );
@@ -352,22 +376,24 @@ export class PgDriftStore implements DriftStore {
   private mapRow(row: Record<string, unknown>): DriftRecord {
     const iso = (value: unknown): string =>
       value instanceof Date ? value.toISOString() : String(value ?? '');
+    const detail = (typeof row.detail === 'object' && row.detail !== null ? row.detail : {}) as Record<string, unknown>;
+    const detectedAt = iso(row.detected_at);
     return {
       drift_key: String(row.drift_key),
       platform: row.platform as Platform,
       day: String(row.day),
       kind: row.kind as DriftKind,
       severity: row.severity as DriftRecord['severity'],
-      subject: row.subject as DriftRecord['subject'],
-      local: (row.local_value ?? null) as DriftRecord['local'],
-      platform_value: (row.platform_value ?? null) as DriftRecord['platform_value'],
-      detail: String(row.detail),
-      suggestion: row.suggestion as DriftRecord['suggestion'],
-      status: row.status as DriftRecord['status'],
-      detected_at: iso(row.detected_at),
-      first_detected_at: iso(row.first_detected_at),
-      last_detected_at: iso(row.last_detected_at),
-      seen_count: Number(row.seen_count),
+      subject: (detail.subject ?? null) as DriftRecord['subject'],
+      local: (detail.local ?? null) as DriftRecord['local'],
+      platform_value: (detail.platform_value ?? null) as DriftRecord['platform_value'],
+      detail: String(detail.text ?? ''),
+      suggestion: (detail.suggestion ?? {}) as DriftRecord['suggestion'],
+      status: (detail.status ?? 'open') as DriftRecord['status'],
+      detected_at: detectedAt,
+      first_detected_at: String(detail.first_detected_at ?? detectedAt),
+      last_detected_at: String(detail.last_detected_at ?? detectedAt),
+      seen_count: Number(detail.seen_count ?? 1),
     };
   }
 
@@ -381,7 +407,7 @@ export class PgDriftStore implements DriftStore {
     const rows = await this.prisma.$queryRawUnsafe<Array<{ kind: string; count: number }>>(
       `SELECT kind, count(*)::int AS count
          FROM drift_log
-        WHERE org_id = $1 AND day = $2::date
+        WHERE org_id = $1 AND day = $2::date AND archived_at IS NULL
           ${platform ? 'AND platform = $3' : ''}
           ${kind ? `AND kind = $${platform ? 4 : 3}` : ''}
         GROUP BY kind`,

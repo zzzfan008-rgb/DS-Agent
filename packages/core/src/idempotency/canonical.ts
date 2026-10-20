@@ -4,11 +4,11 @@
  * 规则：
  * - 键按 UTF-8 码点升序；
  * - 删除 timestamp/nonce/sign/request_id/trace_id/retry_count/attempt；
- * - 金额一律整数分（由调用方保证，不允许浮点）；
+ * - 金额/计数字段必须是整数分，由 zod/schema 与业务校验保证；canonical 层只要求有限数字，
+ *   允许尺码测量等有限小数（JSON.stringify 语义）；
  * - 字符串 trim + NFC + 连续空白压一个空格；
  * - null/undefined/空字符串删除该键；
- * - 数组默认保序，集合语义字段由调用方显式排序；
- * - 数值不允许浮点。
+ * - 数组默认保序，集合语义字段由调用方显式排序。
  */
 import { createHash } from 'node:crypto';
 
@@ -32,8 +32,8 @@ export function canonicalValue(value: unknown, depth = 0): unknown {
   if (value === null || value === undefined) return undefined;
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) throw new Error('canonicalValue: non-finite number');
-    if (!Number.isInteger(value)) throw new Error('canonicalValue: float is not allowed in business payload');
-    return value;
+    // 有限小数合法：尺码测量支持 0.5cm 步进；金额整数由 schema/business 校验负责。
+    return value === 0 ? 0 : value;
   }
   if (typeof value === 'string') {
     const normalized = normalizeString(value);
