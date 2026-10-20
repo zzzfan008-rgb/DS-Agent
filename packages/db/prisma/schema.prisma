@@ -355,7 +355,7 @@ model ProductSku {
   colorId            String    @map("color_id")
   colorName          String    @map("color_name")
   sizeCode           String    @map("size_code")
-  fabricId           String    @map("fabric_id") @db.Uuid
+  fabricCode         String    @map("fabric_code")
   barcode            String?
   priceCents         Int       @map("price_cents")
   listPriceCents     Int?      @map("list_price_cents")

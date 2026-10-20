@@ -16,6 +16,8 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@dssaas/adapters-1688": "workspace:*",
+    "@dssaas/adapters-pdd": "workspace:*",
     "@dssaas/core": "workspace:*",
     "@dssaas/db": "workspace:*",
     "@dssaas/judge-rules": "workspace:*",

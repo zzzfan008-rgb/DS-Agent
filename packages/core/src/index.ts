@@ -29,3 +29,4 @@ export * from './vocab/garment.js';
 export * from './schema/garment.js';
 export * from './facts.js';
 export * from './garment.js';
+export * from './idempotency/canonical.js';

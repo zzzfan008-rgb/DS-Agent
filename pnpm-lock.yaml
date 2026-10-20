@@ -17,6 +17,12 @@ importers:
 
   apps/api:
     dependencies:
+      '@dssaas/adapters-1688':
+        specifier: workspace:*
+        version: link:../../packages/adapters-1688
+      '@dssaas/adapters-pdd':
+        specifier: workspace:*
+        version: link:../../packages/adapters-pdd
       '@dssaas/core':
         specifier: workspace:*
         version: link:../../packages/core

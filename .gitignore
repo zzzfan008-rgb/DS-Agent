@@ -45,6 +45,8 @@ secrets/
 .agent-teams/
 .dsh-ops-*
 **/.dsh-ops-*
+# t18：真实 DSH Host 的开发 profile / 会话 / 桥接令牌（只在本机，不入库）
+dsh-bundle/.dev-home/
 
 # 临时工作目录（写作/生成中间产物）
 .tmp-*/

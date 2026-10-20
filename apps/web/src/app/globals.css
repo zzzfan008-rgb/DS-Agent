@@ -1,0 +1,302 @@
+/* M1 全局样式：token + reset + 基础排版（组件样式在各自 CSS Module）。 */
+
+:root {
+  /* 队长确认的视觉方向 */
+  --sidebar: #0f172a;
+  --sidebar-active: #1e293b;
+  --sidebar-ink: #a9b4c6;
+  --brand-600: #2563eb;
+  --brand-700: #1d4ed8;
+  --brand-50: #eff6ff;
+  --canvas: #f8fafc;
+
+  /* 中性色 */
+  --surface: #ffffff;
+  --surface-muted: #f1f5f9;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --ink-900: #0f172a;
+  --ink-700: #334155;
+  --ink-500: #64748b;
+  --ink-400: #94a3b8;
+
+  /* 语义色 */
+  --success: #15803d;
+  --success-bg: #f0fdf4;
+  --warning: #b45309;
+  --warning-bg: #fffbeb;
+  --danger: #b91c1c;
+  --danger-bg: #fef2f2;
+
+  /* 风险 token：独立一层，不允许被品牌色覆盖（docs/13 §5.1） */
+  --risk-a: #237804;
+  --risk-a-bg: #f6ffed;
+  --risk-a-border: #b7eb8f;
+  --risk-b: #d46b08;
+  --risk-b-bg: #fff7e6;
+  --risk-b-border: #ffd591;
+  --risk-c: #cf1322;
+  --risk-c-bg: #fff1f0;
+  --risk-c-border: #ffa39e;
+
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-pop: 0 12px 32px rgba(15, 23, 42, 0.16);
+
+  --topbar-h: 56px;
+  --sidebar-w: 240px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--canvas);
+  color: var(--ink-900);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol,
+figure {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding-left: 1.25em;
+}
+
+a {
+  color: var(--brand-600);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--brand-700);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  min-height: 36px;
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ink-400);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-600);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.18);
+}
+
+code,
+kbd,
+pre {
+  font-family: var(--font-mono);
+}
+
+kbd {
+  display: inline-block;
+  min-width: 20px;
+  padding: 1px 5px;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface-muted);
+  color: var(--ink-700);
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------- 共享按钮/标签（组件内可再覆盖尺寸） ---------------- */
+
+.buttonPrimary,
+.buttonSecondary,
+.buttonQuiet,
+.buttonDanger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.buttonPrimary {
+  background: var(--brand-600);
+  border: 1px solid var(--brand-600);
+  color: #fff;
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+  color: #fff;
+}
+
+.buttonPrimary:disabled {
+  background: #93b4f6;
+  border-color: #93b4f6;
+  color: #fff;
+}
+
+.buttonSecondary {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--ink-700);
+}
+
+.buttonSecondary:hover:not(:disabled) {
+  border-color: var(--brand-600);
+  color: var(--brand-600);
+}
+
+.buttonSecondary:disabled {
+  color: var(--ink-400);
+  background: var(--surface-muted);
+}
+
+.buttonQuiet {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-500);
+  padding-inline: 8px;
+}
+
+.buttonQuiet:hover:not(:disabled) {
+  background: var(--surface-muted);
+  color: var(--ink-900);
+}
+
+.buttonDanger {
+  background: var(--danger);
+  border: 1px solid var(--danger);
+  color: #fff;
+}
+
+.buttonDanger:hover:not(:disabled) {
+  background: #991b1b;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-muted);
+  color: var(--ink-500);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.badgeDemo {
+  border-color: #fcd34d;
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.badgeM1 {
+  border-color: #bfdbfe;
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

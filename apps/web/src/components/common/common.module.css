@@ -1,0 +1,171 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.headerMain {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink-900);
+}
+
+.badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.description {
+  max-width: 760px;
+  color: var(--ink-500);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.meta {
+  color: var(--ink-400);
+  font-size: 12px;
+}
+
+/* ---------------- Placeholder page ---------------- */
+
+.blockGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.blockCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.blockIndex {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--brand-50);
+  color: var(--brand-700);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.blockTitle {
+  color: var(--ink-900);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.blockDetail {
+  color: var(--ink-500);
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+
+.placeholderCard {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.placeholderBody {
+  padding: 8px 0;
+}
+
+.note {
+  padding: 12px 14px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--ink-500);
+  font-size: 12.5px;
+  line-height: 1.7;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.note strong {
+  color: var(--ink-700);
+}
+
+/* ---------------- 页内 tabs ---------------- */
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--line);
+  margin-top: -4px;
+}
+
+.tab {
+  position: relative;
+  padding: 9px 14px 10px;
+  color: var(--ink-500);
+  font-size: 13px;
+  border-radius: 7px 7px 0 0;
+}
+
+.tab:hover {
+  color: var(--ink-900);
+  background: rgba(241, 245, 249, 0.7);
+}
+
+.tabActive,
+.tabActive:hover {
+  color: var(--brand-700);
+  font-weight: 600;
+  background: transparent;
+}
+
+.tabActive::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--brand-600);
+}

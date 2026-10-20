@@ -217,7 +217,7 @@ async function createProductTransaction(
       checksum: checksumOf({ product_id: product.id, materials }),
       createdBy: context.userId,
     },
-    select: { id: true },
+    select: { id: true, fabricCode: true },
   });
 
   if (!input.size_chart) {
@@ -275,7 +275,7 @@ async function createProductTransaction(
         colorId: sku.color_id,
         colorName: sku.color_name!,
         sizeCode: sku.size_code,
-        fabricId: fabric.id,
+        fabricCode: fabric.fabricCode,
         barcode: sku.barcode ?? null,
         priceCents: sku.price_cents,
         listPriceCents: sku.list_price_cents ?? null,
@@ -460,7 +460,7 @@ export async function getProduct(deps: ProductServiceDeps, id: string) {
       color_id: sku.colorId,
       color_name: sku.colorName,
       size_code: sku.sizeCode,
-      fabric_id: sku.fabricId,
+      fabric_code: sku.fabricCode,
       price_cents: sku.priceCents,
       list_price_cents: sku.listPriceCents,
       sale_price_cents: sku.salePriceCents,

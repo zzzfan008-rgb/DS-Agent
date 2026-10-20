@@ -1,0 +1,966 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* ---------------- 风险徽标（三重编码） ---------------- */
+
+.riskBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.riskBadgeSm {
+  height: 20px;
+  padding: 0 7px;
+  font-size: 11px;
+}
+
+.riskGlyph {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.riskA {
+  color: var(--risk-a);
+  background: var(--risk-a-bg);
+  border-color: var(--risk-a-border);
+}
+
+.riskB {
+  color: var(--risk-b);
+  background: var(--risk-b-bg);
+  border-color: var(--risk-b-border);
+}
+
+.riskC {
+  color: var(--risk-c);
+  background: var(--risk-c-bg);
+  border-color: var(--risk-c-border);
+}
+
+/* ---------------- 统计 ---------------- */
+
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.statValue {
+  color: var(--ink-900);
+  font-size: 21px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.statLabel {
+  color: var(--ink-500);
+  font-size: 12px;
+}
+
+.statDanger {
+  color: var(--risk-c);
+}
+
+.statDivider {
+  width: 1px;
+  height: 22px;
+  background: var(--line);
+}
+
+/* ---------------- 筛选条 ---------------- */
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 12px 16px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.filterGroup,
+.selectGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterLabel {
+  color: var(--ink-500);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.segmented button {
+  padding: 5px 10px;
+  border-radius: 6px;
+  color: var(--ink-500);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.segmented button:hover {
+  color: var(--ink-900);
+}
+
+.segmentActive,
+.segmented .segmentActive:hover {
+  background: var(--surface);
+  color: var(--ink-900);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
+}
+
+.selectGroup select {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 26px 0 8px;
+  font-size: 12.5px;
+  border-color: var(--line);
+  background-color: var(--surface);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-700);
+  font-size: 12.5px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.check input {
+  width: 15px;
+  height: 15px;
+  min-height: 15px;
+  padding: 0;
+  accent-color: var(--brand-600);
+}
+
+.searchGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.search {
+  position: relative;
+  min-width: 190px;
+}
+
+.search svg {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-400);
+  pointer-events: none;
+}
+
+.search input {
+  width: 230px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px 0 30px;
+  font-size: 12.5px;
+  border-color: var(--line);
+}
+
+/* ---------------- 两栏布局 ---------------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(340px, 380px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.layoutSingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.queuePanel {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.panelTitle {
+  color: var(--ink-900);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.panelCount {
+  color: var(--ink-500);
+  font-size: 12px;
+}
+
+.keyHint {
+  margin-left: auto;
+  color: var(--ink-400);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.keyHint kbd {
+  margin-right: 2px;
+  font-size: 10px;
+  line-height: 14px;
+}
+
+/* ---------------- 队列 ---------------- */
+
+.queueList {
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+}
+
+.row {
+  position: relative;
+  border-bottom: 1px solid var(--line);
+  transition: background 120ms ease;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row:hover {
+  background: #f8fafc;
+}
+
+.rowC {
+  box-shadow: inset 4px 0 0 var(--risk-c);
+}
+
+.rowSelected,
+.rowSelected:hover {
+  background: var(--brand-50);
+}
+
+.rowLink {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px 12px 18px;
+  color: inherit;
+}
+
+.rowLink:hover {
+  color: inherit;
+}
+
+.rowTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.actionName {
+  color: var(--ink-900);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.statusChip {
+  display: inline-flex;
+  align-items: center;
+  height: 19px;
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--ink-500);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.rowDemo {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border: 1px solid #fcd34d;
+  border-radius: 4px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.rowTop > :last-child {
+  margin-left: auto;
+}
+
+.rowMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  color: var(--ink-500);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.rowMeta code {
+  color: var(--ink-500);
+  font-size: 10.5px;
+}
+
+.dot {
+  color: var(--ink-400);
+}
+
+.rowNotes {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.noteChip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 2px 8px;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  background: #fffbeb;
+  color: #b45309;
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+.noteMore {
+  color: var(--ink-400);
+  font-size: 10.5px;
+}
+
+/* ---------------- SLA ---------------- */
+
+.sla {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-500);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.slaCompact {
+  font-size: 11px;
+}
+
+.slaNormal {
+  color: var(--ink-500);
+}
+
+.slaWarn {
+  color: var(--risk-b);
+  font-weight: 500;
+}
+
+.slaDanger {
+  color: var(--risk-c);
+  font-weight: 600;
+}
+
+.slaMuted {
+  color: var(--ink-400);
+  font-size: 11.5px;
+}
+
+/* ---------------- 详情 ---------------- */
+
+.detailPanel {
+  min-width: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  position: sticky;
+  top: 72px;
+  max-height: calc(100vh - 88px);
+  overflow-y: auto;
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 0;
+}
+
+.detailHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.detailTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.detailTitle {
+  color: var(--ink-900);
+  font-size: 18px;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.detailMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  color: var(--ink-500);
+  font-size: 11.5px;
+}
+
+.detailMeta code {
+  color: var(--ink-500);
+  font-size: 10.5px;
+}
+
+.detailSlaRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.expires {
+  color: var(--ink-500);
+  font-size: 11px;
+}
+
+.riskBanner {
+  padding: 12px 14px;
+  border: 1px solid;
+  border-left-width: 4px;
+  border-radius: 8px;
+}
+
+.riskBannerC {
+  border-color: var(--risk-c);
+  background: var(--risk-c-bg);
+  color: #7f1d1d;
+}
+
+.riskBannerB {
+  border-color: var(--risk-b);
+  background: var(--risk-b-bg);
+  color: #7c2d12;
+}
+
+.riskBannerHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+}
+
+.riskBanner p {
+  margin-top: 5px;
+  font-size: 12.5px;
+  line-height: 1.75;
+}
+
+.windowHint {
+  color: inherit;
+  opacity: 0.9;
+}
+
+.section {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  min-width: 0;
+}
+
+.sectionTitle {
+  margin-bottom: 9px;
+  color: var(--ink-500);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.impactGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px 14px;
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.impactItem dt {
+  color: var(--ink-500);
+  font-size: 11px;
+}
+
+.impactItem dd {
+  margin: 2px 0 0;
+  color: var(--ink-900);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ---------------- 表格 ---------------- */
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.table thead th {
+  padding: 8px 10px;
+  background: var(--surface-muted);
+  color: var(--ink-500);
+  font-size: 11px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table tbody th,
+.table tbody td {
+  padding: 8px 10px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table tbody th {
+  color: var(--ink-700);
+  font-weight: 500;
+}
+
+.beforeValue {
+  color: var(--ink-500);
+}
+
+.afterValue {
+  color: var(--brand-700);
+  font-weight: 600;
+}
+
+.diffRisk {
+  color: var(--risk-b);
+  font-weight: 500;
+}
+
+.mutedText {
+  color: var(--ink-500);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+/* ---------------- 事实来源 ---------------- */
+
+.factRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fact {
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+}
+
+.factSummary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  color: var(--ink-700);
+  font-size: 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.factSummary::-webkit-details-marker {
+  display: none;
+}
+
+.factHint {
+  color: var(--brand-600);
+  font-size: 10px;
+}
+
+.factBody {
+  max-width: 320px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-500);
+  font-size: 11.5px;
+  line-height: 1.65;
+  word-break: break-all;
+}
+
+/* ---------------- 风险/双人/审计/历史 ---------------- */
+
+.noteList {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ink-700);
+  font-size: 12.5px;
+  line-height: 1.8;
+}
+
+.noteList li::marker {
+  color: var(--risk-b);
+}
+
+.dualGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.dualLabel {
+  display: block;
+  color: var(--ink-500);
+  font-size: 11px;
+}
+
+.dualGrid strong {
+  color: var(--ink-900);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dualNote {
+  grid-column: 1 / -1;
+  color: var(--ink-500);
+  font-size: 11.5px;
+}
+
+.auditGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.auditGrid dt {
+  color: var(--ink-500);
+  font-size: 11px;
+}
+
+.auditGrid dd {
+  margin: 2px 0 0;
+  color: var(--ink-700);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.auditGrid code {
+  font-size: 11px;
+}
+
+.timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline li {
+  display: grid;
+  grid-template-columns: 8px 118px 72px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 12px;
+}
+
+.timeline li:last-child {
+  border-bottom: none;
+}
+
+.timelineDot {
+  width: 6px;
+  height: 6px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--brand-600);
+}
+
+.timelineAt {
+  color: var(--ink-500);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
+.timelineActor {
+  color: var(--ink-700);
+  font-weight: 500;
+}
+
+.timelineAction {
+  color: var(--ink-900);
+}
+
+.timelineComment {
+  grid-column: 4 / -1;
+  color: var(--ink-500);
+  font-size: 11.5px;
+}
+
+/* ---------------- 决策条 ---------------- */
+
+.decisionBar {
+  position: sticky;
+  bottom: -18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+  padding: 12px 0 2px;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.75), #fff 40%);
+}
+
+.decisionNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--ink-500);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.decisionNote svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.decisionActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------------- DEMO 横幅 ---------------- */
+
+.demoBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 14px;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.demoBanner code {
+  font-size: 11px;
+}
+
+.demoBannerInline {
+  margin-bottom: 14px;
+}
+
+/* ---------------- 独立详情页 ---------------- */
+
+.detailRoute {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.backRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-500);
+  font-size: 13px;
+}
+
+.backLink:hover {
+  color: var(--brand-600);
+}
+
+/* ---------------- 响应式 ---------------- */
+
+@media (max-width: 1279px) {
+  .layout {
+    grid-template-columns: 320px minmax(0, 1fr);
+  }
+
+  .search {
+    margin-left: 0;
+  }
+
+  .search input {
+    width: 200px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .layout,
+  .layoutSingle {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detailPanel {
+    position: static;
+    max-height: none;
+  }
+
+  .search {
+    flex: 1;
+  }
+
+  .search input {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .stats {
+    gap: 10px 14px;
+  }
+
+  .statValue {
+    font-size: 18px;
+  }
+
+  .statDivider {
+    height: 18px;
+  }
+
+  .filters {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .filterGroup,
+  .selectGroup {
+    width: 100%;
+  }
+
+  .segmented {
+    flex: 1;
+    overflow-x: auto;
+  }
+
+  .segmented button {
+    flex: 1;
+  }
+
+  .timeline li {
+    grid-template-columns: 8px minmax(0, 1fr);
+    gap: 4px 8px;
+  }
+
+  .timelineAt {
+    grid-column: 2;
+  }
+
+  .timelineActor,
+  .timelineAction,
+  .timelineComment {
+    grid-column: 2;
+  }
+
+  .dualGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .decisionBar {
+    position: static;
+    bottom: auto;
+  }
+
+  .decisionActions {
+    width: 100%;
+  }
+
+  .decisionActions button {
+    flex: 1;
+  }
+}

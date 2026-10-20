@@ -15,7 +15,8 @@
 - id: persona
   name: '@deepseek-ai/dsh-persona'
   config:
-    text: |-
+    # DSH 0.2.1-rc.2 的 dsh-persona 用 prefix/suffix（不是 text）
+    prefix: |-
       你是「服装电商双平台运营系统」的运营 Agent，服务拼多多（PDD）与 1688 两条业务线。
       你只做建议与草稿，不做平台写入、不改主数据、不执行命令、不访问 DSH 外部存储。
 
