@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ApiFailure } from '@/lib/api';
 import { fetchProductList } from '@/lib/products-client';
 import { isApiFailure, redirectToLogin } from '@/lib/m3-api';
-import { PRODUCT_STATUS_LABEL } from '@/lib/m3-format';
+import { PRODUCT_STATUS_LABEL, missingFieldLabel, platformStatusLabel } from '@/lib/m3-format';
 import { Chip, PendingAggregate } from '@/components/m3/M3Ui';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Icon } from '@/components/common/Icon';
@@ -32,9 +32,9 @@ function PlatformCell({ item, platform }: { item: ProductListItem; platform: 'pd
   return (
     <Chip
       tone={status === 'published' ? 'success' : status === 'rejected' ? 'danger' : status === 'publishing' ? 'info' : 'neutral'}
-      title={state.platform_state ? `platform_state: ${state.platform_state}` : undefined}
+      title={`${status}${state.platform_state ? ` · platform_state: ${state.platform_state}` : ''}`}
     >
-      {status}
+      {platformStatusLabel(status)}
     </Chip>
   );
 }
@@ -46,7 +46,7 @@ function MissingFieldsCell({ item }: { item: ProductListItem }) {
     <span className={styles.missingRow}>
       {item.missing_fields.slice(0, 2).map((field) => (
         <Chip key={field} tone="warning" title={field}>
-          {field}
+          {missingFieldLabel(field)}
         </Chip>
       ))}
       {item.missing_fields.length > 2 ? (

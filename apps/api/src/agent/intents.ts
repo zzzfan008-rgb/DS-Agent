@@ -105,6 +105,28 @@ export function narrowTools(intent: AgentIntent, requested: readonly string[] | 
 }
 
 /**
+ * F1：按意图解析首 token 超时（docs/17 §6.5）。
+ * - reply_draft（support.suggest）→ 客服 5s 档；
+ * - copy（content.draft / content.rewrite）→ 8s 档；
+ * - 其他 → 全局默认（仍 8000，不因慢路径抬高）。
+ */
+export const FIRST_TOKEN_TIMEOUT_CLASS: Partial<Record<AgentIntent, 'reply_draft' | 'copy'>> = {
+  'support.suggest': 'reply_draft',
+  'content.draft': 'copy',
+  'content.rewrite': 'copy',
+};
+
+export function firstTokenTimeoutForIntent(
+  intent: AgentIntent,
+  timeouts: { replyDraftMs: number; copyMs: number; defaultMs: number },
+): number {
+  const klass = FIRST_TOKEN_TIMEOUT_CLASS[intent];
+  if (klass === 'reply_draft') return timeouts.replyDraftMs;
+  if (klass === 'copy') return timeouts.copyMs;
+  return timeouts.defaultMs;
+}
+
+/**
  * 会话键：sha256("v1|" + org_id + "|" + user_id + "|" + intent + "|" + objectType + "|" +
  * objectId + "|" + objectVersion)（docs/17 §5.1）。
  *

@@ -26,7 +26,13 @@ import type { MetricsRegistry } from '../services/metrics.js';
 import { BridgeError, type TypertBridgeClient } from './bridge-client.js';
 import { bundleDescriptor, skillsForIntent } from './bundle.js';
 import { AgentConcurrencyGate } from './concurrency.js';
-import { narrowTools, roleCanRunIntent, ruleForIntent, sessionKeyOf } from './intents.js';
+import {
+  firstTokenTimeoutForIntent,
+  narrowTools,
+  roleCanRunIntent,
+  ruleForIntent,
+  sessionKeyOf,
+} from './intents.js';
 import {
   isTerminalStatus,
   type AgentIntent,
@@ -61,6 +67,8 @@ export interface CreateRunInput {
   input: { text?: string; params?: Record<string, unknown> };
   stream: boolean;
   timeoutMs: number;
+  /** F1：按意图分档的首 token 超时；缺省由 config + intent 解析（见 intents.ts）。 */
+  firstTokenTimeoutMs?: number;
   toolsAllow?: string[];
   confirmIrreversible: boolean;
 }
@@ -95,6 +103,7 @@ interface RunRecord {
   startedAt: number | null;
   endedAt: number | null;
   timeoutMs: number;
+  firstTokenTimeoutMs: number;
   streamRequested: boolean;
   tools: string[];
   toolsIgnored: string[];
@@ -217,6 +226,13 @@ export class AgentRunManager {
     }
 
     const rule = ruleForIntent(input.intent);
+    const firstTokenTimeoutMs =
+      input.firstTokenTimeoutMs ??
+      firstTokenTimeoutForIntent(input.intent, {
+        replyDraftMs: this.deps.config.agentFirstTokenTimeoutReplyDraftMs,
+        copyMs: this.deps.config.agentFirstTokenTimeoutCopyMs,
+        defaultMs: this.deps.config.agentFirstTokenTimeoutMs,
+      });
     const narrowed = narrowTools(input.intent, input.toolsAllow);
     const sessionKey = sessionKeyOf({
       orgId: input.actor.orgId,
@@ -289,6 +305,7 @@ export class AgentRunManager {
       input,
       envelope,
       sessionKey,
+      firstTokenTimeoutMs,
       tools: narrowed.tools,
       toolsIgnored: narrowed.ignored,
       status: admission.kind === 'started' ? 'running' : 'queued',
@@ -430,6 +447,7 @@ export class AgentRunManager {
     input: CreateRunInput;
     envelope: AgentRunEnvelope;
     sessionKey: string;
+    firstTokenTimeoutMs: number;
     tools: string[];
     toolsIgnored: string[];
     status: RunStatus;
@@ -449,6 +467,7 @@ export class AgentRunManager {
       startedAt: args.status === 'running' ? now : null,
       endedAt: null,
       timeoutMs: args.input.timeoutMs,
+      firstTokenTimeoutMs: args.firstTokenTimeoutMs,
       streamRequested: args.input.stream,
       tools: args.tools,
       toolsIgnored: args.toolsIgnored,
@@ -511,7 +530,7 @@ export class AgentRunManager {
     let terminalEventSeen = false;
     try {
       for await (const event of this.deps.bridge.run(run.envelope, controller.signal, {
-        firstTokenTimeoutMs: this.deps.config.agentFirstTokenTimeoutMs,
+        firstTokenTimeoutMs: run.firstTokenTimeoutMs,
         onFirstToken: (elapsed) => {
           run.firstTokenMs = elapsed;
           this.deps.metrics.observe(
@@ -919,6 +938,8 @@ export class AgentRunManager {
       model_id: run.modelId,
       bundle_version: run.bundleVersion,
       session_key: run.sessionKey,
+      first_token_ms: run.firstTokenMs,
+      first_token_timeout_ms: run.firstTokenTimeoutMs,
     };
   }
 
@@ -962,6 +983,7 @@ export class AgentRunManager {
         skills: run.envelope.bundle.skills,
         tools_ignored: run.toolsIgnored,
         timeout_ms: run.timeoutMs,
+        first_token_timeout_ms: run.firstTokenTimeoutMs,
         session_key: run.sessionKey,
         facts_snapshot: run.envelope.facts,
       },

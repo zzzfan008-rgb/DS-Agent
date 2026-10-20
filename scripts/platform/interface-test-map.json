@@ -15,7 +15,7 @@
         "4": "P2",
         "5": "P1"
       },
-      "p0_keywords": ["签名", "鉴权", "密钥", "access_token", "错误码", "限流", "接口下线", "必填字段", "字段删除", "字段变更", "接口升级", "授权"],
+      "p0_keywords": ["签名", "鉴权", "密钥", "access_token", "错误码", "限流", "接口下线", "必填字段", "字段删除", "字段变更", "字段新增", "接口升级", "授权"],
       "p2_keywords": ["文案", "澄清", "说明", "活动公告"],
       "interfaces": {
         "product.publish": { "doc_ref": "docs/01 §2.1 第1行", "tests": ["test/listing-package.test.ts", "test/registry.test.ts", "test/client.test.ts"] },
@@ -85,7 +85,7 @@
         },
         {
           "id": "contract",
-          "match": ["签名", "鉴权", "密钥", "access_token", "错误码", "限流", "接口下线", "必填字段", "字段", "接口升级", "授权"],
+          "match": ["签名", "鉴权", "密钥", "access_token", "错误码", "限流", "接口下线", "必填字段", "接口升级", "授权", "字段变更", "字段新增", "字段删除"],
           "interfaces": ["__all__"],
           "extra_tests": ["test/signer.test.ts", "test/config.test.ts", "test/replay.test.ts", "test/client.test.ts", "test/rate-limiter.test.ts", "test/transport.test.ts"],
           "severity": "P0"
@@ -105,7 +105,7 @@
         "4": "P2",
         "5": "P1"
       },
-      "p0_keywords": ["签名", "鉴权", "密钥", "access_token", "错误码", "限流", "接口下线", "必填字段", "字段删除", "字段变更", "接口升级", "授权"],
+      "p0_keywords": ["签名", "鉴权", "密钥", "access_token", "错误码", "限流", "接口下线", "必填字段", "字段删除", "字段变更", "字段新增", "接口升级", "授权"],
       "p2_keywords": ["文案", "澄清", "说明", "活动公告"],
       "interfaces": {
         "item.publish": { "doc_ref": "docs/02 §2.1#1", "tests": ["test/exporter.test.ts", "test/attributes.test.ts", "test/client.test.ts"] },
@@ -174,7 +174,7 @@
         },
         {
           "id": "contract",
-          "match": ["签名", "鉴权", "密钥", "access_token", "错误码", "限流", "接口下线", "必填字段", "字段", "接口升级", "授权"],
+          "match": ["签名", "鉴权", "密钥", "access_token", "错误码", "限流", "接口下线", "必填字段", "接口升级", "授权", "字段变更", "字段新增", "字段删除"],
           "interfaces": ["__all__"],
           "extra_tests": ["test/client.test.ts", "test/attributes.test.ts", "test/exporter.test.ts", "test/mapping.test.ts", "test/moq-dropship.test.ts", "test/price-tiers.test.ts"],
           "severity": "P0"

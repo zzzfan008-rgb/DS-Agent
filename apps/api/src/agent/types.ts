@@ -172,6 +172,8 @@ export interface AgentRunView {
   model_id: string | null;
   bundle_version: string | null;
   session_key: string;
+  first_token_ms: number | null;
+  first_token_timeout_ms: number;
 }
 
 /** `POST /api/agent/runs/:id/cancel` 的 data（docs/12 §3.12）。 */

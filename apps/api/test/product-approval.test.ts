@@ -3,6 +3,7 @@ import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
+import { canonicalHash, createFactEnvelope } from '@dssaas/core';
 import {
   buildTestApp,
   cookiesFrom,
@@ -132,7 +133,6 @@ before(async () => {
 
 after(async () => {
   await app.close();
-  await prisma.product.deleteMany({ where: { id: { in: cleanupProductIds } } });
   await prisma.$disconnect();
 });
 
@@ -165,11 +165,11 @@ test('GET /products 聚合 platform_states / missing_fields，platform 与 missi
   }).data.items;
   const bySuffix = new Map(items.map((item) => [item.spu_code, item]));
   const completeItem = bySuffix.get(`${PREFIX}-COMPLETE`)!;
-  assert.equal(completeItem.platform_states.pdd.status, 'published');
-  assert.equal(completeItem.platform_states['1688'].status, 'not_listed');
+  assert.equal(completeItem.platform_states.pdd!.status, 'published');
+  assert.equal(completeItem.platform_states['1688']!.status, 'not_listed');
   assert.deepEqual(completeItem.missing_fields, []);
-  assert.equal(bySuffix.get(`${PREFIX}-NOTLISTED`)!.platform_states.pdd.status, 'not_listed');
-  assert.equal(bySuffix.get(`${PREFIX}-REJECTED`)!.platform_states.pdd.status, 'rejected');
+  assert.equal(bySuffix.get(`${PREFIX}-NOTLISTED`)!.platform_states.pdd!.status, 'not_listed');
+  assert.equal(bySuffix.get(`${PREFIX}-REJECTED`)!.platform_states.pdd!.status, 'rejected');
 
   assert.deepEqual(bySuffix.get(`${PREFIX}-NOCHART`)!.missing_fields, [PRODUCT_MISSING_CODES.sizeChart]);
   assert.deepEqual(bySuffix.get(`${PREFIX}-NOFABRIC`)!.missing_fields, [PRODUCT_MISSING_CODES.fabric]);
@@ -236,12 +236,17 @@ test('审批内容失效：编辑草稿后旧审批 decide → 428 approval_stal
       contentType: 'title',
       body: '旧标题：纯棉舒适上衣',
       structured: {},
-      facts: {
-        facts_version: 1,
-        captured_at: new Date().toISOString(),
-        items: [],
-        facts_hash: 'c'.repeat(64),
-      },
+      facts: createFactEnvelope([
+        {
+          key: 'name',
+          value: product.name,
+          unit: 'text',
+          source: 'manual',
+          source_table: 'product',
+          source_id: product.id,
+          source_version: 1,
+        },
+      ]) as never,
       factCheck: {},
       status: 'generated',
       createdBy: operator.id,
@@ -293,10 +298,8 @@ test('审批内容失效：编辑草稿后旧审批 decide → 428 approval_stal
 
 function targetHashOf(payload: Record<string, unknown>): string {
   // 与 approval 服务同一 canonicalHash（不另写规范化）。
-  return canonicalHashForTest(payload);
+  return canonicalHash(payload);
 }
-
-import { canonicalHash as canonicalHashForTest } from '@dssaas/core';
 
 test('publish_content 定级：B 级，区别于 listing.create', () => {
   assert.equal(computeLevel('content.publish', {}).level, 'B');

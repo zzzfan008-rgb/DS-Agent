@@ -161,7 +161,7 @@ ${testLines}
 - [ ] 更新 docs/01 或 docs/02 对应行、补脱敏 fixture、记录 release_id
 - [ ] 关闭工单并登记 closed_at
 
-## 回归结果
+## 回归结果（待运行）
 
 （尚未运行；运行 \`run-adapter-regression.mjs\` 后自动追加）
 `;
@@ -210,7 +210,7 @@ async function main() {
       continue;
     }
     const newItems = Array.isArray(delta.new) ? delta.new : [];
-    console.log(
+    console.error(
       `[ticket] delta=${relToRepo(file)} platform=${platform} baseline=${Boolean(delta.baseline)} new=${newItems.length}`,
     );
     for (const notice of newItems) {
@@ -221,7 +221,7 @@ async function main() {
       const existing = byLinkHash.get(notice.link_hash);
       if (existing) {
         skipped.push({ platform, title: notice.title, link_hash: notice.link_hash, existing: existing.file ?? null });
-        console.log(`[ticket] SKIP duplicate ${notice.link_hash.slice(0, 12)}… ${notice.title}`);
+        console.error(`[ticket] SKIP duplicate ${notice.link_hash.slice(0, 12)}… ${notice.title}`);
         continue;
       }
       const impact = await resolveImpact({
@@ -285,7 +285,7 @@ async function main() {
         });
       }
       created.push({ ticket_id: ticketId, file: relToRepo(target), severity: impact.severity, synthetic: data.synthetic, interfaces: impact.interfaces });
-      console.log(`[ticket] CREATE ${relToRepo(target)} severity=${impact.severity} interfaces=${impact.interfaces.length} synthetic=${data.synthetic}`);
+      console.error(`[ticket] CREATE ${relToRepo(target)} severity=${impact.severity} interfaces=${impact.interfaces.length} synthetic=${data.synthetic}`);
     }
   }
 

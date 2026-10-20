@@ -205,17 +205,33 @@ export async function updateContentDraft(
   } catch {
     facts = draft.facts;
   }
-  const updated = await deps.prisma.contentDraft.update({
-    where: { id: draft.id },
-    data: {
-      body: content,
-      ...(input.title === undefined ? {} : { title: input.title }),
-      wordCount: [...content].length,
-      facts: facts as Prisma.InputJsonValue,
-      status: 'generated',
-      judgeId: null,
-      riskFlags: [],
-    },
+  const updated = await deps.prisma.$transaction(async (tx) => {
+    const row = await tx.contentDraft.update({
+      where: { id: draft.id },
+      data: {
+        body: content,
+        ...(input.title === undefined ? {} : { title: input.title }),
+        wordCount: [...content].length,
+        facts: facts as Prisma.InputJsonValue,
+        status: 'generated',
+        judgeId: null,
+        riskFlags: [],
+      },
+    });
+    // 保留旧审批供追查，但关闭 pending 占用；其实效由 target_hash 在 decide 时强制校验。
+    await tx.approval.updateMany({
+      where: {
+        subjectType: 'content_draft',
+        subjectId: draft.id,
+        status: 'pending',
+      },
+      data: {
+        status: 'invalidated',
+        invalidatedAt: new Date(),
+        invalidReason: 'content_changed',
+      },
+    });
+    return row;
   });
   const targetHash = contentDraftTargetHash({
     id: updated.id,

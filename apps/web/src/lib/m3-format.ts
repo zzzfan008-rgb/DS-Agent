@@ -156,6 +156,34 @@ export const VISIBLE_REASON_LABEL: Record<string, string> = {
   model_purpose_mismatch: '模型能力与用途不兼容',
 };
 
+export const PLATFORM_STATUS_LABEL: Record<string, string> = {
+  not_listed: '未上架',
+  published: '已上架',
+  publishing: '发布中',
+  rejected: '已驳回',
+  draft: '草稿',
+  archived: '已归档',
+  unknown: '未知',
+};
+
+export const MISSING_FIELD_LABEL: Record<string, string> = {
+  missing_qualification: '缺资质',
+  missing_platform_category: '缺平台类目',
+  missing_size_chart: '缺尺码表',
+  missing_fabric: '缺成分',
+  missing_attributes: '缺属性',
+  missing_media: '缺素材',
+  missing_sku: '缺 SKU',
+};
+
+export function platformStatusLabel(status: string): string {
+  return PLATFORM_STATUS_LABEL[status] ?? status;
+}
+
+export function missingFieldLabel(field: string): string {
+  return MISSING_FIELD_LABEL[field] ?? field;
+}
+
 export function verdictLabel(verdict: string): string {
   return VERDICT_LABEL[verdict] ?? verdict;
 }

@@ -239,8 +239,8 @@ async function main() {
       summary.errors.push({ file: relToRepo(file), error: '工单未声明 regression_commands / regression_packages' });
       continue;
     }
-    console.log(`[regression] ticket=${relToRepo(file)} ticket_id=${ticket.data.ticket_id ?? '(none)'}`);
-    for (const command of commands) console.log(`[regression]   $ ${command}`);
+    console.error(`[regression] ticket=${relToRepo(file)} ticket_id=${ticket.data.ticket_id ?? '(none)'}`);
+    for (const command of commands) console.error(`[regression]   $ ${command}`);
     if (flags['dry-run']) {
       summary.tickets.push({ file: relToRepo(file), ticket_id: ticket.data.ticket_id ?? null, dry_run: true, commands });
       continue;
@@ -258,7 +258,7 @@ async function main() {
       status: success ? 'regression_passed' : 'blocked',
       results,
     });
-    console.log(`[regression] ${success ? 'PASS' : 'FAIL'} ${relToRepo(file)} → status=${success ? 'regression_passed' : 'blocked'}`);
+    console.error(`[regression] ${success ? 'PASS' : 'FAIL'} ${relToRepo(file)} → status=${success ? 'regression_passed' : 'blocked'}`);
   }
 
   if (json) console.log(JSON.stringify(summary, null, 2));

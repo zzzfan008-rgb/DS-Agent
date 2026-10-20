@@ -417,6 +417,25 @@ function printSummary(summary, newItems) {
   }
 }
 
+async function fetchPddPages({ pageSize, timeoutMs, retries, retryDelayMs }) {
+  const all = [];
+  let totalCount = null;
+  for (let pageIndex = 0; pageIndex < 40; pageIndex += 1) {
+    const body = { ...PDD_SOURCE.request_body, pageIndex, pageSize };
+    const json = await withNetworkRetry(
+      `PDD 公告列表 p${pageIndex + 1}`,
+      () => postJson(PDD_SOURCE.listUrl, body, { timeoutMs }),
+      { retries, retryDelayMs },
+    );
+    const parsed = parseApiPayload(json, PDD_SOURCE);
+    if (totalCount === null) totalCount = parsed.totalCount;
+    if (parsed.items.length === 0) break;
+    all.push(...parsed.items);
+    if (all.length >= (totalCount ?? 0)) break;
+  }
+  return { items: all, totalCount: totalCount ?? all.length, parser: PDD_SOURCE.parser };
+}
+
 async function watchPdd(flags) {
   const fetchedAt = flags.now ? new Date(flags.now).toISOString() : nowIso();
   const timeoutMs = positiveInt(flags['timeout-ms'], 20_000, { min: 1000, max: 120_000, name: '--timeout-ms' });
@@ -435,18 +454,26 @@ async function watchPdd(flags) {
       throw new ParserError(`fixture 不是合法 JSON：${fixturePath}（${error.message}）`);
     }
     parser = parseFixturePayload(raw);
-    console.log(`[watch] 使用 fixture：${fixturePath}`);
+    console.error(`[watch] 使用 fixture：${fixturePath}`);
   } else {
     const sourceUrl = flags['list-url'] ?? PDD_SOURCE.listUrl;
-    const body = { ...PDD_SOURCE.request_body, pageSize: positiveInt(flags['page-size'], PDD_SOURCE.request_body.pageSize, { min: 1, max: 1000, name: '--page-size' }) };
-    const json = await withNetworkRetry('PDD 公告列表', () => postJson(sourceUrl, body, { timeoutMs }), {
-      retries,
-      retryDelayMs,
-    });
-    parser = parseApiPayload(json, PDD_SOURCE);
+    const pageSize = positiveInt(flags['page-size'], PDD_SOURCE.request_body.pageSize, { min: 1, max: 1000, name: '--page-size' });
+    if (sourceUrl !== PDD_SOURCE.listUrl) {
+      // 端点覆盖通常用于故障注入/迁移验证：只请求指定 URL 的第一页。
+      const body = { ...PDD_SOURCE.request_body, pageSize };
+      const json = await withNetworkRetry('PDD 公告列表', () => postJson(sourceUrl, body, { timeoutMs }), {
+        retries,
+        retryDelayMs,
+      });
+      parser = parseApiPayload(json, PDD_SOURCE);
+    } else {
+      parser = await fetchPddPages({ pageSize, timeoutMs, retries, retryDelayMs });
+    }
   }
 
-  const categories = await fetchCategories({ timeoutMs, fetchImpl: fetch });
+  const categories = flags.fixture
+    ? { map: PDD_CATEGORIES_FALLBACK, source: 'fallback' }
+    : await fetchCategories({ timeoutMs, fetchImpl: fetch });
   const items = normalizeItems(parser.items, categories.map, PDD_SOURCE, fetchedAt);
   if (parser.totalCount !== items.length && mode === 'fetch') {
     console.error(`[watch] 注意：totalCount=${parser.totalCount}，实际解析=${items.length}（可能受 pageSize 限制）`);
@@ -558,7 +585,7 @@ async function main() {
     summaries.push(await run1688(flags));
   }
   if (platform === 'all' && flags.fixture) {
-    console.log('[watch] --fixture 只作用于 PDD；1688 仍需登录，未运行。');
+    console.error('[watch] --fixture 只作用于 PDD；1688 仍需登录，未运行。');
   }
 
   if (flags.json) {

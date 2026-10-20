@@ -53,6 +53,8 @@ export const RunRequestSchema = z
     input: InputSchema.default({}),
     stream: z.boolean().default(true),
     timeout_ms: z.number().int().min(1000).max(600_000).optional(),
+    /** F1 诊断/测量用：只覆盖本次 run 的首 token 超时，不改全局默认。 */
+    first_token_timeout_ms: z.number().int().min(100).max(60_000).optional(),
     tools_allow: z.array(z.string().regex(TOOL_PATTERN)).max(32).optional(),
     confirm_irreversible: z.literal(false).optional(),
   })
@@ -101,6 +103,11 @@ export function registerAgentRoutes(app: FastifyInstance): void {
           detail: { field: 'timeout_ms', max: maxTimeout },
         });
       }
+      if (body.first_token_timeout_ms !== undefined && body.first_token_timeout_ms > timeoutMs) {
+        throw new ApiError('validation_failed', 'first_token_timeout_ms 不得大于 timeout_ms', {
+          detail: { field: 'first_token_timeout_ms', max: timeoutMs },
+        });
+      }
       const actor = actorOf(request);
       const result = await app.agentRuns.createRun({
         actor,
@@ -113,6 +120,9 @@ export function registerAgentRoutes(app: FastifyInstance): void {
         input: body.input,
         stream: body.stream,
         timeoutMs,
+        ...(body.first_token_timeout_ms === undefined
+          ? {}
+          : { firstTokenTimeoutMs: body.first_token_timeout_ms }),
         toolsAllow: body.tools_allow,
         confirmIrreversible: false,
       });

@@ -102,6 +102,7 @@ export function parseArgs(argv, { booleans = [] } = {}) {
   const positional = [];
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
+    if (arg === '--') continue; // pnpm/npm 透传分隔符
     if (!arg.startsWith('--')) {
       positional.push(arg);
       continue;
