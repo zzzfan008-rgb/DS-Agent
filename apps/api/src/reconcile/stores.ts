@@ -1,39 +1,17 @@
 /**
- * 差异存储 —— `drift_log` 缺失期的降级实现 + 建表后的正式实现。
+ * 差异存储 —— t37 之后 `drift_log` 为默认；文件存储保留给本地/测试与无库场景。
  *
- * 背景（已上报队长，t37 补表）：
- * - docs/18 §4、docs/20 §7 要求"对账漂移写 `drift_log`"，但 docs/06 未定义、t1 迁移未建；
- * - 任务约束"不改 schema"，因此默认 `RECONCILE_STORE=auto`：
- *   探测到 `drift_log` → 用 Postgres；探测不到 → 落文件（`artifacts/reconcile/<day>/<platform>.json`）；
- * - 两种实现共享同一幂等语义：唯一键 `(org_id, day, platform, drift_key)`，
- *   重复对账只更新 `last_detected_at / seen_count / 当前值`，**不新增行**。
+ * 实际表结构（迁移 `20261020250000_orders_drift_after_sale`）：
+ * `id, org_id, platform, day(date), drift_key, kind, severity, detail(jsonb), detected_at,
+ *  fixed_at, fixed_by, created_at, updated_at, created_by, version, archived_at`；
+ * 唯一索引 `uq_drift_day (platform, day, drift_key) WHERE archived_at IS NULL`（部分唯一）。
  *
- * 建议 DDL（未执行，见 docs/验收记录-M8-对账日报.md §4）：
- * ```sql
- * CREATE TABLE drift_log (
- *   id uuid PRIMARY KEY,
- *   org_id bigint NOT NULL DEFAULT 1,
- *   platform text NOT NULL CHECK (platform IN ('pdd','1688')),
- *   day date NOT NULL,
- *   drift_key text NOT NULL CHECK (char_length(drift_key) = 35),
- *   kind text NOT NULL,
- *   severity text NOT NULL CHECK (severity IN ('low','medium','high')),
- *   subject jsonb NOT NULL DEFAULT '{}',
- *   local_value jsonb,
- *   platform_value jsonb,
- *   detail text NOT NULL,
- *   suggestion jsonb NOT NULL DEFAULT '{}',
- *   status text NOT NULL DEFAULT 'open' CHECK (status IN ('open','fixed','ignored')),
- *   first_detected_at timestamptz NOT NULL,
- *   last_detected_at timestamptz NOT NULL,
- *   seen_count integer NOT NULL DEFAULT 1 CHECK (seen_count >= 1),
- *   detected_at timestamptz NOT NULL,
- *   created_at timestamptz NOT NULL DEFAULT now(),
- *   updated_at timestamptz NOT NULL DEFAULT now(),
- *   UNIQUE (org_id, day, platform, drift_key)
- * );
- * CREATE INDEX ix_drift_day_platform ON drift_log (day, platform, kind);
- * ```
+ * 由于表里只有 `detail` 一个 jsonb 承载内容，差异的扩展字段
+ * （`text/subject/local/platform_value/suggestion/status/first_detected_at/last_detected_at/seen_count`）
+ * 统一打包进 `detail`；键约定见验收记录 §4。
+ *
+ * 两种实现共享幂等语义：唯一键 `(platform, day, drift_key)`，重复对账只更新
+ * `last_detected_at / seen_count / 当前值`，**不新增行**。
  */
 
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
@@ -69,29 +47,26 @@ export interface DriftStore {
   probe(): Promise<{ ok: boolean; reason: string | null }>;
 }
 
-export const PROPOSED_DRIFT_LOG_DDL = `CREATE TABLE drift_log (
+/** 实际表结构提示（用于错误信息；以 t37 迁移为准）。 */
+export const PROPOSED_DRIFT_LOG_DDL = `-- t37 实际结构（迁移 20261020250000_orders_drift_after_sale）
+CREATE TABLE drift_log (
   id uuid PRIMARY KEY,
   org_id bigint NOT NULL DEFAULT 1,
   platform text NOT NULL CHECK (platform IN ('pdd','1688')),
   day date NOT NULL,
-  drift_key text NOT NULL CHECK (char_length(drift_key) = 35),
-  kind text NOT NULL,
-  severity text NOT NULL CHECK (severity IN ('low','medium','high')),
-  subject jsonb NOT NULL DEFAULT '{}',
-  local_value jsonb,
-  platform_value jsonb,
-  detail text NOT NULL,
-  suggestion jsonb NOT NULL DEFAULT '{}',
-  status text NOT NULL DEFAULT 'open' CHECK (status IN ('open','fixed','ignored')),
-  first_detected_at timestamptz NOT NULL,
-  last_detected_at timestamptz NOT NULL,
-  seen_count integer NOT NULL DEFAULT 1 CHECK (seen_count >= 1),
-  detected_at timestamptz NOT NULL,
+  drift_key text NOT NULL,
+  kind text NOT NULL,                  -- 开放词表：13 个业务值，见验收记录 §4
+  severity text NOT NULL,              -- 开放词表：low|medium|high
+  detail jsonb NOT NULL DEFAULT '{}',  -- 承载 text/subject/local/platform_value/suggestion/status/timestamps/seen_count
+  detected_at timestamptz NOT NULL DEFAULT now(),
+  fixed_at timestamptz, fixed_by uuid,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (org_id, day, platform, drift_key)
+  created_by uuid, version integer NOT NULL DEFAULT 1, archived_at timestamptz,
+  CONSTRAINT drift_log_pkey PRIMARY KEY (id)
 );
-CREATE INDEX ix_drift_day_platform ON drift_log (day, platform, kind);`;
+CREATE UNIQUE INDEX uq_drift_day ON drift_log (platform, day, drift_key) WHERE archived_at IS NULL;
+CREATE INDEX ix_drift_open ON drift_log (day, severity) WHERE fixed_at IS NULL;`;
 
 function mergeSeen(
   existing: DriftRecord | undefined,
@@ -428,22 +403,40 @@ export interface DriftStoreBundle {
   note: string;
 }
 
-/** 创建存储：`auto` 优先 Postgres，表缺失时显式降级为文件并给出原因。 */
+export interface DriftStoreDecision {
+  kind: 'file' | 'postgres';
+  note: string;
+}
+
+/**
+ * 纯函数：按配置与探测结果选择存储。抽出来是为了让"表在/不在"两个分支都能被单测覆盖，
+ * 不依赖真实数据库环境。
+ */
+export function decideDriftStore(
+  mode: DriftStoreConfig['mode'],
+  probe: { ok: boolean; reason: string | null },
+): DriftStoreDecision {
+  if (mode === 'file') return { kind: 'file', note: 'RECONCILE_STORE=file（显式文件存储）' };
+  if (mode === 'postgres') return { kind: 'postgres', note: 'RECONCILE_STORE=postgres（drift_log）' };
+  return probe.ok
+    ? { kind: 'postgres', note: 'RECONCILE_STORE=auto → drift_log' }
+    : { kind: 'file', note: `RECONCILE_STORE=auto → 文件存储（${probe.reason ?? 'drift_log 不可用'}）` };
+}
+
+/** 创建存储：`postgres` 默认（t37 已建表）；`auto` 按探测结果选择；`file` 显式文件。 */
 export async function createDriftStore(
   prisma: PrismaClient,
   config: DriftStoreConfig,
 ): Promise<DriftStoreBundle> {
   if (config.mode === 'file') {
-    return { store: new FileDriftStore(config.directory), note: 'RECONCILE_STORE=file（显式文件存储）' };
+    const decision = decideDriftStore('file', { ok: true, reason: null });
+    return { store: new FileDriftStore(config.directory), note: decision.note };
   }
   const pg = new PgDriftStore(prisma, config.orgId ?? 1n);
-  if (config.mode === 'postgres') {
-    return { store: pg, note: 'RECONCILE_STORE=postgres（drift_log）' };
-  }
-  const probe = await pg.probe();
-  if (probe.ok) return { store: pg, note: 'auto → drift_log' };
+  const probe = config.mode === 'postgres' ? { ok: true, reason: null } : await pg.probe();
+  const decision = decideDriftStore(config.mode, probe);
   return {
-    store: new FileDriftStore(config.directory),
-    note: `auto → 文件存储（${probe.reason ?? 'drift_log 不可用'}）`,
+    store: decision.kind === 'postgres' ? pg : new FileDriftStore(config.directory),
+    note: decision.note,
   };
 }

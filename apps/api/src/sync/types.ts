@@ -52,6 +52,26 @@ export interface SyncReader {
   read(input: SyncReadInput): Promise<SyncPage>;
 }
 
+/** 同步落库端口（orders 真实落库；其他资源的 reader 暂时只推进游标）。 */
+export interface SyncSinkResult {
+  created: number;
+  updated: number;
+  skipped: number;
+}
+
+export interface SyncSinkContext {
+  platform: Platform;
+  now: Date;
+}
+
+export interface SyncSink {
+  apply(items: readonly unknown[], context: SyncSinkContext): Promise<SyncSinkResult>;
+}
+
+export interface SyncRunStats extends SyncSinkResult {
+  pulled: number;
+}
+
 export interface SyncRunResult {
   sync_id: string;
   platform: Platform;
@@ -62,7 +82,7 @@ export interface SyncRunResult {
   started_at: string;
   finished_at: string;
   pages: number;
-  stats: { pulled: number };
+  stats: SyncRunStats;
   /** 续跑起点与最终游标（最终游标写回 `sync_cursor.cursor`）。 */
   resumed_from: string | null;
   cursor: string | null;

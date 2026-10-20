@@ -114,8 +114,8 @@ const EnvSchema = z.object({
   SEED_ADMIN_TOTP_SECRET: z.string().optional(),
 
   // ---- M8 对账与日报（docs/12 §3.9/§3.11、docs/16 §5）----
-  /** 差异存储：auto = 有 drift_log 用 PG，否则文件；file/postgres 为显式选择。 */
-  RECONCILE_STORE: z.enum(['auto', 'file', 'postgres']).default('auto'),
+  /** 差异存储：默认 postgres（t37 已建 drift_log）；auto 按探测结果选择；file 仅本地/测试。 */
+  RECONCILE_STORE: z.enum(['auto', 'file', 'postgres']).default('postgres'),
   /** 文件存储目录（默认 <repo>/artifacts/reconcile）。 */
   RECONCILE_DIR: z.string().min(1).optional(),
   /** 对账平台快照来源：recorded 干跑（录制样本）/ adapter 真实（未核验时硬拒绝）。 */
