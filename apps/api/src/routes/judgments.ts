@@ -37,6 +37,7 @@ export function registerJudgmentRoutes(app: FastifyInstance): void {
     prisma: app.prisma,
     audit: app.audit,
     gateway: app.registry.gateway,
+    knowledge: app.knowledge,
   };
 
   app.post('/api/judgments', { config: { minRole: 'operator' } }, async (request, reply) => {

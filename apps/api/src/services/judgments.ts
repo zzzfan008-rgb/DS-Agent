@@ -29,6 +29,7 @@ import { validateFactEnvelope, type FactEnvelope } from '@dssaas/core';
 import type { ModelGateway } from '@dssaas/registry';
 import { ApiError } from '../lib/errors.js';
 import type { AuditService } from './audit.js';
+import type { KnowledgeService } from '../knowledge/service.js';
 import { buildJudgeFacts, buildProductFacts, loadEvidence, verifyFactsAgainstMaster } from './facts.js';
 
 export interface JudgmentContext {
@@ -67,6 +68,8 @@ export interface JudgmentDeps {
   prisma: PrismaClient;
   audit: AuditService;
   gateway?: ModelGateway;
+  /** t22 知识库：为 L2 补政策/规则/FAQ 软证据。 */
+  knowledge?: Pick<KnowledgeService, 'resolveEvidence'>;
   l2Runner?: L2Runner;
   now?: () => Date;
 }
@@ -225,7 +228,42 @@ export async function createJudgment(
       };
     }
   } else {
-    const evidence = await loadEvidence(deps.prisma, facts, context.role, now);
+    const factEvidence = await loadEvidence(deps.prisma, facts, context.role, now);
+    let softEvidence: EvidenceRef[] = [];
+    if (deps.knowledge && text.trim().length > 0) {
+      try {
+        const kb = await deps.knowledge.resolveEvidence(
+          `${text}\n${input.content_type} ${input.platform}`,
+          {
+            role: context.role,
+            k: 5,
+            domains: ['policy', 'platform'],
+            asOf: now,
+            requestId: context.requestId,
+            actorId: context.userId,
+          },
+        );
+        softEvidence = kb.evidence_refs.map((citation) => ({
+          doc_id: citation.doc_id,
+          chunk_id: citation.chunk_id,
+          doc_version: citation.doc_version,
+          quote: citation.quote,
+          effective_from: citation.effective_from,
+          source: 'kb' as const,
+        }));
+      } catch {
+        // 知识库不可用时保留事实证据链；软证据缺失会走 escalate，不静默放行。
+        softEvidence = [];
+      }
+    }
+    const seenChunks = new Set<string>();
+    const evidence: EvidenceRef[] = [];
+    for (const ref of [...factEvidence, ...softEvidence]) {
+      const normalized: EvidenceRef = { ...ref, source: ref.source ?? 'kb' };
+      if (seenChunks.has(normalized.chunk_id)) continue;
+      seenChunks.add(normalized.chunk_id);
+      evidence.push(normalized);
+    }
     if (evidence.length === 0) {
       merged = mergeJudgments(l1, escalateOutput('no_evidence_available'), { noEvidence: true });
       merged.short_circuit = 'NO_EVIDENCE';
@@ -256,7 +294,7 @@ export async function createJudgment(
           latencyMs += result.latencyMs;
           modelCallId = result.modelCallId ?? modelCallId;
           raw = result.raw;
-          validation = validateL2Output(raw, evidence);
+          validation = validateL2Output(raw, evidence, { requireCitation: evidence.length > 0 });
           if (validation.ok) break;
           if (attempt === 1 && ['schema_invalid', 'missing_evidence'].includes(validation.reason)) {
             continue;

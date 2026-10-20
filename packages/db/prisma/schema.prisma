@@ -1184,3 +1184,101 @@ model WorkflowDeadLetter {
 
   @@map("workflow_dead_letter")
 }
+
+/// drift_log — 对账差异（t37；docs/18/docs/20 引用）。同一天同一 drift_key 应 upsert 更新。
+model DriftLog {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  orgId      BigInt    @default(1) @map("org_id")
+  platform   String
+  day        DateTime  @db.Date
+  driftKey   String    @map("drift_key")
+  kind       String
+  severity   String
+  detail     Json      @default("{}")
+  detectedAt DateTime  @default(now()) @map("detected_at") @db.Timestamptz
+  fixedAt    DateTime? @map("fixed_at") @db.Timestamptz
+  fixedBy    String?   @map("fixed_by") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy  String?   @map("created_by") @db.Uuid
+  version    Int       @default(1)
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("drift_log")
+}
+
+/// orders — 平台订单（t37；docs/12 §3.9 订单同步）。buyer_ref 只存哈希。
+model Order {
+  id                String    @id @default(uuid(7)) @db.Uuid
+  orgId             BigInt    @default(1) @map("org_id")
+  platform          String
+  platformOrderId   String    @map("platform_order_id")
+  status            String    @default("pending")
+  totalCents        Int       @default(0) @map("total_cents")
+  freightCents      Int       @default(0) @map("freight_cents")
+  discountCents     Int       @default(0) @map("discount_cents")
+  paidCents         Int       @default(0) @map("paid_cents")
+  buyerRef          String    @map("buyer_ref")
+  buyerNote         String?   @map("buyer_note")
+  platformCreatedAt DateTime  @map("platform_created_at") @db.Timestamptz
+  paidAt            DateTime? @map("paid_at") @db.Timestamptz
+  shippedAt         DateTime? @map("shipped_at") @db.Timestamptz
+  completedAt       DateTime? @map("completed_at") @db.Timestamptz
+  cancelledAt       DateTime? @map("cancelled_at") @db.Timestamptz
+  rawObjectKey      String?   @map("raw_object_key")
+  syncedAt          DateTime? @map("synced_at") @db.Timestamptz
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy         String?   @map("created_by") @db.Uuid
+  version           Int       @default(1)
+  archivedAt        DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("orders")
+}
+
+/// order_items — 订单明细（t37）。order_id 级联删除；listing/sku 可空 SET NULL。
+model OrderItem {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  orgId            BigInt    @default(1) @map("org_id")
+  orderId          String    @map("order_id") @db.Uuid
+  listingId        String?   @map("listing_id") @db.Uuid
+  skuId            String?   @map("sku_id") @db.Uuid
+  platformSkuRef   String    @map("platform_sku_ref")
+  title            String
+  colorId          String?   @map("color_id")
+  sizeCode         String?   @map("size_code")
+  qty              Int       @default(1)
+  unitPriceCents   Int       @map("unit_price_cents")
+  amountCents      Int       @map("amount_cents")
+  attrs            Json      @default("{}")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy        String?   @map("created_by") @db.Uuid
+  version          Int       @default(1)
+  archivedAt       DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("order_items")
+}
+
+/// after_sale — 售后/退款（t37）。order_id ON DELETE RESTRICT（有售后禁止删订单）。
+model AfterSale {
+  id                 String    @id @default(uuid(7)) @db.Uuid
+  orgId              BigInt    @default(1) @map("org_id")
+  platform           String
+  platformAfterSaleId String   @map("platform_after_sale_id")
+  orderId            String    @map("order_id") @db.Uuid
+  kind               String
+  status             String    @default("open")
+  amountCents        Int       @default(0) @map("amount_cents")
+  reason             String?
+  openedAt           DateTime  @default(now()) @map("opened_at") @db.Timestamptz
+  closedAt           DateTime? @map("closed_at") @db.Timestamptz
+  rawObjectKey       String?   @map("raw_object_key")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy          String?   @map("created_by") @db.Uuid
+  version            Int       @default(1)
+  archivedAt         DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("after_sale")
+}

@@ -78,8 +78,8 @@ pnpm e2e
 
 1. **草稿绑定判断**（`subject_type=content_draft`）使用 `buildProductFacts` 生成的事实信封，其中没有 `source=kb` 的 `kb_document` 条目；
 2. 判断层 `loadEvidence` 只从事实信封中引用的 KB 文档加载证据，因此草稿判断必然走 `NO_EVIDENCE`，verdict 为 `escalate`；
-3. 为了验证“L1+L2 可达 pass/needs_revision”的通路，脚本第 04 步额外用 `subject_type=listing` + 显式 facts（产品事实 + 一条 KB 政策事实）构造判断请求，得到 `needs_revision`，并验证 `rule_hits`/`evidence_refs`；
-4. 草稿判断的 `escalate` 记为预期失败 **F-E2E-01**，不修改判断层/内容服务。
+3. **t40 已修复（2026-10-20）**：判断层现在额外调用 `app.knowledge.resolveEvidence` 检索政策/规则/FAQ 软证据，`evidence_refs` 可带 `source='kb'`，L2 在有政策时必须逐字引用；草稿判断不再必然 `NO_EVIDENCE`；
+4. 当时脚本第 04 步用 `subject_type=listing` + 显式 facts 验证 L1+L2 通路；t40 后用 content_draft 政策引用用例验证（见 `docs/验收记录-M3-商品内容.md` §11）。
 
 这不是 E2E 脚本绕过业务规则，而是当前模块间的真实缺口；需要判断层证据组装任务（或 t35 后续）决定“草稿如何携带政策证据”。
 
@@ -91,11 +91,11 @@ pnpm e2e
 
 | ID | 严重度 | 区域 | 现象 | 依赖/建议 |
 |---|---|---|---|---|
-| F-E2E-01 | medium | 内容草稿 → 判断 L2 | 草稿判断无法携带 `kb_document` 政策证据，L2 直接 `NO_EVIDENCE` → `escalate` | 判断层证据组装 / t35；让 `buildProductFacts` 带入政策，或允许草稿判断显式引用 KB |
+| F-E2E-01 | medium | 内容草稿 → 判断 L2 | **resolved（t40）**：判断层接入 `app.knowledge.resolveEvidence`，政策/规则/FAQ 作为软证据进入 `evidence_refs`；7 天政策 pass、30 天政策 needs_revision、无政策仍 escalate | 已修复，见 docs/验收记录-M3-商品内容.md §11 |
 | F-E2E-02 | **blocker** | `media_job.purpose` ↔ 媒体管线 | DB CHECK `ck_media_purpose` 只允许 `image|video`；M6 尺码表渲染使用 `purpose=render`，DB 路径无法创建渲染任务 | t12/t26：迁移放宽 CHECK（加 `render`），或管线把渲染映射为 `image + kind=size_chart`。当前 E2E 用图片任务验证 pending_review/cost_ledger，用直接渲染验证 PNG |
 | F-E2E-03 | high | 媒体 HTTP API | `docs/12 §3.7` 的 `POST /media/generate`、`GET /media/jobs`、`GET /media/assets`、下载端点未实现；当前仅有 `POST /media/jobs/:id/cancel` | M6 API 补齐（t26 后续）；E2E 只能直接调用 worker `MediaPipeline` |
 
-除以上 3 条外，本次链路上的字段名、状态机、错误码、审批动作未发现新的不一致：
+除以上 2 条未解决项（F-E2E-02/F-E2E-03）外，本次链路上的字段名、状态机、错误码、审批动作未发现新的不一致：
 
 - `publish_content` 定级 B，`publish`（listing.create）定级 B，均与契约一致；
 - 上架 dry-run 不把 listing 改成 `published`，符合“dry-run 无平台副作用”；

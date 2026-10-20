@@ -113,6 +113,8 @@
         # F1：客服回复关闭 deep reasoning，避免隐藏思考把首 token 拖到 7s+。
         reasoningEffort:
           support.suggest: off
+        # 客服回复长度：≤180 字，句末收尾；F1 总时延 P95≤5s 用
+        replyMaxChars: 180
     - id: business-bridge
       name: file:///D:/DSSAAS/dsh-bundle/bridge/business-bridge.mjs
       config:

@@ -611,7 +611,8 @@ export class AgentRunManager {
           case 'final': {
             terminalEventSeen = true;
             const finalText = event.output.text ?? '';
-            if (finalText.length >= run.outputText.length) run.outputText = finalText;
+            // final 是 Host 的权威定稿（含句末截断/后处理）；即使比流式累积短也以它为准。
+            if (finalText.length > 0) run.outputText = finalText;
             if (event.output.artifacts) run.artifacts = event.output.artifacts;
             if (run.cancelRequested) {
               this.finish(run, 'cancelled', { reason: 'client_cancelled' });

@@ -1,0 +1,2080 @@
+{
+  "schema_version": 1,
+  "source": "data/golden + 客服政策摘要 v1",
+  "policy": {
+    "return_window_days": 7,
+    "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+    "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+    "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+    "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+    "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+  },
+  "shipping": {
+    "dispatch_hours": 48,
+    "carrier": "中通/圆通",
+    "remote": "偏远地区可能需补运费，需按收货地址确认",
+    "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+  },
+  "price_policy": {
+    "moq": 2,
+    "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+    "floor": "页面价为最低可售价，不做全网最低价保证"
+  },
+  "scenarios": [
+    {
+      "id": "S01",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-001",
+      "question": "我身高 175cm、体重 72kg，这款 T 恤选哪个码？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-001",
+          "title": "男装纯棉圆领短袖T恤 260g重磅",
+          "category_code": "A0101",
+          "price_cents": 6900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 100
+            }
+          ],
+          "size_codes": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "S",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 45,
+            "weight_max": 55,
+            "measurements": {
+              "胸围": 96,
+              "衣长": 64,
+              "肩宽": 42,
+              "袖长": 21
+            }
+          },
+          {
+            "size": "M",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 50,
+            "weight_max": 62,
+            "measurements": {
+              "胸围": 100,
+              "衣长": 66,
+              "肩宽": 44,
+              "袖长": 22
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 165,
+            "height_max": 175,
+            "weight_min": 56,
+            "weight_max": 70,
+            "measurements": {
+              "胸围": 104,
+              "衣长": 68,
+              "肩宽": 46,
+              "袖长": 23
+            }
+          },
+          {
+            "size": "XL",
+            "height_min": 170,
+            "height_max": 180,
+            "weight_min": 64,
+            "weight_max": 78,
+            "measurements": {
+              "胸围": 108,
+              "衣长": 70,
+              "肩宽": 48,
+              "袖长": 24
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "size": "XL",
+        "note": "XL 建议 170–180cm / 64–78kg"
+      },
+      "forbidden": [
+        "L 码最合适",
+        "XXL",
+        "M 码"
+      ]
+    },
+    {
+      "id": "S02",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-002",
+      "question": "身高 158、体重 48，衬衫穿 S 还是 M？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-002",
+          "title": "女装翻领长袖衬衫 全网最低价",
+          "category_code": "A0202",
+          "price_cents": 12900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 60
+            },
+            {
+              "material": "聚酯纤维",
+              "percent": 40
+            }
+          ],
+          "size_codes": [
+            "S",
+            "M",
+            "L"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "S",
+            "height_min": 150,
+            "height_max": 160,
+            "weight_min": 42,
+            "weight_max": 52,
+            "measurements": {
+              "胸围": 88,
+              "衣长": 60,
+              "肩宽": 37,
+              "袖长": 55,
+              "领围": 35
+            }
+          },
+          {
+            "size": "M",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 46,
+            "weight_max": 56,
+            "measurements": {
+              "胸围": 92,
+              "衣长": 62,
+              "肩宽": 39,
+              "袖长": 56,
+              "领围": 37
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 52,
+            "weight_max": 64,
+            "measurements": {
+              "胸围": 96,
+              "衣长": 64,
+              "肩宽": 41,
+              "袖长": 57,
+              "领围": 39
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "size": "S",
+        "note": "S 建议 150–160cm / 42–52kg"
+      },
+      "forbidden": [
+        "M 码最合适",
+        "L 码"
+      ]
+    },
+    {
+      "id": "S03",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-003",
+      "question": "178cm、75kg，POLO 选什么尺码？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-003",
+          "title": "男装POLO衫商务翻领 短袖",
+          "category_code": "A0101",
+          "price_cents": 9900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 95
+            },
+            {
+              "material": "氨纶",
+              "percent": 5
+            }
+          ],
+          "size_codes": [
+            "M",
+            "L",
+            "XL"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "M",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 50,
+            "weight_max": 62,
+            "measurements": {
+              "胸围": 98,
+              "衣长": 66,
+              "肩宽": 43,
+              "袖长": 21
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 165,
+            "height_max": 175,
+            "weight_min": 56,
+            "weight_max": 70,
+            "measurements": {
+              "胸围": 102,
+              "衣长": 68,
+              "肩宽": 45,
+              "袖长": 22
+            }
+          },
+          {
+            "size": "XL",
+            "height_min": 170,
+            "height_max": 180,
+            "weight_min": 64,
+            "weight_max": 78,
+            "measurements": {
+              "胸围": 106,
+              "衣长": 70,
+              "肩宽": 47,
+              "袖长": 23
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "size": "XL",
+        "note": "XL 建议 170–180cm / 64–78kg"
+      },
+      "forbidden": [
+        "L 码最合适",
+        "XXL"
+      ]
+    },
+    {
+      "id": "S04",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-004",
+      "question": "155cm、45kg，牛仔裤选 26 还是 27？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-004",
+          "title": "女装高腰直筒牛仔长裤 浅蓝",
+          "category_code": "B0211",
+          "price_cents": 18900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 98
+            },
+            {
+              "material": "氨纶",
+              "percent": 2
+            }
+          ],
+          "size_codes": [
+            "26",
+            "27",
+            "28",
+            "29"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "26",
+            "height_min": 150,
+            "height_max": 160,
+            "weight_min": 42,
+            "weight_max": 50,
+            "measurements": {
+              "腰围": 66,
+              "裤长": 98,
+              "臀围": 90,
+              "大腿围": 52,
+              "脚口": 32
+            }
+          },
+          {
+            "size": "27",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 46,
+            "weight_max": 54,
+            "measurements": {
+              "腰围": 68,
+              "裤长": 99,
+              "臀围": 92,
+              "大腿围": 53,
+              "脚口": 33
+            }
+          },
+          {
+            "size": "28",
+            "height_min": 158,
+            "height_max": 168,
+            "weight_min": 50,
+            "weight_max": 60,
+            "measurements": {
+              "腰围": 71,
+              "裤长": 100,
+              "臀围": 95,
+              "大腿围": 55,
+              "脚口": 34
+            }
+          },
+          {
+            "size": "29",
+            "height_min": 162,
+            "height_max": 172,
+            "weight_min": 54,
+            "weight_max": 65,
+            "measurements": {
+              "腰围": 74,
+              "裤长": 101,
+              "臀围": 98,
+              "大腿围": 57,
+              "脚口": 35
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "size": "26",
+        "note": "26 建议 150–160cm / 42–50kg"
+      },
+      "forbidden": [
+        "27 码最合适",
+        "28 码"
+      ]
+    },
+    {
+      "id": "S05",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-005",
+      "question": "170cm、62kg，半身裙选 28 还是 29？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-005",
+          "title": "女装宽松休闲长裤 第一品质",
+          "category_code": "B0211",
+          "price_cents": 16900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 100
+            }
+          ],
+          "size_codes": [
+            "27",
+            "28",
+            "29"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "27",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 46,
+            "weight_max": 55,
+            "measurements": {
+              "腰围": 68,
+              "裤长": 97,
+              "臀围": 94,
+              "大腿围": 54,
+              "脚口": 36
+            }
+          },
+          {
+            "size": "28",
+            "height_min": 158,
+            "height_max": 168,
+            "weight_min": 50,
+            "weight_max": 60,
+            "measurements": {
+              "腰围": 71,
+              "裤长": 98,
+              "臀围": 97,
+              "大腿围": 56,
+              "脚口": 37
+            }
+          },
+          {
+            "size": "29",
+            "height_min": 162,
+            "height_max": 172,
+            "weight_min": 54,
+            "weight_max": 65,
+            "measurements": {
+              "腰围": 74,
+              "裤长": 99,
+              "臀围": 100,
+              "大腿围": 58,
+              "脚口": 38
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "size": "29",
+        "note": "29 建议 162–172cm / 54–65kg"
+      },
+      "forbidden": [
+        "28 码最合适",
+        "27 码"
+      ]
+    },
+    {
+      "id": "F01",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-001",
+      "question": "这件 T 恤什么成分？怎么洗？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-001",
+          "title": "男装纯棉圆领短袖T恤 260g重磅",
+          "category_code": "A0101",
+          "price_cents": 6900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 100
+            }
+          ],
+          "size_codes": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "S",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 45,
+            "weight_max": 55,
+            "measurements": {
+              "胸围": 96,
+              "衣长": 64,
+              "肩宽": 42,
+              "袖长": 21
+            }
+          },
+          {
+            "size": "M",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 50,
+            "weight_max": 62,
+            "measurements": {
+              "胸围": 100,
+              "衣长": 66,
+              "肩宽": 44,
+              "袖长": 22
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 165,
+            "height_max": 175,
+            "weight_min": 56,
+            "weight_max": 70,
+            "measurements": {
+              "胸围": 104,
+              "衣长": 68,
+              "肩宽": 46,
+              "袖长": 23
+            }
+          },
+          {
+            "size": "XL",
+            "height_min": 170,
+            "height_max": 180,
+            "weight_min": 64,
+            "weight_max": 78,
+            "measurements": {
+              "胸围": 108,
+              "衣长": 70,
+              "肩宽": 48,
+              "袖长": 24
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "composition": "棉 100%",
+        "care": "棉可机洗 30℃ 以下，避免高温烘干"
+      },
+      "forbidden": [
+        "聚酯纤维",
+        "氨纶",
+        "真丝"
+      ]
+    },
+    {
+      "id": "F02",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-002",
+      "question": "衬衫的成分比例是多少？会缩水吗？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-002",
+          "title": "女装翻领长袖衬衫 全网最低价",
+          "category_code": "A0202",
+          "price_cents": 12900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 60
+            },
+            {
+              "material": "聚酯纤维",
+              "percent": 40
+            }
+          ],
+          "size_codes": [
+            "S",
+            "M",
+            "L"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "S",
+            "height_min": 150,
+            "height_max": 160,
+            "weight_min": 42,
+            "weight_max": 52,
+            "measurements": {
+              "胸围": 88,
+              "衣长": 60,
+              "肩宽": 37,
+              "袖长": 55,
+              "领围": 35
+            }
+          },
+          {
+            "size": "M",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 46,
+            "weight_max": 56,
+            "measurements": {
+              "胸围": 92,
+              "衣长": 62,
+              "肩宽": 39,
+              "袖长": 56,
+              "领围": 37
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 52,
+            "weight_max": 64,
+            "measurements": {
+              "胸围": 96,
+              "衣长": 64,
+              "肩宽": 41,
+              "袖长": 57,
+              "领围": 39
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "composition": "棉 60% / 聚酯纤维 40%"
+      },
+      "forbidden": [
+        "棉 100%",
+        "棉 80%",
+        "聚酯 60%"
+      ]
+    },
+    {
+      "id": "F03",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-003",
+      "question": "POLO 的氨纶含量多少？有弹性吗？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-003",
+          "title": "男装POLO衫商务翻领 短袖",
+          "category_code": "A0101",
+          "price_cents": 9900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 95
+            },
+            {
+              "material": "氨纶",
+              "percent": 5
+            }
+          ],
+          "size_codes": [
+            "M",
+            "L",
+            "XL"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "M",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 50,
+            "weight_max": 62,
+            "measurements": {
+              "胸围": 98,
+              "衣长": 66,
+              "肩宽": 43,
+              "袖长": 21
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 165,
+            "height_max": 175,
+            "weight_min": 56,
+            "weight_max": 70,
+            "measurements": {
+              "胸围": 102,
+              "衣长": 68,
+              "肩宽": 45,
+              "袖长": 22
+            }
+          },
+          {
+            "size": "XL",
+            "height_min": 170,
+            "height_max": 180,
+            "weight_min": 64,
+            "weight_max": 78,
+            "measurements": {
+              "胸围": 106,
+              "衣长": 70,
+              "肩宽": 47,
+              "袖长": 23
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "composition": "棉 95% / 氨纶 5%"
+      },
+      "forbidden": [
+        "氨纶 10%",
+        "氨纶 20%",
+        "棉 100%"
+      ]
+    },
+    {
+      "id": "F04",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-004",
+      "question": "牛仔裤含棉多少？能不能机洗？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-004",
+          "title": "女装高腰直筒牛仔长裤 浅蓝",
+          "category_code": "B0211",
+          "price_cents": 18900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 98
+            },
+            {
+              "material": "氨纶",
+              "percent": 2
+            }
+          ],
+          "size_codes": [
+            "26",
+            "27",
+            "28",
+            "29"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "26",
+            "height_min": 150,
+            "height_max": 160,
+            "weight_min": 42,
+            "weight_max": 50,
+            "measurements": {
+              "腰围": 66,
+              "裤长": 98,
+              "臀围": 90,
+              "大腿围": 52,
+              "脚口": 32
+            }
+          },
+          {
+            "size": "27",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 46,
+            "weight_max": 54,
+            "measurements": {
+              "腰围": 68,
+              "裤长": 99,
+              "臀围": 92,
+              "大腿围": 53,
+              "脚口": 33
+            }
+          },
+          {
+            "size": "28",
+            "height_min": 158,
+            "height_max": 168,
+            "weight_min": 50,
+            "weight_max": 60,
+            "measurements": {
+              "腰围": 71,
+              "裤长": 100,
+              "臀围": 95,
+              "大腿围": 55,
+              "脚口": 34
+            }
+          },
+          {
+            "size": "29",
+            "height_min": 162,
+            "height_max": 172,
+            "weight_min": 54,
+            "weight_max": 65,
+            "measurements": {
+              "腰围": 74,
+              "裤长": 101,
+              "臀围": 98,
+              "大腿围": 57,
+              "脚口": 35
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "composition": "棉 98% / 氨纶 2%"
+      },
+      "forbidden": [
+        "棉 100%",
+        "聚酯纤维 50%"
+      ]
+    },
+    {
+      "id": "F05",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-007",
+      "question": "连衣裙是什么面料？洗护要注意什么？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-007",
+          "title": "女装法式碎花连衣裙 收腰",
+          "category_code": "C0221",
+          "price_cents": 21900,
+          "composition": [
+            {
+              "material": "粘纤",
+              "percent": 100
+            }
+          ],
+          "size_codes": [
+            "S",
+            "M",
+            "L"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "S",
+            "height_min": 150,
+            "height_max": 160,
+            "weight_min": 42,
+            "weight_max": 52,
+            "measurements": {
+              "胸围": 86,
+              "裙长": 106,
+              "腰围": 68,
+              "臀围": 92
+            }
+          },
+          {
+            "size": "M",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 46,
+            "weight_max": 56,
+            "measurements": {
+              "胸围": 90,
+              "裙长": 108,
+              "腰围": 72,
+              "臀围": 96
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 52,
+            "weight_max": 64,
+            "measurements": {
+              "胸围": 94,
+              "裙长": 110,
+              "腰围": 76,
+              "臀围": 100
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "composition": "粘纤 100%",
+        "care": "粘纤建议手洗/低温，不拧干"
+      },
+      "forbidden": [
+        "聚酯纤维 100%",
+        "棉 100%",
+        "可高温烘干"
+      ]
+    },
+    {
+      "id": "A01",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-001",
+      "question": "收到衣服发现破洞，签收 2 天，能退吗？运费谁出？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-001",
+          "title": "男装纯棉圆领短袖T恤 260g重磅",
+          "category_code": "A0101",
+          "price_cents": 6900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 100
+            }
+          ],
+          "size_codes": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "S",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 45,
+            "weight_max": 55,
+            "measurements": {
+              "胸围": 96,
+              "衣长": 64,
+              "肩宽": 42,
+              "袖长": 21
+            }
+          },
+          {
+            "size": "M",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 50,
+            "weight_max": 62,
+            "measurements": {
+              "胸围": 100,
+              "衣长": 66,
+              "肩宽": 44,
+              "袖长": 22
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 165,
+            "height_max": 175,
+            "weight_min": 56,
+            "weight_max": 70,
+            "measurements": {
+              "胸围": 104,
+              "衣长": 68,
+              "肩宽": 46,
+              "袖长": 23
+            }
+          },
+          {
+            "size": "XL",
+            "height_min": 170,
+            "height_max": 180,
+            "weight_min": 64,
+            "weight_max": 78,
+            "measurements": {
+              "胸围": 108,
+              "衣长": 70,
+              "肩宽": 48,
+              "袖长": 24
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "eligible": "质量问题可退换",
+        "freight": "卖家承担",
+        "window": "7 天内"
+      },
+      "forbidden": [
+        "运费买家承担",
+        "不能退",
+        "15 天"
+      ]
+    },
+    {
+      "id": "A02",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-002",
+      "question": "尺码买小了想换大一码，运费谁承担？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-002",
+          "title": "女装翻领长袖衬衫 全网最低价",
+          "category_code": "A0202",
+          "price_cents": 12900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 60
+            },
+            {
+              "material": "聚酯纤维",
+              "percent": 40
+            }
+          ],
+          "size_codes": [
+            "S",
+            "M",
+            "L"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "S",
+            "height_min": 150,
+            "height_max": 160,
+            "weight_min": 42,
+            "weight_max": 52,
+            "measurements": {
+              "胸围": 88,
+              "衣长": 60,
+              "肩宽": 37,
+              "袖长": 55,
+              "领围": 35
+            }
+          },
+          {
+            "size": "M",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 46,
+            "weight_max": 56,
+            "measurements": {
+              "胸围": 92,
+              "衣长": 62,
+              "肩宽": 39,
+              "袖长": 56,
+              "领围": 37
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 52,
+            "weight_max": 64,
+            "measurements": {
+              "胸围": 96,
+              "衣长": 64,
+              "肩宽": 41,
+              "袖长": 57,
+              "领围": 39
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "eligible": "可换码",
+        "freight": "买家承担"
+      },
+      "forbidden": [
+        "运费卖家承担",
+        "不能换",
+        "免费换码"
+      ]
+    },
+    {
+      "id": "A03",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-003",
+      "question": "签收 10 天了，不喜欢还能七天无理由退吗？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-003",
+          "title": "男装POLO衫商务翻领 短袖",
+          "category_code": "A0101",
+          "price_cents": 9900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 95
+            },
+            {
+              "material": "氨纶",
+              "percent": 5
+            }
+          ],
+          "size_codes": [
+            "M",
+            "L",
+            "XL"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "M",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 50,
+            "weight_max": 62,
+            "measurements": {
+              "胸围": 98,
+              "衣长": 66,
+              "肩宽": 43,
+              "袖长": 21
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 165,
+            "height_max": 175,
+            "weight_min": 56,
+            "weight_max": 70,
+            "measurements": {
+              "胸围": 102,
+              "衣长": 68,
+              "肩宽": 45,
+              "袖长": 22
+            }
+          },
+          {
+            "size": "XL",
+            "height_min": 170,
+            "height_max": 180,
+            "weight_min": 64,
+            "weight_max": 78,
+            "measurements": {
+              "胸围": 106,
+              "衣长": 70,
+              "肩宽": 47,
+              "袖长": 23
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "eligible": "超过 7 天不能直接无理由",
+        "action": "建议联系平台/人工复核"
+      },
+      "forbidden": [
+        "可以无理由退",
+        "15 天内可退",
+        "一定可以退"
+      ]
+    },
+    {
+      "id": "A04",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-004",
+      "question": "吊牌剪了还能退吗？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-004",
+          "title": "女装高腰直筒牛仔长裤 浅蓝",
+          "category_code": "B0211",
+          "price_cents": 18900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 98
+            },
+            {
+              "material": "氨纶",
+              "percent": 2
+            }
+          ],
+          "size_codes": [
+            "26",
+            "27",
+            "28",
+            "29"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "26",
+            "height_min": 150,
+            "height_max": 160,
+            "weight_min": 42,
+            "weight_max": 50,
+            "measurements": {
+              "腰围": 66,
+              "裤长": 98,
+              "臀围": 90,
+              "大腿围": 52,
+              "脚口": 32
+            }
+          },
+          {
+            "size": "27",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 46,
+            "weight_max": 54,
+            "measurements": {
+              "腰围": 68,
+              "裤长": 99,
+              "臀围": 92,
+              "大腿围": 53,
+              "脚口": 33
+            }
+          },
+          {
+            "size": "28",
+            "height_min": 158,
+            "height_max": 168,
+            "weight_min": 50,
+            "weight_max": 60,
+            "measurements": {
+              "腰围": 71,
+              "裤长": 100,
+              "臀围": 95,
+              "大腿围": 55,
+              "脚口": 34
+            }
+          },
+          {
+            "size": "29",
+            "height_min": 162,
+            "height_max": 172,
+            "weight_min": 54,
+            "weight_max": 65,
+            "measurements": {
+              "腰围": 74,
+              "裤长": 101,
+              "臀围": 98,
+              "大腿围": 57,
+              "脚口": 35
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "eligible": "影响二次销售/吊牌缺失通常不支持无理由",
+        "action": "转人工/按平台规则"
+      },
+      "forbidden": [
+        "一定可以退",
+        "无条件是退",
+        "7 天内都能退"
+      ]
+    },
+    {
+      "id": "A05",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-005",
+      "question": "1688 批发的裙子能按七天无理由退吗？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-005",
+          "title": "女装宽松休闲长裤 第一品质",
+          "category_code": "B0211",
+          "price_cents": 16900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 100
+            }
+          ],
+          "size_codes": [
+            "27",
+            "28",
+            "29"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "27",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 46,
+            "weight_max": 55,
+            "measurements": {
+              "腰围": 68,
+              "裤长": 97,
+              "臀围": 94,
+              "大腿围": 54,
+              "脚口": 36
+            }
+          },
+          {
+            "size": "28",
+            "height_min": 158,
+            "height_max": 168,
+            "weight_min": 50,
+            "weight_max": 60,
+            "measurements": {
+              "腰围": 71,
+              "裤长": 98,
+              "臀围": 97,
+              "大腿围": 56,
+              "脚口": 37
+            }
+          },
+          {
+            "size": "29",
+            "height_min": 162,
+            "height_max": 172,
+            "weight_min": 54,
+            "weight_max": 65,
+            "measurements": {
+              "腰围": 74,
+              "裤长": 99,
+              "臀围": 100,
+              "大腿围": 58,
+              "脚口": 38
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "eligible": "1688 批发按平台/协议，不直接套用零售七天无理由",
+        "action": "转人工确认"
+      },
+      "forbidden": [
+        "一定可以退",
+        "七天无理由",
+        "卖家承担运费"
+      ]
+    },
+    {
+      "id": "L01",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-001",
+      "question": "下单后多久发货？能当天发吗？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-001",
+          "title": "男装纯棉圆领短袖T恤 260g重磅",
+          "category_code": "A0101",
+          "price_cents": 6900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 100
+            }
+          ],
+          "size_codes": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "S",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 45,
+            "weight_max": 55,
+            "measurements": {
+              "胸围": 96,
+              "衣长": 64,
+              "肩宽": 42,
+              "袖长": 21
+            }
+          },
+          {
+            "size": "M",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 50,
+            "weight_max": 62,
+            "measurements": {
+              "胸围": 100,
+              "衣长": 66,
+              "肩宽": 44,
+              "袖长": 22
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 165,
+            "height_max": 175,
+            "weight_min": 56,
+            "weight_max": 70,
+            "measurements": {
+              "胸围": 104,
+              "衣长": 68,
+              "肩宽": 46,
+              "袖长": 23
+            }
+          },
+          {
+            "size": "XL",
+            "height_min": 170,
+            "height_max": 180,
+            "weight_min": 64,
+            "weight_max": 78,
+            "measurements": {
+              "胸围": 108,
+              "衣长": 70,
+              "肩宽": 48,
+              "袖长": 24
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "dispatch_hours": 48,
+        "avoid": "不承诺当天/24 小时"
+      },
+      "forbidden": [
+        "当天发货",
+        "24 小时内发货",
+        "保证次日达"
+      ]
+    },
+    {
+      "id": "L02",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-002",
+      "question": "发到新疆偏远地区包邮吗？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-002",
+          "title": "女装翻领长袖衬衫 全网最低价",
+          "category_code": "A0202",
+          "price_cents": 12900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 60
+            },
+            {
+              "material": "聚酯纤维",
+              "percent": 40
+            }
+          ],
+          "size_codes": [
+            "S",
+            "M",
+            "L"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "S",
+            "height_min": 150,
+            "height_max": 160,
+            "weight_min": 42,
+            "weight_max": 52,
+            "measurements": {
+              "胸围": 88,
+              "衣长": 60,
+              "肩宽": 37,
+              "袖长": 55,
+              "领围": 35
+            }
+          },
+          {
+            "size": "M",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 46,
+            "weight_max": 56,
+            "measurements": {
+              "胸围": 92,
+              "衣长": 62,
+              "肩宽": 39,
+              "袖长": 56,
+              "领围": 37
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 52,
+            "weight_max": 64,
+            "measurements": {
+              "胸围": 96,
+              "衣长": 64,
+              "肩宽": 41,
+              "袖长": 57,
+              "领围": 39
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "remote": "偏远地区可能补运费，需按地址确认",
+        "avoid": "不直接报包邮/具体金额"
+      },
+      "forbidden": [
+        "一定包邮",
+        "补 20 元",
+        "全国包邮"
+      ]
+    },
+    {
+      "id": "L03",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-003",
+      "question": "快递到了我不想要了，能拦截退款吗？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-003",
+          "title": "男装POLO衫商务翻领 短袖",
+          "category_code": "A0101",
+          "price_cents": 9900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 95
+            },
+            {
+              "material": "氨纶",
+              "percent": 5
+            }
+          ],
+          "size_codes": [
+            "M",
+            "L",
+            "XL"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "M",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 50,
+            "weight_max": 62,
+            "measurements": {
+              "胸围": 98,
+              "衣长": 66,
+              "肩宽": 43,
+              "袖长": 21
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 165,
+            "height_max": 175,
+            "weight_min": 56,
+            "weight_max": 70,
+            "measurements": {
+              "胸围": 102,
+              "衣长": 68,
+              "肩宽": 45,
+              "袖长": 22
+            }
+          },
+          {
+            "size": "XL",
+            "height_min": 170,
+            "height_max": 180,
+            "weight_min": 64,
+            "weight_max": 78,
+            "measurements": {
+              "胸围": 106,
+              "衣长": 70,
+              "肩宽": 47,
+              "袖长": 23
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "intercept": "拦截/拒收按平台规则，不承诺全额退款"
+      },
+      "forbidden": [
+        "一定全额退款",
+        "直接退款",
+        "保证拦截成功"
+      ]
+    },
+    {
+      "id": "L04",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-010",
+      "question": "1688 拿 10 件能便宜多少？直接给我最低价",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-010",
+          "title": "女装短款连帽羽绒服 90%白鸭绒",
+          "category_code": "D0232",
+          "price_cents": 46900,
+          "composition": [
+            {
+              "material": "锦纶",
+              "percent": 100
+            }
+          ],
+          "size_codes": [
+            "M",
+            "L",
+            "XL"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "M",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 46,
+            "weight_max": 58,
+            "measurements": {
+              "胸围": 110,
+              "衣长": 62,
+              "肩宽": 42,
+              "袖长": 59,
+              "下摆": 106
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 52,
+            "weight_max": 66,
+            "measurements": {
+              "胸围": 114,
+              "衣长": 64,
+              "肩宽": 44,
+              "袖长": 60,
+              "下摆": 110
+            }
+          },
+          {
+            "size": "XL",
+            "height_min": 165,
+            "height_max": 175,
+            "weight_min": 58,
+            "weight_max": 74,
+            "measurements": {
+              "胸围": 118,
+              "衣长": 66,
+              "肩宽": 46,
+              "袖长": 61,
+              "下摆": 114
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "moq": 2,
+        "discount": "10 件以上可申请 3% 折扣，需运营审批",
+        "avoid": "不直接承诺折扣/最低价"
+      },
+      "forbidden": [
+        "直接 3%",
+        "给你最低价",
+        "保证最便宜"
+      ]
+    },
+    {
+      "id": "L05",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-002",
+      "question": "标题写全网最低价，别家更便宜你们退差价吗？",
+      "facts": {
+        "product": {
+          "spu_code": "GOLD-SPU-002",
+          "title": "女装翻领长袖衬衫 全网最低价",
+          "category_code": "A0202",
+          "price_cents": 12900,
+          "composition": [
+            {
+              "material": "棉",
+              "percent": 60
+            },
+            {
+              "material": "聚酯纤维",
+              "percent": 40
+            }
+          ],
+          "size_codes": [
+            "S",
+            "M",
+            "L"
+          ]
+        },
+        "size_chart": [
+          {
+            "size": "S",
+            "height_min": 150,
+            "height_max": 160,
+            "weight_min": 42,
+            "weight_max": 52,
+            "measurements": {
+              "胸围": 88,
+              "衣长": 60,
+              "肩宽": 37,
+              "袖长": 55,
+              "领围": 35
+            }
+          },
+          {
+            "size": "M",
+            "height_min": 155,
+            "height_max": 165,
+            "weight_min": 46,
+            "weight_max": 56,
+            "measurements": {
+              "胸围": 92,
+              "衣长": 62,
+              "肩宽": 39,
+              "袖长": 56,
+              "领围": 37
+            }
+          },
+          {
+            "size": "L",
+            "height_min": 160,
+            "height_max": 170,
+            "weight_min": 52,
+            "weight_max": 64,
+            "measurements": {
+              "胸围": 96,
+              "衣长": 64,
+              "肩宽": 41,
+              "袖长": 57,
+              "领围": 39
+            }
+          }
+        ],
+        "policy": {
+          "return_window_days": 7,
+          "condition": "签收次日起 7 天内，商品完好、吊牌/包装完整、不影响二次销售",
+          "quality": "质量问题（破损/色差/起球等）拍照留证后可退换，运费由卖家承担",
+          "size_exchange": "尺码不合适可换码，换码运费由买家承担",
+          "refund": "退款原路退回，到账时间以平台为准（通常 1–3 个工作日）",
+          "source": "客服政策摘要 v1（知识库 policy/return-policy）"
+        },
+        "shipping": {
+          "dispatch_hours": 48,
+          "carrier": "中通/圆通",
+          "remote": "偏远地区可能需补运费，需按收货地址确认",
+          "intercept": "拦截/拒收按平台规则处理，不承诺全额退款"
+        },
+        "price_policy": {
+          "moq": 2,
+          "discount": "10 件以上可申请 3% 折扣，需运营审批；客服不得直接承诺",
+          "floor": "页面价为最低可售价，不做全网最低价保证"
+        }
+      },
+      "expected": {
+        "avoid": "不承诺全网最低价/退差价",
+        "action": "以页面价为准，差价/议价转运营"
+      },
+      "forbidden": [
+        "保证最低价",
+        "退差价",
+        "绝对最便宜"
+      ]
+    }
+  ]
+}

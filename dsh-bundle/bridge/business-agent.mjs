@@ -86,7 +86,21 @@ function debugRecord(config, record) {
   }
 }
 
-function buildPrompt(env, skillText = '') {
+function truncateAtSentence(text, maxChars) {
+  const limit = Number.isFinite(maxChars) && maxChars > 0 ? Math.floor(maxChars) : 0;
+  if (limit <= 0 || [...text].length <= limit) return { text, truncated: false };
+  const chars = [...text];
+  let end = limit;
+  for (let index = limit; index >= Math.max(1, Math.floor(limit * 0.6)); index -= 1) {
+    if (['。', '！', '？', '；', '!', '?', ';', '\n'].includes(chars[index - 1])) {
+      end = index;
+      break;
+    }
+  }
+  return { text: chars.slice(0, end).join('').trim(), truncated: true };
+}
+
+function buildPrompt(env, skillText = '', maxChars = 0) {
   const lines = [`意图：${env.intent}`];
   if (env.context?.page) lines.push(`页面：${env.context.page}`);
   if (env.context?.objectType) lines.push(`对象：${env.context.objectType}${env.context.objectId ? `/${env.context.objectId}` : ''}`);
@@ -213,8 +227,8 @@ export class BusinessAgentService extends TypertRemoteService {
         ? { skills: skillInjection.skills, bytes: skillInjection.bytes, tokens: skillInjection.tokens_estimate }
         : null,
       injectionError: skillInjectionError,
-      promptChars: buildPrompt(env, skillInjection?.text ?? '').length,
-      promptPreview: buildPrompt(env, skillInjection?.text ?? '').slice(0, 600),
+      promptChars: buildPrompt(env, skillInjection?.text ?? '', Number(config.replyMaxChars ?? 0)).length,
+      promptPreview: buildPrompt(env, skillInjection?.text ?? '', Number(config.replyMaxChars ?? 0)).slice(0, 600),
     });
 
     yield {
@@ -322,7 +336,16 @@ export class BusinessAgentService extends TypertRemoteService {
           sessionId,
           requestId: env.requestId ?? env.runId,
           mode: 'queue',
-          content: [{ type: 'text', text: buildPrompt(env, skillInjection?.text ?? '') }],
+          content: [
+            {
+              type: 'text',
+              text: buildPrompt(
+                env,
+                skillInjection?.text ?? '',
+                env.intent === 'support.suggest' ? Number(config.replyMaxChars ?? 180) : 0,
+              ),
+            },
+          ],
         },
         signal,
       );
@@ -400,7 +423,21 @@ export class BusinessAgentService extends TypertRemoteService {
       const costCents = Math.ceil((inputTokens / 1000) * priceIn + (outputTokens / 1000) * priceOut);
       yield { type: 'usage', inputTokens, outputTokens, costCents };
 
-      const text = assistantText || finalText;
+      const rawText = assistantText || finalText;
+      const capped =
+        env.intent === 'support.suggest'
+          ? truncateAtSentence(rawText, Number(config.replyMaxChars ?? 180))
+          : { text: rawText, truncated: false };
+      if (capped.truncated) {
+        debugRecord(config, {
+          runId: env.runId,
+          event: 'output-truncated',
+          rawChars: [...rawText].length,
+          maxChars: Number(config.replyMaxChars ?? 180),
+          finalChars: [...capped.text].length,
+        });
+      }
+      const text = capped.text;
       yield {
         type: 'final',
         output: { text, artifacts: [] },
