@@ -32,7 +32,7 @@ export function AppShell({ me, children }: AppShellProps) {
           {children}
         </main>
         <footer className={styles.footer}>
-          <span>DSSAAS · 服装电商双平台运营台（M1 骨架）</span>
+          <span>DSSAAS · 服装电商双平台运营台</span>
           <span>契约 v2 · 所有写操作必须经审批与审计</span>
         </footer>
       </div>

@@ -57,7 +57,7 @@ export function SidebarNav({ groups, pathname, me }: SidebarNavProps) {
           当前账号：<strong>{me.name}</strong>
         </span>
         <span>
-          {roleLabel(me.role)} · 契约 v2 · M1 骨架
+          {roleLabel(me.role)} · 契约 v2
         </span>
       </div>
     </aside>
