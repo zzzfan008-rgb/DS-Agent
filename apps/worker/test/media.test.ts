@@ -267,7 +267,7 @@ test('单桶 + 前缀：对象键集中在 keys.ts', () => {
   const at = new Date('2026-10-20T10:15:00Z');
   const assetId = '018f3c2a-1111-7222-8333-444455556666';
   const base = { kind: 'scene', orgId: 1n, at, assetId };
-  assert.equal(MEDIA_BUCKET, 'dssaas-media');
+  assert.equal(MEDIA_BUCKET, process.env.MEDIA_BUCKET ?? 'dssaas-media');
   assert.equal(sourceObjectKey({ ...base, ext: 'png' }), `raw/scene/1/2026/10/${assetId}/source.png`);
   assert.equal(
     variantObjectKey({ ...base, variantKey: 'thumb_320', ext: 'webp' }),

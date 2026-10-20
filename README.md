@@ -74,6 +74,9 @@ pnpm typecheck
 | `pnpm typecheck` | 全 workspace `tsc --noEmit`（db 会先 generate） |
 | `pnpm infra:config` | `docker compose config` 校验 |
 | `pnpm infra:up` / `infra:down` | 起停基础依赖 |
+| `pnpm e2e` | 全链路 E2E（独立测试库；商品→文案→判定→审批→上架→客服→媒体→KB） |
+
+> `pnpm e2e` 不进 `quality-gate`，建议在跨模块改动合并前、RC/nightly 或串链排障时运行；报告在 `artifacts/e2e/report.json`，细节见 `docs/验收记录-E2E.md` 与 `scripts/qa/README.md §7`。
 
 ## 数据模型要点
 

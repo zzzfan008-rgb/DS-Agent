@@ -363,6 +363,26 @@ ctx.remoteAccess.registerPolicy('business-api', {
 - 上下文超 60% 预算时压缩一次（保留事实块 + 最近 3 轮），压缩动作写审计；
 - `.jsonl` 仅调试：保留 7 天，业务接口不读（`docs/14` / `docs/15` 静态规则）。
 
+#### 5.4.1 skill 前置注入（F1，2026-10-20）
+
+业务意图不再让模型先调用 `tool-skill` 再回答，而是由 Host 在构造 prompt 时把 skill 正文直接拼入
+`[3] skill 片段`（对应 `support.suggest`=reply_draft、`content.draft`/`content.rewrite`=copy）：
+
+| 项 | 实现 |
+|---|---|
+| 映射 | 默认读 `dsh-bundle/manifest.json` 的 `intents[intent].skills`；bridge 配置可用 `skillInjection.intentSkills` 覆盖（当前 reply_draft 额外注入 `size-guide`，因为客服问题常同时问尺码） |
+| 开关 | `business-agent.config.skillInjection.enabled` + `enabledIntents`；默认只开 `support.suggest`，dev 配置开 copy 两个意图；关闭即回退工具加载 |
+| 读取 | `dsh-bundle/bridge/skill-injection.mjs`：只读 `skills/<name>/<version>/SKILL.md`，去 frontmatter；路径必须落在 `skillRoot` 内；按 mtime/size 缓存；单文件/总字节上限 |
+| prompt | 注入块标题「已预加载 Skills（系统注入，直接遵循）」，并明确禁止本次再调用 `skill` 工具；未列出的信息直接说明缺失/转人工 |
+| 失败 | 配置/读取失败或未命中映射 → 不注入，保持 `tool-skill` 路径；`meta` 带 `skillInjection.mode=tool` 与错误（不阻断 run） |
+| reasoning | `support.suggest` 额外设 `reasoningEffort=off`：F1 实测「已注入但 reasoning=high」首 token 中位数仍 **7.34s**；关闭隐藏思考后为 **0.78s**。这是客服 5s SLA 的必要条件，copy 未改 |
+
+真实 Host 实测（deepseek-flash，2026-10-20，5 次 `support.suggest`，详表见
+`docs/验收记录-M2-DSH真实联调.md` §F1）：前置注入后首 token **P50 780ms / P95 1128ms**，
+5 次均无 `skill`/其他工具调用；工具加载对照（reasoning 同为 off）首 token P50 1924ms。
+prompt token 从 2117 → 2857（+740，约 +35%），单次成本约 +0.6 分；换来首 token 约 −1.1s、
+总时延约 −1.2s。
+
 ### 5.5 会话与审批的关系
 
 - 会话产出只写 `content_draft`/`judgment`/`reply_draft`，不直接产生 `approval`；
@@ -501,11 +521,17 @@ data: {"…","payload":{"run_id":"01J9Z…","output":{"text":"…","artifacts":[
 |---|---|---|
 | 创建 run | 5s | 超时 → 503 `dsh_unavailable` |
 | 排队 | 30s | 超时 → `run.error{code:"quota"}`，不执行 |
-| 首 token | 8s（客服 5s） | 切备用 route；仍无 → 模板降级 |
+| 首 token | 按意图分档：`reply_draft`（support.suggest）**5000ms**；`copy`（content.draft/rewrite）**8000ms**；其他 **8000ms** | 切备用 route；仍无 → 模板降级 |
 | 单步 | 30s | 当前步失败，按可重试/人工分类 |
 | 整次运行 | `timeout_ms`（默认 120s，上限 600s） | 强制 abort → `run.error{code:"timeout"}` |
 | 取消生效 | 步骤边界 ≤2s | 超 5s 未释放 → `agent_leak` 告警 |
 | SSE 建连 | 10s | 前端提示重连 |
+
+分档实现：`AGENT_FIRST_TOKEN_TIMEOUT_MS_REPLY_DRAFT`（默认 5000）与
+`AGENT_FIRST_TOKEN_TIMEOUT_MS_COPY`（默认 8000）独立配置；**全局
+`AGENT_FIRST_TOKEN_TIMEOUT_MS` 默认仍 8000**，不因慢路径抬高。`POST /api/agent/run` 的
+`first_token_timeout_ms` 是**本次运行**的诊断/测量覆盖（100–60000，且 ≤ `timeout_ms`），
+不改变任何默认值；生产 SLA 由意图分档保证。
 
 ### 6.6 幂等与重试
 

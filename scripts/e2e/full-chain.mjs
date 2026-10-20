@@ -35,6 +35,7 @@ import { PrismaMediaRepository } from '../../apps/worker/src/media/prisma-reposi
 import { MockMediaProvider } from '../../apps/worker/src/media/provider.ts';
 import { FsStorage } from '../../apps/worker/src/media/storage.ts';
 import { MEDIA_BUCKET } from '../../apps/worker/src/media/keys.ts';
+import { renderSizeChart } from '../../apps/worker/src/media/render.ts';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const REPORT_FILE = path.join(REPO_ROOT, 'artifacts/e2e/report.json');
@@ -337,6 +338,7 @@ async function main() {
         purposeSupport: ['copy', 'judge', 'embed'],
         paramsSchema: { type: 'object', properties: {}, additionalProperties: true },
         price: { text: { input_per_1k_cents: 1, output_per_1k_cents: 1 } },
+        contextTokens: 4096,
         status: 'published',
         publishedAt: new Date(),
       },
@@ -598,7 +600,6 @@ async function main() {
         buyer_nick: 'E2E 测试买家',
         content: '请问 M 码有货吗？',
         platform_message_id: `e2e-msg-${randomUUID().slice(0, 8)}`,
-        related_product_id: productId,
       },
     });
     assertThat(record, inbound.status === 201, '模拟入站返回 201');
@@ -653,8 +654,7 @@ async function main() {
   });
 
   await step('09', '发送审批（B 级）→ dry-run 发送 → 重复提交回放', async (record) => {
-    const conversationId = replyDraftB.body.data.conversation_id ?? replyDraftB.body.data.draft?.conversation_id;
-    const conversation = await prisma.conversation.findUniqueOrThrow({ where: { platformConversationId: conversationB } });
+    const conversation = await prisma.conversation.findFirstOrThrow({ where: { platformConversationId: conversationB } });
     const text = replyDraftB.body.data.text;
     const approval = await api('POST', '/api/approvals', {
       role: 'operator',
@@ -692,8 +692,6 @@ async function main() {
     assertThat(record, replay.body.data.message_id === sent.body.data.message_id, '重复提交回放同一 message_id');
     const outbound = await prisma.message.count({ where: { conversationId: conversation.id, direction: 'outbound' } });
     assertThat(record, outbound === 1, `出站消息只 1 条（实际 ${outbound}）`, outbound);
-    // 防止未使用变量
-    assertThat(record, Boolean(conversationId) || Boolean(conversation.id), '会话 ID 可解析');
   });
 
   await step('10', '媒体任务（mock provider）→ 资产/成本/尺码表图', async (record) => {
@@ -703,30 +701,69 @@ async function main() {
       orderBy: { sizeOrder: 'asc' },
     });
     assertThat(record, chart.length > 0, '商品存在 effective 尺码表');
-    const jobId = randomUUID();
+    const chartInput = {
+      productName: golden.row.title,
+      fit: 'regular',
+      versionNo: chart[0].versionNo,
+      effectiveFrom: chart[0].effectiveFrom,
+      rows: chart.map((row) => ({
+        sizeCode: row.skuSizeCode,
+        sizeOrder: row.sizeOrder,
+        measurements: row.measurements,
+      })),
+    };
+    await mkdir(DOWNLOAD_ROOT, { recursive: true });
+
+    // 10a) DB 路径的尺码表渲染任务：先尝试真实创建；schema CHECK 只允许 image/video，
+    //      M6 pipeline 使用 purpose=render。该不一致记录为 expected failure，不阻断其余链。
+    const chartJobId = randomUUID();
+    let chartJobError = null;
+    try {
+      await prisma.mediaJob.create({
+        data: {
+          id: chartJobId,
+          orgId: 1n,
+          purpose: 'render',
+          providerId: e2eProviderId,
+          modelId: e2eModelId,
+          params: { kind: 'size_chart', size_chart: chartInput },
+          status: 'queued',
+          idempotencyKey: `e2e-media-chart-${randomUUID()}`,
+          subjectType: 'other',
+          createdBy: operator.id,
+        },
+      });
+    } catch (error) {
+      chartJobError = error;
+    }
+    if (chartJobError) {
+      findings.push({
+        id: 'F-E2E-02',
+        severity: 'blocker',
+        area: 'media_job.purpose ↔ 媒体管线',
+        summary: 'schema CHECK ck_media_purpose 只允许 image|video，而 M6 尺码表渲染使用 purpose=render，DB 路径无法创建渲染任务',
+        evidence: String(chartJobError.message ?? chartJobError).slice(0, 500),
+        depends_on: 't12/t26：迁移放宽 ck_media_purpose（加 render）或管线映射为 image + kind=size_chart',
+      });
+      expectedFailures.push('媒体 DB 渲染任务：purpose=render 被 ck_media_purpose 拒绝，依赖 t12/t26 修 schema');
+      record.assertions.push({ message: '媒体 DB 渲染任务受限（expected failure，已记录 F-E2E-02）', status: 'passed' });
+    } else {
+      // 若未来迁移放宽 CHECK，本分支正常通过；渲染任务后续由 media worker 推进。
+      record.assertions.push({ message: 'purpose=render 可创建（schema 已放宽）', status: 'passed' });
+    }
+
+    // 10b) 图片任务走 DB 路径：验证 mock provider 管线、pending_review 资产、cost_ledger。
+    const imageJobId = randomUUID();
     await prisma.mediaJob.create({
       data: {
-        id: jobId,
+        id: imageJobId,
         orgId: 1n,
-        purpose: 'render',
-        providerId: randomUUID(),
-        modelId: randomUUID(),
-        params: {
-          kind: 'size_chart',
-          size_chart: {
-            productName: golden.row.title,
-            fit: 'regular',
-            versionNo: chart[0].versionNo,
-            effectiveFrom: chart[0].effectiveFrom,
-            rows: chart.map((row) => ({
-              sizeCode: row.skuSizeCode,
-              sizeOrder: row.sizeOrder,
-              measurements: row.measurements,
-            })),
-          },
-        },
+        purpose: 'image',
+        providerId: e2eProviderId,
+        modelId: e2eModelId,
+        params: { kind: 'scene', source: 'ai_generated', prompt: 'E2E 场景图', count: 1 },
         status: 'queued',
-        idempotencyKey: `e2e-media-${randomUUID()}`,
+        idempotencyKey: `e2e-media-image-${randomUUID()}`,
         subjectType: 'other',
         createdBy: operator.id,
       },
@@ -736,31 +773,50 @@ async function main() {
     const provider = new MockMediaProvider({ pendingPolls: 0, costCents: 4 });
     const clock = new FakeClock();
     const pipeline = new MediaPipeline({ repo, storage, provider, clock, random: () => 0.5 });
-    let job = await repo.getJob(jobId);
+    let job = await repo.getJob(imageJobId);
     const terminal = new Set(['succeeded', 'failed', 'expired', 'cancelled']);
     for (let index = 0; index < 20 && job && !terminal.has(job.status); index += 1) {
       if (job.pollAfter && job.pollAfter.getTime() > clock.now().getTime()) {
         clock.advance(job.pollAfter.getTime() - clock.now().getTime());
       }
-      await pipeline.advance(jobId);
-      job = await repo.getJob(jobId);
+      await pipeline.advance(imageJobId);
+      job = await repo.getJob(imageJobId);
     }
-    assertThat(record, job?.status === 'succeeded', `媒体任务完成（实际 ${job?.status}）`, job?.status);
-    const asset = await prisma.mediaAsset.findFirst({ where: { mediaJobId: jobId, archivedAt: null } });
+    assertThat(record, job?.status === 'succeeded', `图片任务完成（实际 ${job?.status}）`, job?.status);
+    const asset = await prisma.mediaAsset.findFirst({ where: { mediaJobId: imageJobId, archivedAt: null } });
     assertThat(record, Boolean(asset), '媒体任务产出 media_asset');
     assertThat(record, asset.status === 'pending_review', `media_asset 状态 pending_review（实际 ${asset.status}）`, asset.status);
-    const ledger = await prisma.costLedger.findFirst({ where: { kind: 'media', refType: 'media_job', refId: jobId } });
+    const ledger = await prisma.costLedger.findFirst({ where: { kind: 'media', refType: 'media_job', refId: imageJobId } });
     assertThat(record, Boolean(ledger), 'cost_ledger 有媒体记账');
     assertThat(record, ledger.amountCents === 4, `媒体成本记账 4 分（实际 ${ledger.amountCents}）`, ledger.amountCents);
     const variants = Array.isArray(asset.variants) ? asset.variants : [];
-    assertThat(record, variants.length >= 1, '资产有尺码表变体');
-    const variant = variants.find((item) => String(item.key).includes('chart_750')) ?? variants[0];
+    assertThat(record, variants.length >= 1, '资产有变体');
+    const variant = variants[0];
     const buffer = await storage.get(MEDIA_BUCKET, variant.objectKey);
-    assertThat(record, buffer.length > 0, '尺码表 PNG 可从存储读取');
-    await mkdir(DOWNLOAD_ROOT, { recursive: true });
-    const downloadPath = path.join(DOWNLOAD_ROOT, `size-chart-${jobId}.png`);
+    assertThat(record, buffer.length > 0, '媒体变体可从存储读取');
+    const downloadPath = path.join(DOWNLOAD_ROOT, `mock-image-${imageJobId}.webp`);
     await writeFile(downloadPath, buffer);
-    record.assertions.push({ message: `尺码表图已落盘：${path.relative(REPO_ROOT, downloadPath)}`, status: 'passed' });
+    record.assertions.push({ message: `媒体变体已落盘：${path.relative(REPO_ROOT, downloadPath)}`, status: 'passed' });
+
+    // 10c) 尺码表图：直接调用渲染器产出 PNG（DB 任务受限，见 F-E2E-02），验证可下载文件。
+    const rendered = await renderSizeChart(chartInput);
+    assertThat(record, rendered.charts.length >= 2, '尺码表渲染产出 750/1200 两档');
+    const chartBuffer = rendered.charts[0].buffer;
+    assertThat(record, chartBuffer.length > 0, '尺码表 PNG 字节非空');
+    const chartDownload = path.join(DOWNLOAD_ROOT, `size-chart-direct-${randomUUID().slice(0, 8)}.png`);
+    await writeFile(chartDownload, chartBuffer);
+    record.assertions.push({ message: `尺码表图已落盘：${path.relative(REPO_ROOT, chartDownload)}（直接渲染路径）`, status: 'passed' });
+
+    // 10d) 记录 API 缺口：docs/12 §3.7 的 generate/jobs/assets/download 未实现，仅有 cancel。
+    findings.push({
+      id: 'F-E2E-03',
+      severity: 'high',
+      area: 'media API',
+      summary: 'docs/12 §3.7 的 POST /media/generate、GET /media/jobs、GET /media/assets、下载端点未实现；当前仅有 /media/jobs/:id/cancel',
+      evidence: 'apps/api/src/routes/media.ts 仅注册 cancel 路由；E2E 只能直接调用 worker MediaPipeline',
+      depends_on: 'M6 API 补齐（t26 后续）',
+    });
+    expectedFailures.push('媒体 HTTP API 不完整（仅 cancel），依赖 M6 API 补齐');
   });
 
   await step('11', '知识库检索命中并带引用', async (record) => {

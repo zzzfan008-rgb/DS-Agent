@@ -288,6 +288,7 @@ async function main(): Promise<void> {
             }
           : {}),
         output_chars: typeof view?.output?.text === 'string' ? view.output.text.length : 0,
+        ...(process.env.F1_PRINT_OUTPUT === '1' ? { output_text: view?.output?.text ?? null } : {}),
         finished,
       });
       await hostIdle(config);

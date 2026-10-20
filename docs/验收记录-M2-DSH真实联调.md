@@ -274,18 +274,10 @@ $env:DSH_BRIDGE_TOKEN_FILE='…\secrets\bridge-token'
 
 ## 8. 已知限制与需队长决策
 
-**F1（需决策）首 token 10.0s > 默认 8s。**
-真实 Host 在生成第一个 token 前先执行了 2 次 `skill` 工具调用（brand-tone 等），
-`run.started → 首 delta` = **10.033s**；`AGENT_FIRST_TOKEN_TIMEOUT_MS` 默认 8000，按默认配置
-本次 run 会被 api 判 `timeout`。本次 smoke 显式设为 60000 才通过。
-已做**默认 8s 的对照实证**：`agent-real-host-firsttoken-default.log` 中 create=202 → `run.error{code:"timeout",
-reason:"first_token_timeout"}` → `status=timeout`，Host 侧 `active_runs=0`（abort 已传导）。
-选项（需队长定）：
-1. 调高默认（如 15000–20000ms），与 docs/17 §6.5 的 8s 冲突，需同步改文档；
-2. 优化 preset：把 skill 内容以前置上下文注入，避免首 token 前的 2 次工具往返（docs/17 §5.4 的
-   「skill 片段」本来就是拼进上下文，不是工具调用）——推荐；
-3. 路由层用更快的模型/预热；客服 5s 场景不能靠这个（docs/18）。
-本任务**未擅自改默认值**（属于 SLA/产品决策），只记录并给出建议。
+**F1（已关闭，t23）首 token 10.0s > 默认 8s。**
+结论：按方案 2 落地 skill 前置注入 + `support.suggest` 关闭 deep reasoning；真实 Host 5 次
+`reply_draft` 首 token **P50 780ms / P95 1128ms**，全部 ≤5s，0 次 skill 工具调用。
+完整改造前后对比、5 次采样与成本结论见 **§8A F1 验收**。
 
 **F2 成本为估算值（真实 token，非真实计价）。**
 Host 上报真实 token；`costCents` 由 bridge 按 `1 分/1k input、2 分/1k output` 估算（可配）。
@@ -321,6 +313,104 @@ DSH 安装路径可通过 `start-dsh-host.ps1 -InstallDir` 覆盖，但 patch �
 
 ---
 
+## 8A. F1 验收（t23）：skill 前置注入 + 按意图首 token 超时
+
+### 8A.1 改造内容
+
+1. **前置注入**：`dsh-bundle/bridge/skill-injection.mjs` 在构造 prompt 前读取
+   `manifest.intents[intent].skills`（bridge 可用 `skillInjection.intentSkills` 覆盖），
+   把 `SKILL.md` 正文拼入 `[3] skill 片段`，并明确禁止本次再调用 `skill` 工具。
+   `support.suggest` 当前注入 `return-policy@1.3.0 + brand-tone@2.1.0 + size-guide@3.0.1`
+   （客服问题常同时问退换/语气/尺码，只注入 manifest 两个仍会触发一次 size-guide 工具调用）。
+2. **可配可关**：`business-agent.config.skillInjection.enabled/enabledIntents/intentSkills/
+   manifestFile/skillRoot/maxSkillBytes/maxTotalBytes`；`enabled:false` 回退 `tool-skill`。
+   探索型/管理型 intent 不在 `enabledIntents` 内，保持工具加载。
+3. **reasoningEffort**：`support.suggest: off`（见 8A.4；不设此项时注入后首 token 仍 7.3s）。
+4. **按意图分档超时**（不改全局默认）：
+   - `AGENT_FIRST_TOKEN_TIMEOUT_MS_REPLY_DRAFT=5000`（support.suggest）；
+   - `AGENT_FIRST_TOKEN_TIMEOUT_MS_COPY=8000`（content.draft/rewrite）；
+   - 其他仍用全局 `AGENT_FIRST_TOKEN_TIMEOUT_MS=8000`；
+   - 请求字段 `first_token_timeout_ms` 只覆盖本次 run（诊断/测量用，≤ `timeout_ms`）。
+
+### 8A.2 改造前后对比
+
+| 方案 | 样本 | 首 token P50 | 首 token max/P95 | 总时延 P50 | tokens in/out（单次均值） | cost（单次均值） | skill 工具调用 |
+|---|---|---|---|---|---|---|---|
+| 改造前（t18，reasoning=high + 2 次 skill） | 1 | **10.033s** | 10.033s | 13.041s | 691 / 1689 | 5 分 | 2 |
+| 注入但 reasoning=high（对照，30s 诊断超时） | 5 | 7.340s | 12.311s | 11.652s | ~2.75k / 1.81k | ~6.4 分 | 0（但首 token 仍超） |
+| 工具加载 baseline，reasoning=off（注入关闭） | 3 | **1.924s** | 2.583s | 6.217s | 2117 / 590 | 4 分 | 3 |
+| **前置注入 + reasoning=off（最终）** | **5** | **0.780s** | **1.128s** | **4.989s** | **2857 / 633** | **4.6 分** | **0** |
+
+> P95 按 5 样本 nearest-rank = 最大值。对 t18：首 token −9.253s（−92.2%），总时延 −8.052s
+> （−61.7%）。对工具加载 baseline：首 token −1.144s（−59.5%），总时延 −1.228s（−19.8%）。
+
+### 8A.3 5 次采样明细（最终方案）
+
+| # | 首 token（run.started→首个 delta） | 总时延 | tokens in | tokens out | cost | tool calls |
+|---|---|---|---|---|---|---|
+| 1 | 1110ms | 4813ms | 2857 | 511 | 4 分 | 0 |
+| 2 | 1128ms | 4989ms | 2853 | 682 | 5 分 | 0 |
+| 3 | 780ms | 5163ms | 2854 | 693 | 5 分 | 0 |
+| 4 | 698ms | 3880ms | 2853 | 507 | 4 分 | 0 |
+| 5 | 485ms | 5343ms | 2859 | 770 | 5 分 | 0 |
+
+首 token 排序：485 / 698 / 780 / 1110 / 1128ms；中位数 **780ms**，P95 **1128ms**，5/5 ≤5s。
+总时延中位数 **4989ms**；最大 5343ms，比 docs/18 的 5s 草稿线高 **343ms（1/5）**，需在
+M5 草稿编排层加输出长度/提前收尾或模板兜底（首 token 已满足，本任务不掩盖该残余）。
+
+### 8A.4 关键卡点：reasoning=high 是主因，不只是工具往返
+
+- 先只做注入、保留默认 reasoning：5 次首 token 中位数 **7340ms**（7306/8418/7340/12311/7247），
+  仍 >5s；进一步拆解发现主要延迟来自 deepseek-flash 的隐藏 reasoning，而不是注入体积
+  （prompt 仅 2064–3135 字符）。
+- 关闭 `support.suggest` 的 reasoning 后：注入方案首 token 降到 780ms；工具加载 baseline 也降到
+  1924ms。因此原始 t18 的 10.033s = **reasoning 高 + skill 工具往返叠加**，不是单纯 7s 工具往返。
+- 这是**模型行为变更**（客服场景关闭深度思考），已写入 docs/17 §5.4.1；copy 等其他 intent 未改。
+  若评审认为回答质量需保留 reasoning，则 5s 首 token 无法达到，需回到模板降级或换更快模型。
+
+### 8A.5 成本结论
+
+- prompt 输入 tokens：2117 → **2857**（**+740/次，+35.0%**）；输出 590 → 633（+43/次）；
+- 估算成本：4.0 → **4.6 分/次**（**+0.6 分/次**，配置价 1 分/1k in、2 分/1k out）；
+- 结论：**每次多花约 0.6 分，换首 token 少 1.14s、总时延少 1.23s**（相对 reasoning=off 的
+  工具加载）；相对 t18 的 10.033s，首 token 少 9.25s，同时因 reasoning 关闭，单次成本反而从
+  5 分降到 4.6 分。若按生产真实计价，以 model gateway 的 model_call_log 为准。
+
+### 8A.6 命令与证据
+
+```console
+# Host（已加载新插件/配置）
+pwsh -File scripts/dev/start-dsh-host.ps1 -ForceRestart
+
+# 5 次注入采样（默认 reply_draft 5000ms 档）
+$env:DSH_BRIDGE_URL='http://127.0.0.1:43181'
+$env:DSH_BRIDGE_TOKEN_FILE='D:\DSSAAS\dsh-bundle\.dev-home\secrets\bridge-token'
+$env:F1_MODE='injected'; $env:F1_RUNS='5'
+pnpm --filter @dssaas/api exec tsx test/agent-f1.ts
+# → summary.first_delta_ms.median=780, max=1128; skill_tool_calls=0
+
+# 工具加载 baseline（Host 配置 skillInjection.enabled=false 后重启）
+$env:F1_MODE='baseline'; $env:F1_RUNS='3'; $env:F1_FIRST_TOKEN_TIMEOUT_MS='30000'
+pnpm --filter @dssaas/api exec tsx test/agent-f1.ts
+
+# agent 回归（19 条原用例 + 3 条 F1 分档单元 = 22/22；首 token 超时用 stub 1500ms 延迟）
+pnpm --filter @dssaas/api test:agent
+# ℹ tests 22 / pass 22 / fail 0
+
+# 审计链
+pnpm --filter @dssaas/api audit:verify
+# {"ok": true, "checked": 272, "brokenAtSeq": null, "reason": null}
+```
+
+证据文件：
+- `apps/api/test/agent-f1-injected.json`（5 次最终采样，含输出文本）
+- `apps/api/test/agent-f1-baseline.json`（3 次工具加载对照）
+- `apps/api/test/agent-f1-injected-30s.json`（注入 + high reasoning 对照，5 次）
+- `dsh-bundle/.dev-home/logs/f1-injection.jsonl`（每次注入的 skills/bytes/tokens、tool/call、
+  model-selection；本机 gitignored）
+
+---
+
 ## 9. 复现与清理
 
 ```powershell
@@ -351,8 +441,8 @@ pwsh -File scripts/dev/stop-dsh-host.ps1
   **CI/无凭据回归**，真实 Host 作为 **dev 联调与 M3 前置**。
 - t3 的 api 侧驱动 19/19 用例、并发/超时/降级逻辑未改动；本任务只新增 dev Host 资产、
   smoke 模式与文档。
-- M3 仍需完成：会话映射（F3）、真实计价（F2）、skill 前置注入（F1 方案 2）、生产镜像与
-  `/ready` 聚合、MCP 启用与工具守卫。
+- M3 仍需完成：会话映射（F3）、真实计价（F2）、生产镜像与 `/ready` 聚合、MCP 启用与工具守卫；
+  **F1（skill 前置注入）已由 t23 关闭**，见 §8A。
 
 ---
 
@@ -369,4 +459,8 @@ pwsh -File scripts/dev/stop-dsh-host.ps1
 | `apps/api/test/agent-real-host-cancel.log` | 取消延迟、Host active_runs、partial 输出 |
 | `apps/api/test/agent-real-host-auth.log` | 鉴权矩阵（200/401/401/401/200） |
 | `apps/api/test/agent-real-host-firsttoken-default.log` | **F1 对照**：默认 8s 下真实 run 被 api 判 timeout |
+| `apps/api/test/agent-f1-injected.json` | **F1 最终**：5 次注入采样（首 token/总时延/tokens/cost/0 工具调用） |
+| `apps/api/test/agent-f1-baseline.json` | **F1 对照**：3 次工具加载 baseline（同 reasoning=off） |
+| `apps/api/test/agent-f1-injected-30s.json` | **F1 对照**：注入 + reasoning=high，首 token 仍 7.3s |
+| `apps/api/test/agent-f1-debug.json` | F1 单次事件序列与注入 debug（含 tool/call 检查） |
 | `dsh-bundle/.dev-home/logs/host-*.log` | 真实 Host 启动/插件日志（本机，gitignored） |

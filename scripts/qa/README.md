@@ -19,6 +19,7 @@
 | `pnpm check:migrations` | 空库连续两次 `migrate deploy` | 是 |
 | `pnpm test:api` | 测试库运行器（默认 docker；或 reuse 既有库独立库）+ API 测试 | 本地（CI 直接跑 API 测试） |
 | `pnpm test:api:local` | 自备 `TEST_DATABASE_URL` 跑 API 测试（不创建/清理库） | 本地 |
+| `pnpm e2e` | 全链路 E2E（商品→文案→判定→审批→上架→客服→媒体→知识库；with-db 独立库） | 可选，非 quality-gate |
 | `pnpm verify` | 依次执行以上全部门禁（fail fast；`ci` 与 pnpm 内置命令冲突，故用 `verify`） | 本地/CI |
 
 `pnpm verify -- --skip-migrations` 可在没有本地数据库时跳过迁移项；CI **不应**跳过。
@@ -139,3 +140,21 @@ pnpm 脚本内部再调用 `pnpm` 时，会继承 `npm_execpath`；在多 agent 
 
 GitHub Actions 使用干净的 `pgvector/pgvector:pg16` service（`dssaas_ci`），**不需要**运行锁或复用机制；
 CI 的 API 测试步骤直接 `pnpm --filter @dssaas/api test`。本机制只服务本地并行开发。
+
+## 7. 全链路 E2E（t38）
+
+`pnpm e2e` 用 `scripts/e2e/full-chain.mjs` 跑 12 步跨模块链路（含 seed、黄金集导入、文案、L1+L2、审批、上架 dry-run、客服/SSE、回复 dry-run、媒体 mock、KB 检索），输出 `artifacts/e2e/report.json`。它同样用 `with-db` 建独立库，所以不会污染开发库。
+
+**何时跑：**
+
+- 跨模块改动（商品/内容/判断/审批/写入门/客服/媒体/KB 任一接口或状态机变更）合并前；
+- 发布候选（RC）或 nightly；可用 CI `workflow_dispatch`/单独 job 跑，不放进 `quality-gate` 的必过项；
+- 排查“单模块测试都过、串起来失败”的问题时优先跑它，报告里有每步耗时、断言与 `request_id`。
+
+**环境：**
+
+- 默认 docker 路径：`pnpm e2e`；
+- 已有 Postgres：`DSSAAS_DB_REUSE=1 DSSAAS_PG_BASE_URL=postgresql://.../dssaas_test?schema=public pnpm e2e`（跑完 DROP 独立库）；
+- 本机无 Docker CLI 时用 `DSSAAS_DOCKER_BIN="wsl docker"` 或直接走 reuse 路径。
+
+**已知缺口（截至 2026-10-20，详见 `docs/验收记录-E2E.md §4`）：** 媒体渲染 `purpose=render` 与 DB CHECK 不一致（blocker）、媒体 HTTP API 只有 cancel、草稿判断无法携带 KB 政策证据。E2E 当前以 expected failure 记录，不掩盖单模块测试结果。

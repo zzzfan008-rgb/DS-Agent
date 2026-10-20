@@ -116,6 +116,7 @@ export class MediaPipeline {
     if (!job) throw new MediaPipelineError('not_found', `媒体任务不存在：${jobId}`);
     if (TERMINAL.includes(job.status)) {
       if (job.status === 'cancelled') await this.cleanupTemp(job);
+      if (job.lockedBy === this.workerId) await this.release(job.id);
       return job;
     }
     const guarded = job.lockedBy !== null && job.lockedBy === this.workerId;
