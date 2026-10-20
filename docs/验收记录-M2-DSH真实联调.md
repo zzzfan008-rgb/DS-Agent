@@ -399,7 +399,7 @@ pnpm --filter @dssaas/api test:agent
 
 # 审计链
 pnpm --filter @dssaas/api audit:verify
-# {"ok": true, "checked": 272, "brokenAtSeq": null, "reason": null}
+# {"ok": true, "checked": 436, "brokenAtSeq": null, "reason": null}
 ```
 
 证据文件：

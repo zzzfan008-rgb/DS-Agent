@@ -44,6 +44,8 @@ export interface EvidenceRef {
   doc_version: number;
   quote: string;
   effective_from?: string | null;
+  /** fact=主数据硬证据；kb=知识库软证据（政策/规则/FAQ）。 */
+  source?: 'fact' | 'kb';
 }
 
 export interface L2Output {

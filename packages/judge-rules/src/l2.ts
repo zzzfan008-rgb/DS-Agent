@@ -74,6 +74,7 @@ export const JUDGMENT_V1 = {
         doc_version: { type: 'integer', minimum: 1 },
         quote: { type: 'string', minLength: 4, maxLength: 200 },
         effective_from: { type: ['string', 'null'] },
+        source: { enum: ['fact', 'kb'] },
       },
     },
   },
@@ -108,6 +109,7 @@ function compact(value: string): string {
 export function validateL2Output(
   raw: string | unknown,
   evidence: EvidenceRef[],
+  options: { requireCitation?: boolean } = {},
 ): L2Validation {
   const parsed = typeof raw === 'string' ? parseJsonLoose(raw) : raw;
   if (!parsed || !validateSchema(parsed)) {
@@ -140,6 +142,9 @@ export function validateL2Output(
     return { ok: false, reason: quoteDrop ? 'quote_mismatch' : 'unresolvable_evidence' };
   }
   if ((output.verdict === 'reject' || output.verdict === 'needs_revision') && validRefs.length === 0) {
+    return { ok: false, reason: 'missing_evidence' };
+  }
+  if (options.requireCitation && validRefs.length === 0) {
     return { ok: false, reason: 'missing_evidence' };
   }
   return { ok: true, output: { ...output, evidence_refs: validRefs } };
