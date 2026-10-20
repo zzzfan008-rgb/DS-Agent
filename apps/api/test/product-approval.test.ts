@@ -282,10 +282,17 @@ test('审批内容失效：编辑草稿后旧审批 decide → 428 approval_stal
 
   const current = await prisma.contentDraft.findUniqueOrThrow({ where: { id: draft.id } });
   const newTarget = contentDraftTargetPayload(current);
+
+  // 编辑草稿后旧审批仍保留为 pending（不再被编辑动作改写为 invalidated）；
+  // 同一 subject+action 同时只允许一个活跃审批，所以重提要用内容专用动作
+  // publish_content，而旧审批靠 target_hash 校验在 decide 时被 428 拦住。
+  const oldAfterEdit = await prisma.approval.findUniqueOrThrow({ where: { id: approvalId } });
+  assert.equal(oldAfterEdit.status, 'pending', '编辑草稿不应改写旧审批状态');
+
   const recreated = await post('/api/approvals', {
     subject_type: 'content_draft',
     subject_id: draft.id,
-    action: 'publish',
+    action: 'publish_content',
     platform: 'pdd',
     target_payload: newTarget,
     context: { listingStatus: 'draft' },
