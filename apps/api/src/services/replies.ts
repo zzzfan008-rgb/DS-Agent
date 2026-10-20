@@ -12,7 +12,7 @@ import type { ModelGateway } from '@dssaas/registry';
 import { ApiError } from '../lib/errors.js';
 import type { AuditService } from './audit.js';
 import { buildProductFacts } from './facts.js';
-import { selectFallbackTemplates, type TemplateView } from './templates.js';
+import { selectFallbackTemplates, recordTemplateUsage, type TemplateView } from './templates.js';
 import type { ConfirmTokenStore } from '../write-gate/confirm.js';
 import type { KillSwitchService } from '../write-gate/kill-switch.js';
 import type { PlatformWritePort } from '../write-gate/platform-port.js';
@@ -32,8 +32,10 @@ export interface ReplyDeps {
   killSwitch: KillSwitchService;
   platform: PlatformWritePort;
   confirmTokens: ConfirmTokenStore;
-  /** 测试可注入；返回最终文案。 */
-  generate?: (input: { prompt: string; conversationId: string }) => Promise<string>;
+  /** 测试可注入；返回最终文案，可带 gateway 调用记录 id。 */
+  generate?: (input: { prompt: string; conversationId: string }) => Promise<
+    string | { text: string; modelCallId: string | null }
+  >;
   now?: () => Date;
 }
 
@@ -61,6 +63,7 @@ export interface DraftResult {
   expires_at: string;
   evidence_refs: EvidenceRef[];
   template_id: string | null;
+  model_call_id: string | null;
   suggested_templates: TemplateView[];
 }
 
@@ -93,7 +96,7 @@ async function defaultGenerate(
   deps: ReplyDeps,
   prompt: string,
   context: ReplyContext,
-): Promise<string> {
+): Promise<{ text: string; modelCallId: string | null }> {
   const role = await deps.prisma.role.findFirst({
     where: { code: context.role, orgId: 1n, archivedAt: null },
     select: { id: true },
@@ -113,7 +116,7 @@ async function defaultGenerate(
     params: { prompt, temperature: 0.2 },
     estimate: { tokensIn: 900, tokensOut: 300 },
   });
-  return (result.response.text ?? '').trim();
+  return { text: (result.response.text ?? '').trim(), modelCallId: result.callLogId ?? null };
 }
 
 export async function createReplyDraft(
@@ -163,6 +166,7 @@ export async function createReplyDraft(
   // 无证据不允许模型自由发挥：直接降级模板 + 人工提示。
   if (evidence.length === 0) {
     const template = suggestions[0];
+    await recordTemplateUsage(deps.prisma, template);
     const draft = await persistDraft(deps, {
       conversationId: conversation.id,
       inboundMessageId: inbound.id,
@@ -170,6 +174,7 @@ export async function createReplyDraft(
       degraded: true,
       templateId: template && !template.builtin ? template.id : null,
       fallbackReason: 'no_evidence',
+      modelCallId: null,
       latencyMs: Date.now() - started,
       context,
       evidence,
@@ -183,6 +188,7 @@ export async function createReplyDraft(
       expires_at: new Date(now.getTime() + 5 * 60 * 1000).toISOString(),
       evidence_refs: evidence,
       template_id: draft.templateId,
+      model_call_id: null,
       suggested_templates: suggestions,
     };
   }
@@ -191,6 +197,7 @@ export async function createReplyDraft(
   const generate =
     deps.generate ?? ((args: { prompt: string; conversationId: string }) => defaultGenerate(deps, args.prompt, context));
   let text = '';
+  let modelCallId: string | null = null;
   let degraded = false;
   let degradedReason: DraftResult['degraded_reason'] = null;
   try {
@@ -198,7 +205,13 @@ export async function createReplyDraft(
       const timer = setTimeout(() => reject(new DraftTimeoutError('draft deadline exceeded')), deadlineMs);
       timer.unref?.();
     });
-    text = await Promise.race([generate({ prompt, conversationId: conversation.id }), timeout]);
+    const generated = await Promise.race([generate({ prompt, conversationId: conversation.id }), timeout]);
+    if (typeof generated === 'string') {
+      text = generated;
+    } else {
+      text = generated.text;
+      modelCallId = generated.modelCallId;
+    }
     if (!text || text.trim().length === 0) {
       degraded = true;
       degradedReason = 'model_error';
@@ -211,8 +224,10 @@ export async function createReplyDraft(
   let templateId: string | null = null;
   if (degraded) {
     const template = suggestions[0];
+    await recordTemplateUsage(deps.prisma, template);
     text = template?.text ?? '您好，正在为您核实，请稍等。';
     templateId = template && !template.builtin ? template.id : null;
+    modelCallId = null;
   }
   const trimmed = text.trim().slice(0, 5000);
   const draft = await persistDraft(deps, {
@@ -222,6 +237,7 @@ export async function createReplyDraft(
     degraded,
     templateId,
     fallbackReason: degradedReason,
+    modelCallId,
     latencyMs: Date.now() - started,
     context,
     evidence,
@@ -236,6 +252,7 @@ export async function createReplyDraft(
     expires_at: new Date(now.getTime() + 5 * 60 * 1000).toISOString(),
     evidence_refs: evidence,
     template_id: templateId,
+    model_call_id: modelCallId,
     suggested_templates: suggestions,
   };
 }
@@ -249,6 +266,7 @@ async function persistDraft(
     degraded: boolean;
     templateId: string | null;
     fallbackReason: string | null;
+    modelCallId: string | null;
     latencyMs: number;
     context: ReplyContext;
     evidence: EvidenceRef[];
@@ -263,6 +281,7 @@ async function persistDraft(
       degraded: input.degraded,
       evidenceRefs: input.evidence as never,
       fallbackReason: input.fallbackReason,
+      modelCallId: input.modelCallId,
       latencyMs: input.latencyMs,
       templateId: input.templateId,
       status: 'draft',
@@ -301,11 +320,14 @@ export interface SendInput {
   draft_id?: string;
   approval_id?: string;
   outbound_idempotency_key: string;
+  /** 缺省 dry_run：未核验平台只做演练，不把消息记为已发送。 */
+  delivery_mode?: 'live' | 'dry_run';
 }
 
 export interface SendResult {
   message_id: string;
-  status: 'sent' | 'sending' | 'failed';
+  status: 'sent' | 'queued' | 'sending' | 'failed';
+  delivery_mode: 'live' | 'dry_run';
   platform_msg_id: string | null;
   deduped: boolean;
   contract_unverified: boolean;
@@ -361,10 +383,16 @@ function mapExistingMessage(message: {
   id: string;
   status: string;
   platformMessageId: string | null;
+  deliveryMode?: string;
 }): SendResult {
+  const status =
+    message.status === 'sent' || message.status === 'queued' || message.status === 'failed'
+      ? message.status
+      : 'sending';
   return {
     message_id: message.id,
-    status: message.status === 'sent' ? 'sent' : 'sending',
+    status: status as SendResult['status'],
+    delivery_mode: message.deliveryMode === 'dry_run' ? 'dry_run' : 'live',
     platform_msg_id: message.platformMessageId,
     deduped: true,
     contract_unverified: true,
@@ -461,6 +489,7 @@ export async function sendReply(deps: ReplyDeps, input: SendInput, context: Repl
         contentType: 'text',
         content: input.text.trim(),
         status: 'sending',
+        deliveryMode,
         outboundIdempotencyKey: input.outbound_idempotency_key,
         approvalId: approval!.id,
         aiGenerated: Boolean(input.draft_id),

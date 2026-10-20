@@ -148,6 +148,18 @@ export async function selectFallbackTemplates(
   return builtinTemplates(input.platform, input.intent, input.limit);
 }
 
+/** 模板被选中时原子回写使用量；内置模板无 DB 行，不写。 */
+export async function recordTemplateUsage(
+  prisma: PrismaClient,
+  template: TemplateView | undefined,
+): Promise<void> {
+  if (!template || template.builtin) return;
+  await prisma.replyTemplate.update({
+    where: { id: template.id },
+    data: { usageCount: { increment: 1 }, lastUsedAt: new Date() },
+  });
+}
+
 export interface TemplateContext {
   requestId: string;
   userId: string;
