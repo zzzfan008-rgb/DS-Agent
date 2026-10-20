@@ -5,7 +5,7 @@
 | 任务 | t25 · M3 前端：商品库 + 文案工作台 + 模型管理 |
 | 里程碑 | M3（商品、文案、模型） |
 | 验收日期 | 2026-10-20 |
-| 结论 | **通过（PASS）**；3 个页面、新建/导入/生成/判定/审批/模型配置主流程均以真实 API 跑通。2 个后端缺陷登记为 G22/G23，1 个契约缺口 G21 按设计降级，均不阻塞本任务验收 |
+| 结论 | **通过（PASS）**；3 个页面、新建/导入/生成/判定/审批/模型配置主流程均以真实 API 跑通。G22/G23 已由后端 t41 修复并复测关闭；G21（L2 证据）仍按设计降级 |
 | 代码范围 | `apps/web/src/**`；未修改 `apps/api/**`、`prisma/**` |
 | 截图目录 | `docs/assets/M2-web/`，文件名 `m3-*` |
 
@@ -129,6 +129,8 @@ Web：http://localhost:3100（next dev）
 3. 详情实测：`GY0101` 被归一为 `GY-0101`，SKU 编码 `SPU-2026-020-GY-0101-M`，售价 `¥199.00`，库存 0，起批 1；`fact v4`。
    - [m3-product-created.png](assets/M2-web/m3-product-created.png)
    - [m3-product-create.png](assets/M2-web/m3-product-create.png)（表单全貌）
+4. **半码复测（t41 修复后）**：同一表单填写 `SPU-2026-021 / 半码 UI 复测卫衣 / A0102`，SKU `BL0301 / L / 159 元`，肩宽 **45.5**；提交成功，详情尺码表显示 `45.5`（不是字符串/近似值），`fact v4`。
+   - [m3-product-455.png](assets/M2-web/m3-product-455.png)
 
 > 校验口径与后端一致：SPU 正则、类目正则、色卡/尺码归一、价格转整数分、成分 1–8 条且降序合计 100、尺码至少 2 个测量值且 0.5 步进、SKU 尺码必须在尺码表内、建议身高/体重成对且递增。服务端 422 的 `detail.issues` 会回填到同一校验列表；409 单独提示 SPU 重复。
 
@@ -186,6 +188,8 @@ Web：http://localhost:3100（next dev）
 - 填 `name=ui_provider`、`base_url=https://127.0.0.1:8443`、`credential_ref=mock_cred`，提交成功；状态“配置中”。
 - 点击“测试连通” → `连通性正常 · 6ms · probed 1`，状态转为“启用”。
 - [m3-models-provider-ui.png](assets/M2-web/m3-models-provider-ui.png)
+- **编辑（t41 后开放）**：点“编辑”改 region=`cn-shanghai`、timeout=`62000`，保存返回 `version 4`；抽屉只允许改 base_url/凭据名/region/timeout/并发/限流/status，name/kind/vendor/auth 禁用。
+- [m3-models-provider-edit.png](assets/M2-web/m3-models-provider-edit.png)
 - 已有 `mock_text` 的测试也实测通过（8ms）。列表只显示 `moc****ed` 凭据掩码，不返回密钥。
 
 #### B. 后台新建 Model → 测试 → 发布（UI 真实提交）
@@ -194,6 +198,8 @@ Web：http://localhost:3100（next dev）
 - 创建成功为“草稿”，`visible=false`，原因 `no_route`（后端返回 `visible_reason`，前端直接展示）。
 - 点击“测试” → 8ms 通过；点击“发布” → `published`，前台可见。
 - [m3-models-model-ui.png](assets/M2-web/m3-models-model-ui.png)
+- **编辑（t41 后开放）**：点“编辑”改 rpm=62 保存，返回 `version 5`、`price_version 2`；抽屉隐藏不可改的 provider/external/capability/purpose，schema/默认参数留空表示不变。
+- [m3-models-model-edit.png](assets/M2-web/m3-models-model-edit.png)
 - 已有 `Mock Chat` 的测试/发布也已实测；发布守卫失败时的 `detail.missing[]` 会显示为清单（本轮 UI 新建模型一次通过，失败分支由代码路径覆盖）。
 
 #### C. Route 新建与编辑（UI 真实提交）
@@ -214,6 +220,23 @@ Web：http://localhost:3100（next dev）
 - viewer 前台视图：`当前角色没有可用模型`，空态解释可能原因（角色无用途权限 / 无 active 路由 / 未发布 / 供应商不可用），并声明“前端不推断”；不显示后台 tab。
 - [m3-models-frontend.png](assets/M2-web/m3-models-frontend.png)
 - [m3-viewer-models.png](assets/M2-web/m3-viewer-models.png)
+
+### 3.7 后端 t41 修复复测（G22/G23）
+
+backend-api 在 t41 修复后，按原样本复测：
+
+| 项 | 请求 | 结果 |
+|---|---|---|
+| G23 半码创建 | `POST /api/products`，measurements `{衣长:70,胸围:108,肩宽:45.5}` | **201**；`size_chart[0].measurements.肩宽=45.5`；`fact_version=4` |
+| G23 金额非整数 | `POST /api/products`，`price_cents: 12.5` | **400** `validation_failed` “金额字段必须是整数分” |
+| G23 UI 全链路 | UI 新建 `SPU-2026-021`，肩宽 45.5 | **创建成功**，详情显示 45.5 |
+| G22 列表 version | `GET /providers`、`GET /models?limit=20` | 列表项均含 `version`（provider v2、model v3） |
+| G22 正确 PATCH | Provider timeout 61000 + `If-Match: 2`；Model rate_limit + `If-Match: 3` | **200**；version→3 / 4 |
+| G22 旧版本 | 同上再发一次旧 `If-Match` | **409 conflict** |
+| G22 UI 编辑 | Provider 改 region/timeout；Model 改 rpm | 分别成功，version→4 / 5，无需刷新页面 |
+
+> 前端此前因 G22 隐藏了编辑按钮；复测后已补回 Provider/Model 编辑抽屉（If-Match + 409 提示）。G23 修复后新建表单继续允许 0.5 步进，未改校验口径。
+
 ---
 
 ## 4. 权限与可见性（只读 `/me.permissions[]`）
@@ -243,8 +266,8 @@ Web：http://localhost:3100（next dev）
 | G13 | 内容审批映射 `listing.create` → B 级 | 只显示服务端 `level`（B 级），不硬编码 | 语义待后端加 content action |
 | G15/G16 | 模型列表无 provider 名称；草稿接口忽略 model_id | 后台用 Provider 列表本地关联名称；前台不显示供应商；**无任何模型选择器**，固定“由路由策略自动选择” | 无“假开关” |
 | G21 | 商品草稿 facts 无 KB 证据，L2 实际不可达 | UI 完整支持 L2 渲染与证据抽屉，但只展示真实的 L1 / `NO_EVIDENCE` escalate；不伪造 L2 | L2 验收留到 KB 证据接入后 |
-| G22 | `GET /providers`、`GET /models` 不返回 `version`，但 PATCH 要 `If-Match` | 后台不渲染 Provider/Model 编辑按钮，页面注明原因；新建/测试/发布/停用可用；Route 列表有 version，编辑已实测 | 无法改价格/参数/凭据，需后端补 `version` |
-| G23 | `POST /products` 带 0.5 测量值（如肩宽 45.5）返回 **500**：`canonicalValue: float is not allowed in business payload` | 前端仍按规则允许 0.5 步进；验收样本改用整数测量值，并在本记录登记，不伪装成功 | **需后端修**：幂等 checksum 允许有限小数（金额/测量统一整数/字符串） |
+| G22 | ~~`GET /providers`、`GET /models` 不返回 `version`，但 PATCH 要 `If-Match`~~ | **已修复（t41）**：列表项带 version；Provider/Model 编辑已开放并实测（provider v4、model v5、旧版本 409） | 无（编辑 UI 已补） |
+| G23 | ~~`POST /products` 带 0.5 测量值返回 500~~ | **已修复（t41）**：45.5 返回 201 且原值保留；`price_cents: 12.5` 仍 400；UI 创建 `SPU-2026-021` 复测成功 | 无 |
 | G17 | 历史草稿列表 verdict 恒 null、cost 恒 0 | 显示“—”，打开后重新判定 | 列表无法按判定筛选 |
 | G14 | 无角色/用户列表 | Route scope=role/user 需填 UUID；org 流程已实测 | 账号管理后补下拉 |
 | G4 | 无 KB chunk 查询端点 | 证据抽屉显示 quote/doc/chunk/version；“去知识库”跳 `/kb?doc=…` 占位 | M7 接入 |
@@ -293,6 +316,7 @@ Web：http://localhost:3100（next dev）
 | `m3-product-create.png` | 新建商品表单全貌 |
 | `m3-product-create-errors.png` | 新建校验错误 7 项 |
 | `m3-product-created.png` | UI 创建成功后的详情（SPU-2026-020） |
+| `m3-product-455.png` | t41 复测：UI 创建肩宽 45.5 的半码商品（SPU-2026-021） |
 | `m3-import-preview.png` | CSV dry-run 3 行通过 |
 | `m3-import-success.png` | 确认导入成功 + import_id |
 | `m3-import-failed.png` | CSV 失败行 + 确认禁用 |
@@ -304,9 +328,11 @@ Web：http://localhost:3100（next dev）
 | `m3-models-provider.png` | Provider 列表 + 连通性测试 |
 | `m3-models-provider-create.png` | Provider 新建表单 |
 | `m3-models-provider-ui.png` | UI 新建 `ui_provider` + 测试 6ms |
+| `m3-models-provider-edit.png` | Provider 编辑抽屉（If-Match，实测 version→4） |
 | `m3-models-model.png` | Model 列表 + 价格 + 发布态 |
 | `m3-models-model-create.png` | Model 新建表单（JSON/价格/purpose） |
 | `m3-models-model-ui.png` | UI 新建 `UI Mock` 并发布 |
+| `m3-models-model-edit.png` | Model 编辑抽屉（If-Match，实测 version→5） |
 | `m3-models-route.png` | Route 列表（copy/judge） |
 | `m3-models-route-create.png` | Route 新建表单（scope/fallback/quota） |
 | `m3-models-route-ui.png` | UI 新建 + 编辑为 active 的 3 条路由 |
@@ -322,8 +348,8 @@ Web：http://localhost:3100（next dev）
 ## 9. 未覆盖 / 遗留
 
 1. **窄屏 760 截图**：响应式断点已实现（≤1400 两栏、≤900 单栏；copy 三栏在 ≤1400/≤900 降级；模型卡自适应），本轮浏览器窗口固定 1384 宽，未单独截 760；M4 前补窄屏走查。
-2. **Provider/Model 编辑**：受 G22 阻塞，不渲染编辑；补 version 后开放。
-3. **0.5 测量值**：受 G23 阻塞，后端修复后创建/导入可支持半码。
+2. **Provider/Model 编辑**：t41 后已开放并实测（见 §3.7），不再阻塞。
+3. **0.5 测量值**：t41 后 API 与 UI 均实测成功（SPU-2026-021），不再阻塞。
 4. **L2 真实裁决**：受 G21 阻塞，当前只有 escalate；KB 证据接入后按现有 UI 直接展示。
 5. **Route role/user scope**：无账号列表（G14），只能填 UUID；org scope 已实测。
 6. **M4 平台写入门、M6 素材、M7 知识库**：不在 M3 范围，保持占位。

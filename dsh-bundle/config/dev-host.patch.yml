@@ -115,7 +115,8 @@
         reasoningEffort:
           support.suggest: off
         # 客服回复长度：≤180 字，句末收尾；F1 总时延 P95≤5s 用
-        replyMaxChars: 180
+        replyMaxChars: 110
+        replyMinChars: 80
     - id: business-bridge
       name: file:///D:/DSSAAS/dsh-bundle/bridge/business-bridge.mjs
       config:

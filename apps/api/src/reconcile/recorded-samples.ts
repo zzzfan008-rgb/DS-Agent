@@ -104,7 +104,7 @@ export const RECORDED_PLATFORM_SNAPSHOTS: Record<'pdd' | '1688', PlatformSnapsho
         status: 'paid',
         totalCents: 30000,
         paidCents: 30000,
-        refundStatus: 'none',
+        refundStatus: 'refunding',
         platformCreatedAt: '2026-10-19T03:00:00.000Z',
         items: [{ platformSkuRef: 'ALI-SKU-0002', qty: 2, unitPriceCents: 15000, amountCents: 30000 }],
       },

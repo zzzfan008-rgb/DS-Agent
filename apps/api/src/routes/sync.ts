@@ -1,9 +1,10 @@
 /**
  * 同步端点 —— docs/12 §3.9（`POST /sync/:platform`、`GET /sync/status`）。
  *
- * 本轮只读、干跑：`sync_reader=recorded` 时用录制样本验证"游标推进 + 断点续跑"；
+ * `sync_reader=recorded` 时用录制样本验证"游标推进 + 断点续跑"；
  * `sync_reader=adapter` 时真实 reader 未核验，返回 `publish_blocked`（409）并给 TODO 列表。
- * 不写业务数据（orders/after_sale 表在 t37 补建后再接）。
+ * t43：`orders` 会真实落库（orders + order_items，幂等键 `(platform, platform_order_id)`）；
+ * 其他资源仍只推进游标。
  */
 
 import type { FastifyInstance } from 'fastify';
@@ -13,6 +14,7 @@ import { ok } from '../lib/response.js';
 import { serviceContext } from '../lib/service-context.js';
 import { PrismaSyncCursorStore } from '../sync/cursor-store.js';
 import { createSyncReaders } from '../sync/readers.js';
+import { PrismaOrderSink } from '../sync/order-sink.js';
 import { SyncService } from '../sync/service.js';
 import { SYNC_RESOURCES } from '../sync/types.js';
 
@@ -29,7 +31,12 @@ const StatusQuery = z.object({ platform: z.enum(['pdd', '1688']).optional() });
 export function registerSyncRoutes(app: FastifyInstance): void {
   const store = new PrismaSyncCursorStore(app.prisma);
   const readers = createSyncReaders(app.config.syncReader);
-  const service = new SyncService({ store, readers });
+  const service = new SyncService({
+    store,
+    readers,
+    // t43：orders 真实落库（orders + order_items）；其他资源只推进游标。
+    sinks: { orders: new PrismaOrderSink(app.prisma) },
+  });
 
   app.post('/api/sync/:platform', { config: { minRole: 'operator' } }, async (request, reply) => {
     const { platform } = PlatformParams.parse(request.params);

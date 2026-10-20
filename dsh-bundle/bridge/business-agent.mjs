@@ -255,6 +255,8 @@ export class BusinessAgentService extends TypertRemoteService {
     let usage = null;
     let turnEndReason = null;
     let startedTurn = false;
+    let earlyStopRequested = false;
+    let streamBuffer = '';
     const toolNames = new Map();
 
     const push = (item) => {
@@ -266,7 +268,23 @@ export class BusinessAgentService extends TypertRemoteService {
     const onAssistantStream = ({ agent, frame }) => {
       if (agent?.session?.id !== sessionId) return;
       if (frame?.type === 'chunk' && frame.chunk?.type === 'text-delta' && typeof frame.chunk.text === 'string') {
+        streamBuffer += frame.chunk.text;
         push({ kind: 'delta', text: frame.chunk.text });
+        // 客服回复提前收尾：到句末且达到最短长度即停止生成，避免为凑长度拖过 5s。
+        if (
+          env.intent === 'support.suggest' &&
+          config.replyEarlyStop !== false &&
+          !earlyStopRequested
+        ) {
+          const maxChars = Number(config.replyMaxChars ?? 120);
+          const minChars = Number(config.replyMinChars ?? 90);
+          const chars = [...streamBuffer];
+          const last = chars[chars.length - 1];
+          if (chars.length >= minChars && chars.length <= maxChars + 20 && ['。', '！', '？', '；', '!', '?', ';'].includes(last)) {
+            earlyStopRequested = true;
+            push({ kind: 'early-stop' });
+          }
+        }
       }
     };
     const onSessionEvent = (session, event) => {
@@ -363,6 +381,11 @@ export class BusinessAgentService extends TypertRemoteService {
         }
         const item = queue.shift();
         if (item.kind === 'end') break;
+        if (item.kind === 'early-stop') {
+          assistantText = streamBuffer;
+          void this.cancelQuietly(sessionId);
+          break;
+        }
         if (item.kind === 'delta') {
           assistantText += item.text;
           yield { type: 'delta', text: item.text };
@@ -381,12 +404,12 @@ export class BusinessAgentService extends TypertRemoteService {
         }
       }
 
-      if (signal.aborted) {
+      if (signal.aborted && !earlyStopRequested) {
         await this.cancelQuietly(sessionId);
         return;
       }
 
-      if (turnEndReason && turnEndReason.kind === 'error') {
+      if (!earlyStopRequested && turnEndReason && turnEndReason.kind === 'error') {
         yield {
           type: 'error',
           code: 'upstream_5xx',
@@ -396,7 +419,7 @@ export class BusinessAgentService extends TypertRemoteService {
         };
         return;
       }
-      if (turnEndReason && turnEndReason.kind === 'aborted') {
+      if (!earlyStopRequested && turnEndReason && turnEndReason.kind === 'aborted') {
         return;
       }
 

@@ -92,10 +92,10 @@ pnpm e2e
 | ID | 严重度 | 区域 | 现象 | 依赖/建议 |
 |---|---|---|---|---|
 | F-E2E-01 | medium | 内容草稿 → 判断 L2 | **resolved（t40）**：判断层接入 `app.knowledge.resolveEvidence`，政策/规则/FAQ 作为软证据进入 `evidence_refs`；7 天政策 pass、30 天政策 needs_revision、无政策仍 escalate | 已修复，见 docs/验收记录-M3-商品内容.md §11 |
-| F-E2E-02 | **blocker** | `media_job.purpose` ↔ 媒体管线 | DB CHECK `ck_media_purpose` 只允许 `image|video`；M6 尺码表渲染使用 `purpose=render`，DB 路径无法创建渲染任务 | t12/t26：迁移放宽 CHECK（加 `render`），或管线把渲染映射为 `image + kind=size_chart`。当前 E2E 用图片任务验证 pending_review/cost_ledger，用直接渲染验证 PNG |
-| F-E2E-03 | high | 媒体 HTTP API | `docs/12 §3.7` 的 `POST /media/generate`、`GET /media/jobs`、`GET /media/assets`、下载端点未实现；当前仅有 `POST /media/jobs/:id/cancel` | M6 API 补齐（t26 后续）；E2E 只能直接调用 worker `MediaPipeline` |
+| F-E2E-02 | **blocker** | `media_job.purpose` ↔ 媒体管线 | **resolved（t39）**：迁移 `20261020260000_media_purpose_render` 把 `ck_media_purpose` 放宽为 `image/video/render`；DB 实测 image/video/render 均可落库、`bogus` 被 23514 拒 | 证据：docs/验收记录-M1-骨架.md §20.1、验收记录-M6-媒体.md；`render` 仍走本地渲染（不调供应商） |
+| F-E2E-03 | high | 媒体 HTTP API | **resolved（t39）**：补齐 `POST /media/generate`（幂等）、`GET /media/jobs`、`GET /media/jobs/:id`、`GET /media/assets`、`GET /media/assets/:id`、`GET /media/assets/:id/download`、`POST /media/assets/:id/review`；generate=operator、review=admin、读=viewer | 证据：docs/验收记录-M1-骨架.md §20.2（3/3 集成测试：generate→worker→job/asset→review→download、幂等、非法拒绝） |
 
-除以上 2 条未解决项（F-E2E-02/F-E2E-03）外，本次链路上的字段名、状态机、错误码、审批动作未发现新的不一致：
+以上 2 条（F-E2E-02/F-E2E-03）已由 t39 解决；本次链路上的字段名、状态机、错误码、审批动作未发现新的不一致：
 
 - `publish_content` 定级 B，`publish`（listing.create）定级 B，均与契约一致；
 - 上架 dry-run 不把 listing 改成 `published`，符合“dry-run 无平台副作用”；
@@ -104,9 +104,11 @@ pnpm e2e
 
 ### 预期失败清单（与报告一致）
 
-- `content_draft` L2 证据缺口：expected `escalate`（`NO_EVIDENCE`）。
-- 媒体 DB 渲染任务：`purpose=render` 被 CHECK 拒绝（blocker）。
-- 媒体 HTTP API 不完整：仅 cancel。
+> 以下为 t39 前的历史预期失败，t39 已修复（保留记录用于对照）：
+>
+> - `content_draft` L2 证据缺口：expected `escalate`（`NO_EVIDENCE`）。
+> - 媒体 DB 渲染任务：`purpose=render` 被 CHECK 拒绝（blocker）→ **t39 已放宽为 image/video/render**。
+> - 媒体 HTTP API 不完整：仅 cancel → **t39 已补齐主链路（见上表 F-E2E-03）**。
 
 ---
 
@@ -115,7 +117,7 @@ pnpm e2e
 - **平台/模型零真实依赖**：上架与发送均 `dry_run`；模型用进程内 mock gateway（copy 返回中文文案、judge 返回带引用的 JSON、embed 返回确定性向量）；媒体用 `MockMediaProvider` + 本地 `FsStorage`；
 - **无真实密钥**：未读取任何平台/模型凭据；DB 连接串来自 `with-db`；
 - **SSE**：真实 HTTP `GET /api/events/stream`，通过 `last_event_id=0` 回放 `message.created`；
-- **媒体**：DB 图片任务走 `PrismaMediaRepository` + `MediaPipeline`；尺码表 PNG 用 `renderSizeChart` 直接渲染并落盘；DB 渲染任务受 F-E2E-02 限制；
+- **媒体**：DB 图片任务走 `PrismaMediaRepository` + `MediaPipeline`；尺码表 PNG 用 `renderSizeChart` 直接渲染并落盘；t39 起 `purpose=render` 可走 DB/HTTP 主链路（F-E2E-02/03 已 resolved，见 §4 与 M1 验收 §20）；
 - **清理**：脚本不删数据；由 `with-db` 在成功时 DROP 独立库；失败时保留并打印连接串，便于排查；
 - **失败可读性**：`scripts/e2e/full-chain.mjs` 对每个 HTTP 失败输出中文原因 + `request_id`，并写入 report 的 `error` 字段；成功时每步也记录 `request_ids`。
 

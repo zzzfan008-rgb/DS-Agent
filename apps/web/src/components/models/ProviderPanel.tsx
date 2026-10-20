@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { ApiFailure } from '@/lib/api';
-import { createProvider, fetchProviders, testProvider } from '@/lib/models-client';
+import { createProvider, fetchProviders, testProvider, updateProvider } from '@/lib/models-client';
 import { isApiFailure, redirectToLogin } from '@/lib/m3-api';
 import type { ProviderItem } from '@/lib/m3-types';
 import { formatCents } from '@/lib/format';
@@ -23,6 +23,7 @@ interface ProviderForm {
   max_concurrency: string;
   rpm: string;
   tpm: string;
+  status: '' | 'active' | 'disabled';
 }
 
 const EMPTY_FORM: ProviderForm = {
@@ -37,6 +38,7 @@ const EMPTY_FORM: ProviderForm = {
   max_concurrency: '8',
   rpm: '',
   tpm: '',
+  status: '',
 };
 
 function failureMessage(failure: ApiFailure): string {
@@ -50,6 +52,7 @@ export function ProviderPanel() {
   const [error, setError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editing, setEditing] = useState<ProviderItem | null>(null);
   const [form, setForm] = useState<ProviderForm>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -86,26 +89,81 @@ export function ProviderPanel() {
 
   const update = (patch: Partial<ProviderForm>) => setForm((previous) => ({ ...previous, ...patch }));
 
+  const openCreate = () => {
+    setEditing(null);
+    setForm(EMPTY_FORM);
+    setFormError(null);
+    setDrawerOpen(true);
+  };
+
+  const openEdit = (provider: ProviderItem) => {
+    setEditing(provider);
+    setForm({
+      ...EMPTY_FORM,
+      kind: provider.kind,
+      name: provider.name,
+      credential_ref: '',
+      base_url: provider.base_url ?? '',
+      region: provider.region ?? '',
+      timeout_ms: '',
+      max_concurrency: '',
+      rpm: '',
+      tpm: '',
+      status: provider.status === 'active' || provider.status === 'disabled' ? provider.status : '',
+    });
+    setFormError(null);
+    setDrawerOpen(true);
+  };
+
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+    setEditing(null);
+    setFormError(null);
+  };
+
   const submit = async () => {
     setSubmitting(true);
     setFormError(null);
     try {
-      await createProvider({
-        kind: form.kind,
-        name: form.name.trim(),
-        credential_ref: form.credential_ref.trim(),
-        ...(form.base_url.trim() ? { base_url: form.base_url.trim() } : {}),
-        vendor: form.vendor as 'other',
-        auth_scheme: form.auth_scheme as 'bearer',
-        ...(form.region.trim() ? { region: form.region.trim() } : {}),
-        timeout_ms: Number(form.timeout_ms) || 60000,
-        max_concurrency: Number(form.max_concurrency) || 8,
-        rate_limit: {
-          ...(form.rpm ? { rpm: Number(form.rpm) } : {}),
-          ...(form.tpm ? { tpm: Number(form.tpm) } : {}),
-        },
-      });
-      setDrawerOpen(false);
+      if (editing) {
+        await updateProvider(
+          editing.id,
+          {
+            base_url: form.base_url.trim() || null,
+            ...(form.credential_ref.trim() ? { credential_ref: form.credential_ref.trim() } : {}),
+            region: form.region.trim() || null,
+            ...(form.timeout_ms ? { timeout_ms: Number(form.timeout_ms) } : {}),
+            ...(form.max_concurrency ? { max_concurrency: Number(form.max_concurrency) } : {}),
+            ...(form.rpm || form.tpm
+              ? {
+                  rate_limit: {
+                    ...(form.rpm ? { rpm: Number(form.rpm) } : {}),
+                    ...(form.tpm ? { tpm: Number(form.tpm) } : {}),
+                  },
+                }
+              : {}),
+            ...(form.status ? { status: form.status } : {}),
+          },
+          editing.version,
+        );
+      } else {
+        await createProvider({
+          kind: form.kind,
+          name: form.name.trim(),
+          credential_ref: form.credential_ref.trim(),
+          ...(form.base_url.trim() ? { base_url: form.base_url.trim() } : {}),
+          vendor: form.vendor as 'other',
+          auth_scheme: form.auth_scheme as 'bearer',
+          ...(form.region.trim() ? { region: form.region.trim() } : {}),
+          timeout_ms: Number(form.timeout_ms) || 60000,
+          max_concurrency: Number(form.max_concurrency) || 8,
+          rate_limit: {
+            ...(form.rpm ? { rpm: Number(form.rpm) } : {}),
+            ...(form.tpm ? { tpm: Number(form.tpm) } : {}),
+          },
+        });
+      }
+      closeDrawer();
       setForm(EMPTY_FORM);
       setReload((value) => value + 1);
     } catch (caught: unknown) {
@@ -114,10 +172,14 @@ export function ProviderPanel() {
           redirectToLogin();
           return;
         }
+        if (caught.status === 409) {
+          setFormError('版本冲突（409）：列表已被其他操作更新，请关闭后刷新再改。');
+          return;
+        }
         setFormError(failureMessage(caught));
         return;
       }
-      setFormError('创建 Provider 失败：网络错误');
+      setFormError(editing ? '保存 Provider 失败：网络错误' : '创建 Provider 失败：网络错误');
     } finally {
       setSubmitting(false);
     }
@@ -153,9 +215,9 @@ export function ProviderPanel() {
   return (
     <PanelCard
       title="Provider（供应商账号）"
-      description="只显示凭据掩码与连通性，密钥永不返回。创建后需测试连通性；编辑 PATCH 需要 version，但列表未返回 version，M3 暂不提供编辑。"
+      description="只显示凭据掩码与连通性，密钥永不返回。列表已返回 version，可编辑 base_url/凭据名/超时/并发/限流/状态；name/kind/vendor 不可改。"
       actions={
-        <button type="button" className="buttonPrimary" onClick={() => setDrawerOpen(true)}>
+        <button type="button" className="buttonPrimary" onClick={openCreate}>
           新建 Provider
         </button>
       }
@@ -165,7 +227,7 @@ export function ProviderPanel() {
       {!loading && providers.length === 0 ? (
         <div className={styles.emptyBlock}>
           <p>还没有 Provider。先接入一个供应商账号，再创建 Model。</p>
-          <button type="button" className="buttonSecondary" onClick={() => setDrawerOpen(true)}>
+          <button type="button" className="buttonSecondary" onClick={openCreate}>
             接入第一个供应商
           </button>
         </div>
@@ -194,7 +256,9 @@ export function ProviderPanel() {
                   <th scope="row">
                     <div className={styles.nameCell}>
                       <span>{provider.name}</span>
-                      <span className={m3.mono}>{provider.id.slice(0, 10)}…</span>
+                      <span className={m3.mono}>
+                        v{provider.version} · {provider.id.slice(0, 10)}…
+                      </span>
                     </div>
                   </th>
                   <td>
@@ -219,6 +283,9 @@ export function ProviderPanel() {
                       >
                         {testingId === provider.id ? <Spinner label="测试中" /> : '测试连通'}
                       </button>
+                      <button type="button" className="buttonQuiet" onClick={() => openEdit(provider)}>
+                        编辑
+                      </button>
                     </div>
                     {testResults[provider.id] ? (
                       <p className={styles.testResult}>{testResults[provider.id]}</p>
@@ -236,16 +303,20 @@ export function ProviderPanel() {
 
       <Drawer
         open={drawerOpen}
-        title="新建 Provider"
-        description="base_url 必须是 https（后端校验）；credential_ref 只是凭据名，不传密钥明文。"
-        onClose={() => setDrawerOpen(false)}
+        title={editing ? `编辑 Provider · ${editing.name}` : '新建 Provider'}
+        description={
+          editing
+            ? 'name/kind/vendor/auth_scheme 不可修改；凭据名留空则保持不变；保存使用 If-Match version，冲突返回 409。'
+            : 'base_url 必须是 https（后端校验）；credential_ref 只是凭据名，不传密钥明文。'
+        }
+        onClose={closeDrawer}
         footer={
           <>
-            <button type="button" className="buttonSecondary" onClick={() => setDrawerOpen(false)} disabled={submitting}>
+            <button type="button" className="buttonSecondary" onClick={closeDrawer} disabled={submitting}>
               取消
             </button>
             <button type="button" className="buttonPrimary" onClick={() => void submit()} disabled={submitting}>
-              {submitting ? <Spinner label="创建中" /> : '创建 Provider'}
+              {submitting ? <Spinner label="保存中" /> : editing ? '保存 Provider' : '创建 Provider'}
             </button>
           </>
         }
@@ -259,6 +330,7 @@ export function ProviderPanel() {
               value={form.name}
               onChange={(event) => update({ name: event.target.value })}
               placeholder="mock_text"
+              disabled={Boolean(editing)}
             />
           </Field>
           <Field label="类型" htmlFor="provider-kind" required>
@@ -267,6 +339,7 @@ export function ProviderPanel() {
               className={m3.select}
               value={form.kind}
               onChange={(event) => update({ kind: event.target.value as ProviderForm['kind'] })}
+              disabled={Boolean(editing)}
             >
               <option value="text">text</option>
               <option value="image">image</option>
@@ -274,13 +347,18 @@ export function ProviderPanel() {
               <option value="embedding">embedding</option>
             </select>
           </Field>
-          <Field label="凭据引用 credential_ref" htmlFor="provider-cred" required hint="只存名称，真值在 DSH/环境变量">
+          <Field
+            label="凭据引用 credential_ref"
+            htmlFor="provider-cred"
+            required={!editing}
+            hint={editing ? '留空保持不变；只存名称，真值在 DSH/环境变量' : '只存名称，真值在 DSH/环境变量'}
+          >
             <input
               id="provider-cred"
               className={m3.input}
               value={form.credential_ref}
               onChange={(event) => update({ credential_ref: event.target.value })}
-              placeholder="mock_cred"
+              placeholder={editing ? '留空不修改' : 'mock_cred'}
             />
           </Field>
           <Field label="Base URL" htmlFor="provider-base" hint="必须 https；留空不可测试">
@@ -298,6 +376,7 @@ export function ProviderPanel() {
               className={m3.select}
               value={form.vendor}
               onChange={(event) => update({ vendor: event.target.value })}
+              disabled={Boolean(editing)}
             >
               <option value="openai_compatible">openai_compatible</option>
               <option value="deepseek">deepseek</option>
@@ -312,6 +391,7 @@ export function ProviderPanel() {
               className={m3.select}
               value={form.auth_scheme}
               onChange={(event) => update({ auth_scheme: event.target.value })}
+              disabled={Boolean(editing)}
             >
               <option value="bearer">bearer</option>
               <option value="header">header</option>
@@ -320,22 +400,55 @@ export function ProviderPanel() {
               <option value="none">none</option>
             </select>
           </Field>
-          <Field label="timeout_ms" htmlFor="provider-timeout">
+          <Field label="region（可选）" htmlFor="provider-region">
+            <input
+              id="provider-region"
+              className={m3.input}
+              value={form.region}
+              onChange={(event) => update({ region: event.target.value })}
+              placeholder="cn-beijing"
+            />
+          </Field>
+          {editing ? (
+            <Field label="status" htmlFor="provider-status" hint="不选则保持不变；停用后前台不可用">
+              <select
+                id="provider-status"
+                className={m3.select}
+                value={form.status}
+                onChange={(event) => update({ status: event.target.value as ProviderForm['status'] })}
+              >
+                <option value="">不修改</option>
+                <option value="active">active 启用</option>
+                <option value="disabled">disabled 停用</option>
+              </select>
+            </Field>
+          ) : null}
+          <Field
+            label="timeout_ms"
+            htmlFor="provider-timeout"
+            hint={editing ? '留空保持不变' : undefined}
+          >
             <input
               id="provider-timeout"
               className={m3.input}
               value={form.timeout_ms}
               onChange={(event) => update({ timeout_ms: event.target.value.replace(/\D/g, '') })}
               inputMode="numeric"
+              placeholder={editing ? '留空不修改' : '60000'}
             />
           </Field>
-          <Field label="max_concurrency" htmlFor="provider-conc">
+          <Field
+            label="max_concurrency"
+            htmlFor="provider-conc"
+            hint={editing ? '留空保持不变' : undefined}
+          >
             <input
               id="provider-conc"
               className={m3.input}
               value={form.max_concurrency}
               onChange={(event) => update({ max_concurrency: event.target.value.replace(/\D/g, '') })}
               inputMode="numeric"
+              placeholder={editing ? '留空不修改' : '8'}
             />
           </Field>
           <Field label="rpm（可选）" htmlFor="provider-rpm">

@@ -9,7 +9,9 @@ import {
   publishModel,
   suspendModel,
   testModel,
+  updateModel,
   type ModelCreateInput,
+  type ModelUpdateInput,
 } from '@/lib/models-client';
 import { isApiFailure, redirectToLogin } from '@/lib/m3-api';
 import type { ModelItem, PriceBook, ProviderItem } from '@/lib/m3-types';
@@ -109,6 +111,7 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editing, setEditing] = useState<ModelItem | null>(null);
   const [form, setForm] = useState<ModelForm>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -156,6 +159,46 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
 
   const update = (patch: Partial<ModelForm>) => setForm((previous) => ({ ...previous, ...patch }));
 
+  const openCreate = () => {
+    setEditing(null);
+    setForm((previous) => ({ ...EMPTY_FORM, provider_id: previous.provider_id || providers[0]?.id || '' }));
+    setFormError(null);
+    setDrawerOpen(true);
+  };
+
+  const openEdit = (model: ModelItem) => {
+    setEditing(model);
+    setForm({
+      ...EMPTY_FORM,
+      provider_id: model.provider_id,
+      external_model_id: model.external_model_id,
+      display_name: model.display_name,
+      capability: model.capability,
+      purposes: [],
+      params_schema: '',
+      default_params: '',
+      context_tokens: '',
+      max_output_tokens: '',
+      embed_dim: '',
+      input_per_1k: model.price.text?.input_per_1k_cents?.toString() ?? '',
+      output_per_1k: model.price.text?.output_per_1k_cents?.toString() ?? '',
+      per_image: model.price.image?.per_image_cents?.toString() ?? '',
+      per_megapixel: model.price.image?.per_megapixel_cents?.toString() ?? '',
+      per_second: model.price.video?.per_second_cents?.toString() ?? '',
+      per_1k_embed: model.price.embed?.per_1k_tokens_cents?.toString() ?? '',
+      rpm: model.rate_limit?.rpm ? String(model.rate_limit.rpm) : '',
+      tpm: model.rate_limit?.tpm ? String(model.rate_limit.tpm) : '',
+    });
+    setFormError(null);
+    setDrawerOpen(true);
+  };
+
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+    setEditing(null);
+    setFormError(null);
+  };
+
   const changeCapability = (capability: Capability) => {
     setForm((previous) => ({
       ...previous,
@@ -166,30 +209,41 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
 
   const submit = async () => {
     setFormError(null);
-    let paramsSchema: Record<string, unknown>;
-    let defaultParams: Record<string, unknown>;
-    try {
-      paramsSchema = JSON.parse(form.params_schema) as Record<string, unknown>;
-    } catch {
-      setFormError('params_schema 不是合法 JSON');
-      return;
+    const isEdit = editing !== null;
+    let paramsSchema: Record<string, unknown> | undefined;
+    let defaultParams: Record<string, unknown> | undefined;
+    if (!isEdit || form.params_schema.trim()) {
+      try {
+        paramsSchema = JSON.parse(form.params_schema) as Record<string, unknown>;
+      } catch {
+        setFormError('params_schema 不是合法 JSON');
+        return;
+      }
     }
-    try {
-      defaultParams = JSON.parse(form.default_params) as Record<string, unknown>;
-    } catch {
-      setFormError('default_params 不是合法 JSON');
-      return;
+    if (!isEdit || form.default_params.trim()) {
+      try {
+        defaultParams = JSON.parse(form.default_params) as Record<string, unknown>;
+      } catch {
+        setFormError('default_params 不是合法 JSON');
+        return;
+      }
     }
-    if (!form.provider_id) {
-      setFormError('请选择 Provider');
-      return;
+    if (!isEdit) {
+      if (!form.provider_id) {
+        setFormError('请选择 Provider');
+        return;
+      }
+      if (!form.external_model_id.trim()) {
+        setFormError('external_model_id 必填');
+        return;
+      }
+      if (form.purposes.length === 0) {
+        setFormError('至少选择一个 purpose');
+        return;
+      }
     }
-    if (!form.external_model_id.trim() || !form.display_name.trim()) {
-      setFormError('external_model_id 与 display_name 必填');
-      return;
-    }
-    if (form.purposes.length === 0) {
-      setFormError('至少选择一个 purpose');
+    if (!form.display_name.trim()) {
+      setFormError('display_name 必填');
       return;
     }
     const price = buildPrice(form);
@@ -202,27 +256,41 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
       setFormError('价格必填（整数分）；按能力填写对应段');
       return;
     }
-    const input: ModelCreateInput = {
-      provider_id: form.provider_id,
-      external_model_id: form.external_model_id.trim(),
-      display_name: form.display_name.trim(),
-      capability: form.capability,
-      purpose_support: form.purposes,
-      params_schema: paramsSchema,
-      default_params: defaultParams,
-      price,
-      rate_limit: {
-        ...(form.rpm ? { rpm: Number(form.rpm) } : {}),
-        ...(form.tpm ? { tpm: Number(form.tpm) } : {}),
-      },
-      ...(form.context_tokens ? { context_tokens: Number(form.context_tokens) } : {}),
-      ...(form.max_output_tokens ? { max_output_tokens: Number(form.max_output_tokens) } : {}),
-      ...(form.embed_dim ? { embed_dim: Number(form.embed_dim) } : {}),
-    };
     setSubmitting(true);
     try {
-      await createModel(input);
-      setDrawerOpen(false);
+      if (editing) {
+        const input: ModelUpdateInput = {
+          display_name: form.display_name.trim(),
+          price,
+          rate_limit: {
+            ...(form.rpm ? { rpm: Number(form.rpm) } : {}),
+            ...(form.tpm ? { tpm: Number(form.tpm) } : {}),
+          },
+          ...(paramsSchema ? { params_schema: paramsSchema } : {}),
+          ...(defaultParams ? { default_params: defaultParams } : {}),
+        };
+        await updateModel(editing.id, input, editing.version);
+      } else {
+        const input: ModelCreateInput = {
+          provider_id: form.provider_id,
+          external_model_id: form.external_model_id.trim(),
+          display_name: form.display_name.trim(),
+          capability: form.capability,
+          purpose_support: form.purposes,
+          params_schema: paramsSchema ?? {},
+          default_params: defaultParams ?? {},
+          price,
+          rate_limit: {
+            ...(form.rpm ? { rpm: Number(form.rpm) } : {}),
+            ...(form.tpm ? { tpm: Number(form.tpm) } : {}),
+          },
+          ...(form.context_tokens ? { context_tokens: Number(form.context_tokens) } : {}),
+          ...(form.max_output_tokens ? { max_output_tokens: Number(form.max_output_tokens) } : {}),
+          ...(form.embed_dim ? { embed_dim: Number(form.embed_dim) } : {}),
+        };
+        await createModel(input);
+      }
+      closeDrawer();
       setForm((previous) => ({ ...EMPTY_FORM, provider_id: previous.provider_id }));
       setReload((value) => value + 1);
       onChanged?.();
@@ -232,10 +300,14 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
           redirectToLogin();
           return;
         }
+        if (caught.status === 409) {
+          setFormError('版本冲突（409）：模型已被其他操作更新，请关闭后刷新再改。');
+          return;
+        }
         setFormError(errorMessage(caught));
         return;
       }
-      setFormError('创建 Model 失败：网络错误');
+      setFormError(editing ? '保存 Model 失败：网络错误' : '创建 Model 失败：网络错误');
     } finally {
       setSubmitting(false);
     }
@@ -289,9 +361,9 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
   return (
     <PanelCard
       title="Model（模型与参数价格）"
-      description="发布守卫需要：24h 内测试成功、Provider active+ok、凭据 active、params_schema/price 合法。列表未返回 version，M3 暂不提供编辑。"
+      description="发布守卫需要：24h 内测试成功、Provider active+ok、凭据 active、params_schema/price 合法。列表已返回 version，可编辑展示名/参数 schema/默认参数/价格/限流（If-Match，冲突 409）。"
       actions={
-        <button type="button" className="buttonPrimary" onClick={() => setDrawerOpen(true)}>
+        <button type="button" className="buttonPrimary" onClick={openCreate}>
           新建 Model
         </button>
       }
@@ -310,7 +382,7 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
       {!loading && models.length === 0 ? (
         <div className={styles.emptyBlock}>
           <p>还没有 Model。先在 Provider 建好凭据，再新建模型并测试→发布。</p>
-          <button type="button" className="buttonSecondary" onClick={() => setDrawerOpen(true)}>
+          <button type="button" className="buttonSecondary" onClick={openCreate}>
             新建第一个 Model
           </button>
         </div>
@@ -336,7 +408,9 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
                   <th scope="row">
                     <div className={styles.nameCell}>
                       <span>{model.display_name}</span>
-                      <span className={m3.mono}>{model.external_model_id}</span>
+                      <span className={m3.mono}>
+                        {model.external_model_id} · v{model.version}
+                      </span>
                     </div>
                   </th>
                   <td>{providerName(model.provider_id)}</td>
@@ -368,6 +442,9 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
                         disabled={busy === `${model.id}:test`}
                       >
                         {busy === `${model.id}:test` ? <Spinner label="测试中" /> : '测试'}
+                      </button>
+                      <button type="button" className="buttonQuiet" onClick={() => openEdit(model)}>
+                        编辑
                       </button>
                       {model.status === 'published' ? (
                         <button
@@ -401,17 +478,21 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
 
       <Drawer
         open={drawerOpen}
-        title="新建 Model"
-        description="params_schema 会经 meta-schema 校验；text/rerank 必须填 context_tokens，embedding 必须填 embed_dim。"
-        onClose={() => setDrawerOpen(false)}
+        title={editing ? `编辑 Model · ${editing.display_name}` : '新建 Model'}
+        description={
+          editing
+            ? '只可改展示名/参数 schema/默认参数/价格/限流；provider/external/capability/purpose 不可改。schema 留空保持不变；保存用 If-Match version。'
+            : 'params_schema 会经 meta-schema 校验；text/rerank 必须填 context_tokens，embedding 必须填 embed_dim。'
+        }
+        onClose={closeDrawer}
         width={640}
         footer={
           <>
-            <button type="button" className="buttonSecondary" onClick={() => setDrawerOpen(false)} disabled={submitting}>
+            <button type="button" className="buttonSecondary" onClick={closeDrawer} disabled={submitting}>
               取消
             </button>
             <button type="button" className="buttonPrimary" onClick={() => void submit()} disabled={submitting}>
-              {submitting ? <Spinner label="创建中" /> : '创建 Model'}
+              {submitting ? <Spinner label="保存中" /> : editing ? '保存 Model' : '创建 Model'}
             </button>
           </>
         }
@@ -424,6 +505,7 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
               className={m3.select}
               value={form.provider_id}
               onChange={(event) => update({ provider_id: event.target.value })}
+              disabled={Boolean(editing)}
             >
               {providers.map((provider) => (
                 <option key={provider.id} value={provider.id}>
@@ -438,6 +520,7 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
               className={m3.select}
               value={form.capability}
               onChange={(event) => changeCapability(event.target.value as Capability)}
+              disabled={Boolean(editing)}
             >
               {CAPABILITIES.map((capability) => (
                 <option key={capability} value={capability}>
@@ -453,6 +536,7 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
               value={form.external_model_id}
               onChange={(event) => update({ external_model_id: event.target.value })}
               placeholder="deepseek-chat"
+              disabled={Boolean(editing)}
             />
           </Field>
           <Field label="展示名 display_name" htmlFor="model-display" required>
@@ -466,44 +550,55 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
           </Field>
         </div>
 
-        <div>
-          <p className={m3.label}>purpose_support *</p>
-          <div className={styles.checkboxGrid}>
-            {PURPOSES.map((purpose) => (
-              <label key={purpose} className={m3.checkboxRow}>
-                <input
-                  type="checkbox"
-                  checked={form.purposes.includes(purpose)}
-                  onChange={(event) =>
-                    update({
-                      purposes: event.target.checked
-                        ? [...form.purposes, purpose]
-                        : form.purposes.filter((item) => item !== purpose),
-                    })
-                  }
-                />
-                {PURPOSE_LABEL[purpose] ?? purpose}
-              </label>
-            ))}
+        {!editing ? (
+          <div>
+            <p className={m3.label}>purpose_support *</p>
+            <div className={styles.checkboxGrid}>
+              {PURPOSES.map((purpose) => (
+                <label key={purpose} className={m3.checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={form.purposes.includes(purpose)}
+                    onChange={(event) =>
+                      update({
+                        purposes: event.target.checked
+                          ? [...form.purposes, purpose]
+                          : form.purposes.filter((item) => item !== purpose),
+                      })
+                    }
+                  />
+                  {PURPOSE_LABEL[purpose] ?? purpose}
+                </label>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <p className={m3.muted}>purpose_support 不可修改；如用途需调整，请新建模型并迁移路由。</p>
+        )}
 
-        <Field label="params_schema（JSON）" htmlFor="model-schema" required hint="必须能通过 meta-schema 与 default_params 校验">
+        <Field
+          label="params_schema（JSON）"
+          htmlFor="model-schema"
+          required={!editing}
+          hint={editing ? '留空保持不变；如需修改请粘贴完整 schema' : '必须能通过 meta-schema 与 default_params 校验'}
+        >
           <textarea
             id="model-schema"
             className={`${m3.textarea} ${styles.jsonArea}`}
             value={form.params_schema}
             onChange={(event) => update({ params_schema: event.target.value })}
             spellCheck={false}
+            placeholder={editing ? '留空不修改' : undefined}
           />
         </Field>
-        <Field label="default_params（JSON）" htmlFor="model-defaults">
+        <Field label="default_params（JSON）" htmlFor="model-defaults" hint={editing ? '留空保持不变' : undefined}>
           <textarea
             id="model-defaults"
             className={`${m3.textarea} ${styles.jsonArea}`}
             value={form.default_params}
             onChange={(event) => update({ default_params: event.target.value })}
             spellCheck={false}
+            placeholder={editing ? '留空不修改' : undefined}
           />
         </Field>
 
@@ -594,43 +689,45 @@ export function ModelPanel({ onChanged }: { onChanged?: () => void }) {
           </Field>
         </div>
 
-        <div className={m3.grid3}>
-          <Field
-            label="context_tokens"
-            htmlFor="model-context"
-            required={form.capability === 'text' || form.capability === 'rerank'}
-          >
-            <input
-              id="model-context"
-              className={m3.input}
-              value={form.context_tokens}
-              onChange={(event) => update({ context_tokens: event.target.value.replace(/\D/g, '') })}
-              inputMode="numeric"
-            />
-          </Field>
-          <Field label="max_output_tokens" htmlFor="model-max">
-            <input
-              id="model-max"
-              className={m3.input}
-              value={form.max_output_tokens}
-              onChange={(event) => update({ max_output_tokens: event.target.value.replace(/\D/g, '') })}
-              inputMode="numeric"
-            />
-          </Field>
-          <Field
-            label="embed_dim"
-            htmlFor="model-embed-dim"
-            required={form.capability === 'embedding'}
-          >
-            <input
-              id="model-embed-dim"
-              className={m3.input}
-              value={form.embed_dim}
-              onChange={(event) => update({ embed_dim: event.target.value.replace(/\D/g, '') })}
-              inputMode="numeric"
-            />
-          </Field>
-        </div>
+        {!editing ? (
+          <div className={m3.grid3}>
+            <Field
+              label="context_tokens"
+              htmlFor="model-context"
+              required={form.capability === 'text' || form.capability === 'rerank'}
+            >
+              <input
+                id="model-context"
+                className={m3.input}
+                value={form.context_tokens}
+                onChange={(event) => update({ context_tokens: event.target.value.replace(/\D/g, '') })}
+                inputMode="numeric"
+              />
+            </Field>
+            <Field label="max_output_tokens" htmlFor="model-max">
+              <input
+                id="model-max"
+                className={m3.input}
+                value={form.max_output_tokens}
+                onChange={(event) => update({ max_output_tokens: event.target.value.replace(/\D/g, '') })}
+                inputMode="numeric"
+              />
+            </Field>
+            <Field
+              label="embed_dim"
+              htmlFor="model-embed-dim"
+              required={form.capability === 'embedding'}
+            >
+              <input
+                id="model-embed-dim"
+                className={m3.input}
+                value={form.embed_dim}
+                onChange={(event) => update({ embed_dim: event.target.value.replace(/\D/g, '') })}
+                inputMode="numeric"
+              />
+            </Field>
+          </div>
+        ) : null}
 
         <p className={m3.muted}>
           当前价格预览：{priceText(buildPrice(form), form.capability)}

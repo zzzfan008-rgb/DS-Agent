@@ -223,7 +223,7 @@ const SUGGESTIONS: Record<DriftKind, FixSuggestion> = {
       {
         kind: 'manual',
         action: 'order.adopt',
-        level: 'manual',
+        level: null,
         requires_approval: false,
         endpoint: null,
         note: '人工补录订单/明细，或标记为测试单；补录后再次对账确认',

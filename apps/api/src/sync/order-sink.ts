@@ -11,6 +11,7 @@
  */
 
 import type { PrismaClient } from '@dssaas/db';
+import type { Prisma } from '@dssaas/db';
 import { ApiError } from '../lib/errors.js';
 import { uuidv7 } from '../lib/ids.js';
 import type { Platform } from '../reconcile/types.js';
@@ -34,7 +35,7 @@ interface RawOrderItem {
   title?: string;
   qty: number;
   unit_price_cents: number;
-  amount_cents?: number;
+  amount_cents: number;
   color_id?: string | null;
   size_code?: string | null;
   attrs?: Record<string, unknown>;
@@ -207,7 +208,7 @@ export class PrismaOrderSink implements SyncSink {
               qty: item.qty,
               unitPriceCents: item.unit_price_cents,
               amountCents: item.amount_cents,
-              attrs: item.attrs ?? {},
+              attrs: (item.attrs ?? {}) as Prisma.InputJsonValue,
             },
           });
           itemChanged = true;

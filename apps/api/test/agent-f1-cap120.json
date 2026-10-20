@@ -1,0 +1,241 @@
+{
+  "injection_estimate": {
+    "skills": [
+      "return-policy@1.3.0",
+      "brand-tone@2.1.0"
+    ],
+    "bytes": 4046,
+    "tokens_estimate": 2529
+  },
+  "summary": {
+    "mode": "injected",
+    "intent": "support.suggest",
+    "runs": 5,
+    "success": 5,
+    "first_delta_ms": {
+      "median": 1098,
+      "max": 1212,
+      "min": 1015
+    },
+    "total_ms": {
+      "median": 4733,
+      "max": 5081
+    },
+    "tokens_in_total": 13549,
+    "tokens_out_total": 2246,
+    "cost_cents_total": 20,
+    "skill_tool_calls": 0
+  },
+  "samples": [
+    {
+      "index": 1,
+      "run_id": "01a1588a-2cec-7809-82a1-630a927a1f45",
+      "status": "succeeded",
+      "error": null,
+      "started_ts": "2026-10-20T09:00:13.215Z",
+      "first_delta_ts": "2026-10-20T09:00:14.349Z",
+      "first_delta_after_started_ms": 1134,
+      "total_ms": 2148,
+      "api_first_token_ms": 1430,
+      "first_token_timeout_ms": 5000,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "skill_tool_calls": 0,
+      "output_chars": 111,
+      "output_text": "**结论：这条客户消息涉及两处事实缺口：该风衣的有效尺码表和店铺退换政策原文都没有随请求提供。因此，我不能直接给出具体码数和“可以退”的承诺。下面给出两条可直接发送的消息：一条是当前就能发出的回复，告诉客户我们先核对尺码；",
+      "finished": {
+        "event_id": "01a1588a-2cec-7809-82a1-630a927a1f45-000068",
+        "type": "run.finished",
+        "seq": 68,
+        "ts": "2026-10-20T09:00:15.030Z",
+        "org_id": 1,
+        "request_id": "f1-injected-1-1792486812890",
+        "payload": {
+          "run_id": "01a1588a-2cec-7809-82a1-630a927a1f45",
+          "status": "succeeded",
+          "output": {
+            "text": "**结论：这条客户消息涉及两处事实缺口：该风衣的有效尺码表和店铺退换政策原文都没有随请求提供。因此，我不能直接给出具体码数和“可以退”的承诺。下面给出两条可直接发送的消息：一条是当前就能发出的回复，告诉客户我们先核对尺码；",
+            "artifacts": [],
+            "partial": false
+          },
+          "tokens": {
+            "in": 0,
+            "out": 0
+          },
+          "cost_cents": 0,
+          "duration_ms": 2090
+        }
+      }
+    },
+    {
+      "index": 2,
+      "run_id": "01a1588a-3557-72fe-96f6-6c07b24bec92",
+      "status": "succeeded",
+      "error": null,
+      "started_ts": "2026-10-20T09:00:15.100Z",
+      "first_delta_ts": "2026-10-20T09:00:16.198Z",
+      "first_delta_after_started_ms": 1098,
+      "total_ms": 4775,
+      "api_first_token_ms": 1126,
+      "first_token_timeout_ms": 5000,
+      "tokens_in": 3387,
+      "tokens_out": 556,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "skill_tool_calls": 0,
+      "output_chars": 116,
+      "output_text": "给客户的回复草稿：\n\n---\n您好，感谢咨询～关于尺码和退换，分两部分回答您：\n\n**一、选码**\n我这边暂时没有调取到这件风衣的有效尺码表（各码胸围、肩宽、衣长等实测数据），所以不能凭身高体重直接给您定码，避免报错码让您白等一趟。",
+      "finished": {
+        "event_id": "01a1588a-3557-72fe-96f6-6c07b24bec92-000560",
+        "type": "run.finished",
+        "seq": 560,
+        "ts": "2026-10-20T09:00:19.811Z",
+        "org_id": 1,
+        "request_id": "f1-injected-2-1792486815041",
+        "payload": {
+          "run_id": "01a1588a-3557-72fe-96f6-6c07b24bec92",
+          "status": "succeeded",
+          "output": {
+            "text": "给客户的回复草稿：\n\n---\n您好，感谢咨询～关于尺码和退换，分两部分回答您：\n\n**一、选码**\n我这边暂时没有调取到这件风衣的有效尺码表（各码胸围、肩宽、衣长等实测数据），所以不能凭身高体重直接给您定码，避免报错码让您白等一趟。",
+            "artifacts": [],
+            "partial": false
+          },
+          "tokens": {
+            "in": 3387,
+            "out": 556
+          },
+          "cost_cents": 5,
+          "duration_ms": 4729
+        }
+      }
+    },
+    {
+      "index": 3,
+      "run_id": "01a1588a-480b-709e-8279-cbaf65d026e4",
+      "status": "succeeded",
+      "error": null,
+      "started_ts": "2026-10-20T09:00:19.881Z",
+      "first_delta_ts": "2026-10-20T09:00:20.898Z",
+      "first_delta_after_started_ms": 1017,
+      "total_ms": 5081,
+      "api_first_token_ms": 1042,
+      "first_token_timeout_ms": 5000,
+      "tokens_in": 3390,
+      "tokens_out": 674,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "skill_tool_calls": 0,
+      "output_chars": 107,
+      "output_text": "结论：现在还不能给客户确切的尺码和退换承诺，缺商品尺码表、商品信息和店铺退换政策原文。下面先给一版可直接发的话术，再从两个部分补齐：选码和退换。\n\n**可直接发给客户的回复（拼多多，友好语气）**\n\n```text",
+      "finished": {
+        "event_id": "01a1588a-480b-709e-8279-cbaf65d026e4-000678",
+        "type": "run.finished",
+        "seq": 678,
+        "ts": "2026-10-20T09:00:24.895Z",
+        "org_id": 1,
+        "request_id": "f1-injected-3-1792486819821",
+        "payload": {
+          "run_id": "01a1588a-480b-709e-8279-cbaf65d026e4",
+          "status": "succeeded",
+          "output": {
+            "text": "结论：现在还不能给客户确切的尺码和退换承诺，缺商品尺码表、商品信息和店铺退换政策原文。下面先给一版可直接发的话术，再从两个部分补齐：选码和退换。\n\n**可直接发给客户的回复（拼多多，友好语气）**\n\n```text",
+            "artifacts": [],
+            "partial": false
+          },
+          "tokens": {
+            "in": 3390,
+            "out": 674
+          },
+          "cost_cents": 5,
+          "duration_ms": 5032
+        }
+      }
+    },
+    {
+      "index": 4,
+      "run_id": "01a1588a-5be7-7161-b044-b742d1adee62",
+      "status": "succeeded",
+      "error": null,
+      "started_ts": "2026-10-20T09:00:24.963Z",
+      "first_delta_ts": "2026-10-20T09:00:25.978Z",
+      "first_delta_after_started_ms": 1015,
+      "total_ms": 4304,
+      "api_first_token_ms": 1037,
+      "first_token_timeout_ms": 5000,
+      "tokens_in": 3388,
+      "tokens_out": 497,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "skill_tool_calls": 0,
+      "output_chars": 76,
+      "output_text": "**结论：本次请求缺少关键事实，因此我不能给出具体的尺码和退换承诺。** 请先补齐下面 3 项，我才能输出可直接发送的完整回复。\n\n## 缺失的关键事实",
+      "finished": {
+        "event_id": "01a1588a-5be7-7161-b044-b742d1adee62-000501",
+        "type": "run.finished",
+        "seq": 501,
+        "ts": "2026-10-20T09:00:29.206Z",
+        "org_id": 1,
+        "request_id": "f1-injected-4-1792486824906",
+        "payload": {
+          "run_id": "01a1588a-5be7-7161-b044-b742d1adee62",
+          "status": "succeeded",
+          "output": {
+            "text": "**结论：本次请求缺少关键事实，因此我不能给出具体的尺码和退换承诺。** 请先补齐下面 3 项，我才能输出可直接发送的完整回复。\n\n## 缺失的关键事实",
+            "artifacts": [],
+            "partial": false
+          },
+          "tokens": {
+            "in": 3388,
+            "out": 497
+          },
+          "cost_cents": 5,
+          "duration_ms": 4257
+        }
+      }
+    },
+    {
+      "index": 5,
+      "run_id": "01a1588a-6cac-78d3-a46d-48fe7b8ea007",
+      "status": "succeeded",
+      "error": null,
+      "started_ts": "2026-10-20T09:00:29.268Z",
+      "first_delta_ts": "2026-10-20T09:00:30.480Z",
+      "first_delta_after_started_ms": 1212,
+      "total_ms": 4733,
+      "api_first_token_ms": 1244,
+      "first_token_timeout_ms": 5000,
+      "tokens_in": 3384,
+      "tokens_out": 519,
+      "cost_cents": 5,
+      "tool_calls": [],
+      "skill_tool_calls": 0,
+      "output_chars": 106,
+      "output_text": "**结论：这版回复暂时不能发。** 这次请求没有带上「事实快照块」，我拿不到风衣的尺码表和店铺退换政策原文。因此，选码和退货承诺都缺少可核查的依据；按事实纪律，我只能提供不含具体数字的话术骨架。\n\n缺的关键事实：",
+      "finished": {
+        "event_id": "01a1588a-6cac-78d3-a46d-48fe7b8ea007-000523",
+        "type": "run.finished",
+        "seq": 523,
+        "ts": "2026-10-20T09:00:33.944Z",
+        "org_id": 1,
+        "request_id": "f1-injected-5-1792486829216",
+        "payload": {
+          "run_id": "01a1588a-6cac-78d3-a46d-48fe7b8ea007",
+          "status": "succeeded",
+          "output": {
+            "text": "**结论：这版回复暂时不能发。** 这次请求没有带上「事实快照块」，我拿不到风衣的尺码表和店铺退换政策原文。因此，选码和退货承诺都缺少可核查的依据；按事实纪律，我只能提供不含具体数字的话术骨架。\n\n缺的关键事实：",
+            "artifacts": [],
+            "partial": false
+          },
+          "tokens": {
+            "in": 3384,
+            "out": 519
+          },
+          "cost_cents": 5,
+          "duration_ms": 4699
+        }
+      }
+    }
+  ]
+}

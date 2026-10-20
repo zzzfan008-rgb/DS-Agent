@@ -290,6 +290,7 @@ export interface ProviderItem {
   credential_ref_masked: string;
   region: string | null;
   status: 'configuring' | 'active' | 'degraded' | 'disabled';
+  version: number;
   connectivity: {
     ok: boolean;
     latency_ms: number | null;
@@ -311,6 +312,8 @@ export interface ModelItem {
   published_at: string | null;
   visible: boolean;
   visible_reason?: string;
+  version: number;
+  notes?: string | null;
 }
 
 export interface RouteItem {

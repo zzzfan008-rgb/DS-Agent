@@ -16,18 +16,125 @@ interface RecordedPage {
 
 const RECORDED_AT = '2026-10-20T02:00:00.000Z';
 
+/** 合成 buyer_ref：sha256 hex（64 位小写）——DB 硬 CHECK，禁止明文买家信息。 */
+const buyerRef = (suffix: string): string => suffix.padEnd(64, '0').slice(0, 64);
+
 const RECORDED_PAGES: Record<SyncResource, RecordedPage[]> = {
   orders: [
     {
       cursor: 'ck-orders-1',
       items: [
-        { order_id: 'ALI-ORDER-1001', status: 'paid', amount_cents: 31600, sku_count: 1 },
-        { order_id: 'ALI-ORDER-1002', status: 'paid', amount_cents: 63200, sku_count: 2 },
+        {
+          order_id: 'ALI-ORDER-1001',
+          status: 'paid',
+          total_cents: 31600,
+          freight_cents: 800,
+          discount_cents: 0,
+          paid_cents: 31600,
+          buyer_ref: buyerRef('1a2b3c'),
+          platform_created_at: '2026-10-18T02:00:00.000Z',
+          items: [
+            {
+              platform_sku_ref: 'ALI-SKU-0001',
+              title: '女式纯棉翻领长袖衬衫 本白 M',
+              qty: 2,
+              unit_price_cents: 15800,
+              amount_cents: 31600,
+              color_id: 'WH-0001',
+              size_code: 'M',
+            },
+          ],
+        },
+        {
+          order_id: 'ALI-ORDER-1003',
+          status: 'shipped',
+          total_cents: 15800,
+          freight_cents: 0,
+          discount_cents: 0,
+          paid_cents: 15800,
+          buyer_ref: buyerRef('4d5e6f'),
+          platform_created_at: '2026-10-19T02:00:00.000Z',
+          items: [
+            {
+              platform_sku_ref: 'ALI-SKU-0001',
+              title: '女式纯棉翻领长袖衬衫 本白 M',
+              qty: 1,
+              unit_price_cents: 15800,
+              amount_cents: 15800,
+              color_id: 'WH-0001',
+              size_code: 'M',
+            },
+          ],
+        },
+        {
+          order_id: 'ALI-ORDER-1004',
+          status: 'paid',
+          total_cents: 30000,
+          freight_cents: 0,
+          discount_cents: 0,
+          paid_cents: 30000,
+          buyer_ref: buyerRef('7a8b9c'),
+          platform_created_at: '2026-10-19T03:00:00.000Z',
+          items: [
+            {
+              platform_sku_ref: 'ALI-SKU-0002',
+              title: '女式纯棉翻领长袖衬衫 牛仔蓝 L',
+              qty: 2,
+              unit_price_cents: 15000,
+              amount_cents: 30000,
+              color_id: 'BL-0102',
+              size_code: 'L',
+            },
+          ],
+        },
       ],
     },
     {
       cursor: 'ck-orders-2',
-      items: [{ order_id: 'ALI-ORDER-1003', status: 'shipped', amount_cents: 15800, sku_count: 1 }],
+      items: [
+        {
+          order_id: 'ALI-ORDER-1005',
+          status: 'refunded',
+          total_cents: 15800,
+          freight_cents: 0,
+          discount_cents: 0,
+          paid_cents: 15800,
+          buyer_ref: buyerRef('abcdef'),
+          platform_created_at: '2026-10-19T04:00:00.000Z',
+          items: [
+            {
+              platform_sku_ref: 'ALI-SKU-0003',
+              title: '女式纯棉翻领长袖衬衫 本白 L',
+              qty: 1,
+              unit_price_cents: 15800,
+              amount_cents: 15800,
+              color_id: 'WH-0001',
+              size_code: 'L',
+            },
+          ],
+        },
+        {
+          order_id: 'ALI-ORDER-1006',
+          status: 'paid',
+          total_cents: 31600,
+          freight_cents: 0,
+          discount_cents: 0,
+          paid_cents: 31600,
+          buyer_ref: buyerRef('0f1e2d'),
+          platform_created_at: '2026-10-19T05:00:00.000Z',
+          items: [
+            {
+              platform_sku_ref: 'ALI-SKU-0001',
+              title: '女式纯棉翻领长袖衬衫 本白 M',
+              qty: 2,
+              unit_price_cents: 15800,
+              amount_cents: 31600,
+              color_id: 'WH-0001',
+              size_code: 'M',
+            },
+          ],
+        },
+      ],
     },
   ],
   products: [
@@ -52,7 +159,24 @@ const RECORDED_PAGES: Record<SyncResource, RecordedPage[]> = {
   after_sale: [
     {
       cursor: 'ck-aftersale-1',
-      items: [{ after_sale_id: 'ALI-AS-9001', order_id: 'ALI-ORDER-1001', status: 'refund_pending' }],
+      items: [
+        {
+          after_sale_id: 'ALI-AS-9001',
+          order_id: 'ALI-ORDER-1004',
+          kind: 'refund_only',
+          status: 'open',
+          amount_cents: 5000,
+          opened_at: '2026-10-19T06:00:00.000Z',
+        },
+        {
+          after_sale_id: 'ALI-AS-9002',
+          order_id: 'ALI-ORDER-1005',
+          kind: 'return_refund',
+          status: 'closed',
+          amount_cents: 15800,
+          opened_at: '2026-10-19T07:00:00.000Z',
+        },
+      ],
     },
   ],
   messages: [
