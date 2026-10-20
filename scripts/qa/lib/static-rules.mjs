@@ -103,6 +103,8 @@ const SKIP_DIRS = new Set([
   '.next',
   '.pnpm-store',
   '.turbo',
+  '.tmp',
+  'tmp',
 ]);
 const SKIP_DIR_PREFIXES = ['.tmp-', 'tmp-', '.dsh-ops-'];
 const SKIP_FILES = new Set(['pnpm-lock.yaml', 'package-lock.json', 'yarn.lock']);
