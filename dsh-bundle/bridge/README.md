@@ -167,7 +167,7 @@ business-agent:
 ## 5. 生产化（M3）剩余
 
 1. api 的 sessionKey → Host session 映射（Redis）；多轮上下文复用。
-3. 真实计价：`model_call_log` + `cost_ledger`（M2/t7），bridge 只上报 token。
-4. 生产 `dsh-host` 镜像、卷权限、`/ready` 聚合、MCP 启用与 `ctx.tools.guard`（docs/14 §8.3）。
-5. 生产鉴权失败改 404（`authFailureStatus: 404`，docs/14 §4.3）；dev 保持 401（t18 要求）。
+2. 真实计价：`model_call_log` + `cost_ledger`（M2/t7），bridge 只上报 token。
+3. 生产 `dsh-host` 镜像、卷权限、`/ready` 聚合、MCP 启用与 `ctx.tools.guard`（docs/14 §8.3）。
+4. 生产鉴权失败改 404（`authFailureStatus: 404`，docs/14 §4.3）；dev 保持 401（t18 要求）。
 
