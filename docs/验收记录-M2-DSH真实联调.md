@@ -86,6 +86,11 @@ Host 就绪：http://127.0.0.1:43181
 `mcp_tools=0` 是真实值：M1 的两个只读 MCP server 仍是占位（`dsh-bundle/config/mcp-servers.yaml`），
 未在本任务启用；skill 通过 `tool-skill` 正常可用（见 §3 的 tool_call）。
 
+> `manifest_hash` 随 `dsh-bundle/manifest.json` 内容变化：上面是当时（2d4b3547…）的真实输出；
+> t18 末尾更新 manifest 说明后当前值为 `070ea3169e5409fdf6eecefd3fe15cc7716fc1a9bdc308dba5da5655b8ecadb4`。
+> api 启动时读取同一文件并计算，`/api/health.checks.dsh_host_detail.manifest_match` 仍为 true。
+
+
 ### 2.2 停止
 
 ```powershell
@@ -164,6 +169,21 @@ run.finished       seq 540 07:56:31.324   tokens 691/1689, cost_cents=5, duratio
 > 2026秋季女士中长款风衣 收腰显瘦 防风防泼水 小个子通勤外套
 …（省略，完整文本见日志）
 ```
+
+**F1 对照（默认 8s，故意不覆盖）**：同一命令不设 `AGENT_FIRST_TOKEN_TIMEOUT_MS`（默认 8000）时，
+api 在 8s 处主动 abort，真实 Host 本次**没能产出第一个 token**：
+
+```text
+create          202
+events          … run.step, run.step, run.error
+run.error       {code:"timeout", reason:"first_token_timeout",
+                 message:"首 token 超时（>8000ms）；已中止本次运行，可重试或改用手工模板"}
+GET /run        status=timeout, error.code=timeout
+Host 侧          active_runs=0（api abort 已传导，无残留）
+```
+
+证据：`apps/api/test/agent-real-host-firsttoken-default.log`（smoke 的 `pass=false` 是预期结果）。
+这确认 F1 不是理论风险：**默认配置下真实 Host 会被 api 判超时**。
 
 ---
 
@@ -258,6 +278,8 @@ $env:DSH_BRIDGE_TOKEN_FILE='…\secrets\bridge-token'
 真实 Host 在生成第一个 token 前先执行了 2 次 `skill` 工具调用（brand-tone 等），
 `run.started → 首 delta` = **10.033s**；`AGENT_FIRST_TOKEN_TIMEOUT_MS` 默认 8000，按默认配置
 本次 run 会被 api 判 `timeout`。本次 smoke 显式设为 60000 才通过。
+已做**默认 8s 的对照实证**：`agent-real-host-firsttoken-default.log` 中 create=202 → `run.error{code:"timeout",
+reason:"first_token_timeout"}` → `status=timeout`，Host 侧 `active_runs=0`（abort 已传导）。
 选项（需队长定）：
 1. 调高默认（如 15000–20000ms），与 docs/17 §6.5 的 8s 冲突，需同步改文档；
 2. 优化 preset：把 skill 内容以前置上下文注入，避免首 token 前的 2 次工具往返（docs/17 §5.4 的
@@ -286,11 +308,16 @@ dev 按 t18 要求 401；生产按 docs/14 §4.3 建议 `authFailureStatus: 404`
 - MCP 工具（`mcp_tools=0`，两个 server 仍占位）；
 - 多轮上下文、preset 灰度、manifest 不匹配告警；
 - Host 重启中的 run（api 会 `dsh_unavailable`，需 M3 演练）；
-- 真实账号额度/限流（本任务只跑了 3 次真实 run）。
+- 真实账号额度/限流（本任务共 4 次真实 run：1 成功流式 + 1 取消 + 1 首 token 超时对照 + 早前调试）。
 
 **F7 运行成本提示。**
 每次真实流式 run 消耗实际账号额度（本例约 691 in / 1689 out tokens）；CI 默认使用协议桩，
 不要把真实 Host 测试接进无凭据的流水线。
+
+**F8 路径为工作区绝对路径。**
+`dev-host.patch.yml` 里的 `file:///D:/DSSAAS/...`、skill 目录、令牌路径按本机 `D:\DSSAAS` 写死；
+换机器/换目录需同步改 `dsh-bundle/config/dev-host.patch.yml`（脚本本身不重写 patch）。
+DSH 安装路径可通过 `start-dsh-host.ps1 -InstallDir` 覆盖，但 patch 内路径不随之变化。
 
 ---
 
@@ -341,4 +368,5 @@ pwsh -File scripts/dev/stop-dsh-host.ps1
 | `apps/api/test/agent-real-host-stream.log` | 真实流式完整 JSON（事件、tokens、cost、duration、first-delta） |
 | `apps/api/test/agent-real-host-cancel.log` | 取消延迟、Host active_runs、partial 输出 |
 | `apps/api/test/agent-real-host-auth.log` | 鉴权矩阵（200/401/401/401/200） |
+| `apps/api/test/agent-real-host-firsttoken-default.log` | **F1 对照**：默认 8s 下真实 run 被 api 判 timeout |
 | `dsh-bundle/.dev-home/logs/host-*.log` | 真实 Host 启动/插件日志（本机，gitignored） |

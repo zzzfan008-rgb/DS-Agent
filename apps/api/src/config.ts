@@ -61,6 +61,8 @@ const EnvSchema = z.object({
   DSSAAS_TOTP_SECRETS: z.string().optional(),
   /** 开发/PoC 的模型供应商凭据表（JSON: {"credential_ref":"secret"}）；生产由 DSH 凭据解析。 */
   DSSAAS_MODEL_CREDENTIALS: z.string().optional(),
+  /** 仅 dev/test 的入站模拟端点开关；默认关闭，生产不得开启。 */
+  DSSAAS_ENABLE_INTERNAL_SIMULATION: envBool(false),
 
   /** Prometheus 抓取令牌（可选）；优先仍可用 admin 会话。 */
   METRICS_TOKEN: z.string().min(16).optional(),
@@ -125,6 +127,7 @@ export interface AppConfig {
   totpIssuer: string;
   totpSecretsJson: string | null;
   modelCredentialsJson: string | null;
+  enableInternalSimulation: boolean;
   metricsToken: string | null;
   version: string;
 
@@ -209,6 +212,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     totpIssuer: raw.TOTP_ISSUER,
     totpSecretsJson: raw.DSSAAS_TOTP_SECRETS ?? null,
     modelCredentialsJson: raw.DSSAAS_MODEL_CREDENTIALS ?? null,
+    enableInternalSimulation: raw.DSSAAS_ENABLE_INTERNAL_SIMULATION,
     metricsToken: raw.METRICS_TOKEN ?? null,
     version: '0.1.0',
     dshBridgeUrl: raw.DSH_BRIDGE_URL.replace(/\/+$/, ''),
