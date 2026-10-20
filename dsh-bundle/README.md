@@ -48,10 +48,14 @@ curl -fsS -H "Authorization: Bearer $(cat /data/dsh/secrets/bridge-token)" \
 - skill 与知识库同源同版本；skill 只规定表达方式，不是事实源（docs/04 X4）。
 - 生产卷只读挂载；升级按 docs/04 月度窗口 + docs/17 §9 灰度。
 
-## M1 的边界（重要）
+## M1 的边界与 t18 更新
 
-- `apps/api` 已实现桥接 **客户端**（HTTP POST + SSE、AbortSignal、超时、重连、失败映射）；
-  Host 侧 `business-bridge` 插件尚未实现，因此 M1 的流式验收使用
-  `apps/api/test/support/dsh-host-stub.ts`（**协议桩**，严格实现同一 wire 契约）跑通。
-- 真实 DSH Host 的接入验收（Owner→非 owner Peer、gateway stream、MCP 工具清单）在 M3
-  按 `bridge/README.md` 的清单逐项回归；本目录不冒充已完成。
+- `apps/api` 已实现桥接 **客户端**（HTTP POST + SSE、AbortSignal、超时、重连、失败映射）。
+- **t18 已用真实 DSH Host（0.2.1-rc.2）联调通过**：`bridge/business-agent.mjs` +
+  `bridge/business-bridge.mjs` 挂入独立 dev profile，真实模型流式、取消、鉴权矩阵均有留证
+  （`docs/验收记录-M2-DSH真实联调.md`）。一键脚本：`scripts/dev/start-dsh-host.ps1`。
+- `apps/api/test/support/dsh-host-stub.ts`（协议桩）继续保留，作为 **CI/无凭据回归**；
+  真实 Host 测试会消耗模型额度，不进普通流水线。
+- 生产化剩余：skill 前置注入（首 token）、sessionKey 映射、真实计价、Host 镜像与 MCP 启用，
+  见 `bridge/README.md` §5。
+

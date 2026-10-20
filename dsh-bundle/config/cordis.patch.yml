@@ -31,7 +31,9 @@
 # 禁止用 /connect（owner principal 会绕过 remoteAccess）。
 - insert:
     - id: business-bridge
-      name: ./bridge/business-bridge.js
+      # 真实 Host 联调（t18）使用 dsh-bundle/config/dev-host.patch.yml 直接挂 .mjs；
+      # 本行保留为生产 compose 的登记模板（生产 profile 落地时再启用）。
+      name: ./bridge/business-bridge.mjs
       disabled: true
       config:
         bind:

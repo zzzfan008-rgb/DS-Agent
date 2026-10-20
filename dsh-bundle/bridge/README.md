@@ -116,22 +116,32 @@ api 侧连接期指数退避重试最多 2 次（`AGENT_BRIDGE_RECONNECT_ATTEMPT
 事件之前**重试；首事件之后不重试，避免重复输出。公开 SSE 的断线续传由 api 的事件缓冲 +
 `Last-Event-ID` 完成（`GET /api/agent/runs/:id/events`），不依赖 Host 回放。
 
-## 3. 安全清单（M3 验收逐项）
+## 3. 安全清单（真实 Host 联调结果，t18）
 
-- [ ] 令牌由 Host 启动生成，写 `<dsh-data>/secrets/bridge-token`（0600）；api 启动读取，读失败 fail closed。
-- [ ] 来源网段、方法、Content-Type、精确路径四项全查，任一失败 404。
-- [ ] 常量时间比较（`crypto.timingSafeEqual`）。
-- [ ] `createPeer({ principal:{kind:'business-api'}, interactions:'none' })`，每请求 dispose。
-- [ ] `remoteAccess.registerPolicy('business-api', …)` 仅放行 `businessAgent/run`，
-      condition 校验 `intent` 白名单与 `role × intent`；拒绝返回 `remote-access/denied`。
-- [ ] 日志不打印令牌、完整信封、模型原文；只记 `request_id/run_id/intent/role/结果`。
-- [ ] `/internal/agent/run` 不向局域网/公网暴露（compose 仅发布 127.0.0.1:43180）。
+- [x] 令牌文件在工作区 `dsh-bundle/.dev-home/secrets/bridge-token`，每请求 mtime 热读；令牌轮换后旧令牌立即 401。
+- [x] 来源（127.0.0.1）、方法、Content-Type、精确路径四项全查，任一失败 404。
+- [x] 常量时间比较（`crypto.timingSafeEqual`）。
+- [x] `createPeer({ principal:{kind:'business-api'}, interactions:'none' })`，每请求 dispose。
+- [x] `remoteAccess.registerPolicy('business-api', …)` 仅放行 `businessAgent/run`，
+      `explain` 校验 `intent` 白名单与 `role × intent`；拒绝返回 `remote-access/denied`。
+      binding.role 必须是 `{name, resource:'global', actions:['businessAgent/run']}`（t18 实测）。
+- [x] 不打印令牌/完整信封/模型原文；Host 日志只到 plugin 级。
+- [ ] 生产镜像仍需把监听限制在 compose `127.0.0.1:43180` 与内部网络（M3 部署项）。
 
-## 4. M3 落地顺序
+## 4. 已验证的真实 Host 接入（t18）
 
-1. 启用 `config/cordis.patch.yml` 的 `business-bridge` 行（先 `disabled:false`）。
-2. 部署 `business-agent.ts` 对应的 Remote service（bundle `1.0.0`）。
-3. 用 `apps/api` 的 `test/agent-smoke.ts` 对真实 Host 跑一遍：
-   `SMOKE_MODE=stream DSH_BRIDGE_URL=http://127.0.0.1:43180 DSH_BRIDGE_TOKEN_FILE=…`。
-4. 跑 docs/17 §11 的 #2/#3/#4/#5/#11 与 docs/14 SEC-12（令牌错误 → 404）。
-5. 把真实事件序列写进 `docs/验收记录-M1-Agent.md` 的 M3 追加一节。
+1. 一键启动：`pwsh -File scripts/dev/start-dsh-host.ps1`（独立 profile、junction、令牌、健康等待）。
+2. 插件：`business-agent.mjs`（Remote service）+ `business-bridge.mjs`（路由/policy/peer/gateway）。
+3. 真实事件：`apps/api/test/agent-real-host-{stream,cancel,auth}.log`，摘要见
+   `docs/验收记录-M2-DSH真实联调.md`。
+4. 已知问题：真实首 token 10.0s > api 默认 8s（F1，需决策）；成本为按 token 的估算（F2）；
+   每 run 新建 Host session（F3）。
+
+## 5. 生产化（M3）剩余
+
+1. `businessAgent` 接入业务 preset 的 skill **前置注入**，避免首 token 前的 skill 工具往返（F1 方案 2）。
+2. api 的 sessionKey → Host session 映射（Redis）；多轮上下文复用。
+3. 真实计价：`model_call_log` + `cost_ledger`（M2/t7），bridge 只上报 token。
+4. 生产 `dsh-host` 镜像、卷权限、`/ready` 聚合、MCP 启用与 `ctx.tools.guard`（docs/14 §8.3）。
+5. 生产鉴权失败改 404（`authFailureStatus: 404`，docs/14 §4.3）；dev 保持 401（t18 要求）。
+

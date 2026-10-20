@@ -48,7 +48,7 @@
     "internalEndpoint": "/internal/agent/run",
     "healthEndpoint": "/internal/health",
     "principal": "business-api",
-    "note": "见 bridge/README.md；Host 侧插件属 M3 交付，本 seed 提供契约与参考实现。"
+    "note": "见 bridge/README.md；Host 侧 mjs 插件已用 DSH 0.2.1-rc.2 真实联调通过（t18，见 docs/验收记录-M2-DSH真实联调.md），生产化剩余项见 bridge/README.md §5。"
   },
   "mcp": {
     "policy": "config/mcp-policy.yaml",
