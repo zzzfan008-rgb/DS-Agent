@@ -2,9 +2,9 @@
 
 | 项 | 内容 |
 |---|---|
-| 适用 | `apps/api` 的 agent 驱动（已实现）与 Host 内 `business-bridge` 插件（M3 实现）之间 |
+| 适用 | `apps/api` 的 agent 驱动（已实现）与 Host 内 `business-bridge` 插件之间 |
 | 依据 | docs/17 §2.2/§3.3/§3.4/§3.2、docs/21 §13、docs/14 §4.3、docs/16 §7.3 |
-| 状态 | api 侧 **已实现**；Host 侧 **参考实现（本目录 business-bridge.ts）**，M3 接入 |
+| 状态 | api 侧 **已实现**；Host 侧 **真实 Host 联调通过（t18，DSH 0.2.1-rc.2）**。运行时实现：`business-agent.mjs` + `business-bridge.mjs`；`business-agent.ts`/`business-bridge.ts` 为早期参考稿。验收证据：`docs/验收记录-M2-DSH真实联调.md` |
 
 ## 1. 拓扑与信任边界
 
@@ -16,7 +16,7 @@
                      ▼
               business-bridge（Host 内精确路由）
                      │ createPeer({ principal:{kind:'business-api'}, interactions:'none' })
-                     │ typertGateway.stream({ namespace:'businessAgent', method:'run', args:[env], peer, signal })
+                     │ typertGateway.stream({ namespace:'businessAgent', method:'run', args:{ env }, peer, signal })
                      ▼
                 业务 Agent（模型 + 只读 MCP）
 ```

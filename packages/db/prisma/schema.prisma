@@ -818,6 +818,9 @@ model Approval {
   decidedBy      String?   @map("decided_by") @db.Uuid
   decidedAt      DateTime? @map("decided_at") @db.Timestamptz
   decisionNote   String?   @map("decision_note")
+  secondConfirmBy String?  @map("second_confirm_by") @db.Uuid
+  payloadPatch   Json?     @map("payload_patch")
+  batchId        String?   @map("batch_id") @db.Uuid
   targetHash     String    @map("target_hash")
   factSnapshot   Json      @default("{}") @map("fact_snapshot")
   riskMeta       Json      @default("{}") @map("risk_meta")

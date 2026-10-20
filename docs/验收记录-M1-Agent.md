@@ -415,6 +415,11 @@ policy）以参考实现 + 清单放在 `dsh-bundle/bridge/`，M3 接入。验�
 api 侧代码路径与真实 Host 完全一致；真实 Host 的事件序列需在 M3 追加一节（步骤见
 `dsh-bundle/bridge/README.md` §4）。这是本任务最大的未验证面，评审时必须知情。
 
+> **2026-10-20 更新（t18 关闭）**：真实 DSH Host（0.2.1-rc.2）已联调通过——plugins 挂载、
+> `businessAgent/run` 真实模型流式、取消 44ms/16ms 释放、鉴权 200/401 矩阵、事件对照表均已留证。
+> 详见 `docs/验收记录-M2-DSH真实联调.md`。本任务 §8 D1 的「未验证」限制关闭；新发现
+> **F1（真实首 token 10.0s > 默认 8s）** 需队长决策，协议桩保留为 CI/无凭据回归。
+
 **D2 run 状态与事件缓冲为进程内。** docs/17 §5.2 明确「不新增 agent_session 表」；M1 用内存
 实现，接口（create/get/subscribe/cancel）保持不变，后续换 Redis Stream 时只替换存储层。
 进程重启会丢失进行中的 run（docs/17 §4.1 重启语义：返回 `dsh_unavailable`，客户端重试）。
