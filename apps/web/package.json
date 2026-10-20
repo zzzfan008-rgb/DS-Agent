@@ -1,0 +1,21 @@
+{
+  "name": "@dssaas/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Next.js 业务台：12 个业务页面，所有业务操作的唯一入口",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000"
+  },
+  "dependencies": {
+    "next": "^16.4.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  }
+}

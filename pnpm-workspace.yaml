@@ -1,0 +1,14 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm 11 默认不执行依赖的 postinstall；Prisma 需要在安装期下载 schema/query engine，
+# esbuild / msgpackr-extract / sharp 为构建期原生依赖。逐个显式放行，不做全局 --all 放行。
+allowBuilds:
+  "@prisma/client": true
+  "@prisma/engines": true
+  esbuild: true
+  msgpackr-extract: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true

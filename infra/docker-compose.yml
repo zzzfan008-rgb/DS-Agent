@@ -1,0 +1,179 @@
+# 服装电商双平台运营系统 · 基础依赖（M1 底座）
+#
+# 用法：
+#   docker compose -f infra/docker-compose.yml config                          # 语法 + 变量解析校验
+#   docker compose -f infra/docker-compose.yml up -d                          # postgres / redis / minio / caddy
+#   docker compose -f infra/docker-compose.yml --profile app up -d            # 追加 api / worker
+#
+# 说明：
+#   - api / worker 镜像在 M2 前后接入（当前只声明服务、卷与依赖，保证 M1 不被阻塞）；
+#   - 所有密码走环境变量，默认值仅供本机开发（见根目录 .env.example）；
+#   - DSH 工作目录挂在命名卷 dsh-data，所有容器共用同一卷，禁止各写本地文件（总纲 §19.1）。
+
+name: dssaas
+
+services:
+  # -------------------------------------------------------------
+  # Postgres 16 + pgvector：业务唯一事实源，向量检索同库（总纲 §4）
+  # -------------------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: dssaas-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dssaas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dssaas_dev_pw}
+      POSTGRES_DB: ${POSTGRES_DB:-dssaas}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    stop_grace_period: 1m
+
+  # -------------------------------------------------------------
+  # Redis 7：BullMQ 队列（工作流状态机在 Postgres，队列只做投递）
+  # -------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: dssaas-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # -------------------------------------------------------------
+  # MinIO：素材 / 视频 / 导出包，版本化存储
+  # -------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: dssaas-minio
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-dssaas}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-dssaas_dev_pw}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # -------------------------------------------------------------
+  # Caddy：唯一对外入口（反代 web / api，生产自动 HTTPS）
+  # -------------------------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    container_name: dssaas-caddy
+    restart: unless-stopped
+    ports:
+      - "${CADDY_HTTP_PORT:-80}:80"
+    environment:
+      API_UPSTREAM: ${API_UPSTREAM:-host.docker.internal:3001}
+      WEB_UPSTREAM: ${WEB_UPSTREAM:-host.docker.internal:3000}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
+
+  # -------------------------------------------------------------
+  # 业务进程（profile=app；镜像由 CI/部署脚本构建并打 tag）
+  # DSH 持久卷 dsh-data 挂到 /var/lib/dsh，api 与 worker 共用。
+  # -------------------------------------------------------------
+  api:
+    image: ${DSSAAS_API_IMAGE:-dssaas/api:dev}
+    container_name: dssaas-api
+    restart: unless-stopped
+    profiles: ["app"]
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      TZ: ${TZ:-Asia/Shanghai}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dssaas}:${POSTGRES_PASSWORD:-dssaas_dev_pw}@postgres:5432/${POSTGRES_DB:-dssaas}?schema=public
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-dssaas}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-dssaas_dev_pw}
+      S3_BUCKET_ASSETS: ${S3_BUCKET_ASSETS:-dssaas-assets}
+      DSH_HOME: ${DSH_HOME:-/var/lib/dsh}
+      DSH_HOST_URL: ${DSH_HOST_URL:-http://host.docker.internal:8787}
+      API_PORT: ${API_PORT:-3001}
+    ports:
+      - "${API_PORT:-3001}:3001"
+    volumes:
+      - dsh-data:/var/lib/dsh
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  worker:
+    image: ${DSSAAS_WORKER_IMAGE:-dssaas/worker:dev}
+    container_name: dssaas-worker
+    restart: unless-stopped
+    profiles: ["app"]
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      TZ: ${TZ:-Asia/Shanghai}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dssaas}:${POSTGRES_PASSWORD:-dssaas_dev_pw}@postgres:5432/${POSTGRES_DB:-dssaas}?schema=public
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-dssaas}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-dssaas_dev_pw}
+      S3_BUCKET_ASSETS: ${S3_BUCKET_ASSETS:-dssaas-assets}
+      DSH_HOME: ${DSH_HOME:-/var/lib/dsh}
+    volumes:
+      - dsh-data:/var/lib/dsh
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+  caddy_data:
+  caddy_config:
+  # DSH 工作目录（配置 + 会话黑匣子 + 凭据引用）；随卷备份，凭据另做加密导出。
+  dsh-data:

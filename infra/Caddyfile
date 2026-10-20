@@ -1,0 +1,27 @@
+# Caddy —— 唯一对外入口（总纲 §3.1：apps/web 是业务唯一入口，api 只在后端）
+#
+# 默认只监听 :80（本机/内网开发）。生产改成真实域名后 Caddy 会自动申请证书，
+# 此时需要把 compose 里的 443 端口也映射出来。
+{
+	admin off
+	# 生产建议打开结构化访问日志并落盘到卷内，便于审计与排障：
+	# log default {
+	# 	output file /data/access.log
+	# }
+}
+
+:80 {
+	encode zstd gzip
+
+	# API 前缀直连 Fastify；SSE 需要关闭缓冲（flush_interval -1）
+	handle /api/* {
+		reverse_proxy {$API_UPSTREAM:host.docker.internal:3001} {
+			flush_interval -1
+		}
+	}
+
+	# 其余全部交给 Next.js
+	handle {
+		reverse_proxy {$WEB_UPSTREAM:host.docker.internal:3000}
+	}
+}

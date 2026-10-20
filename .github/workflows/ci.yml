@@ -1,0 +1,99 @@
+name: ci
+
+# PR 必过门禁（docs/15 §9.1 / docs/21 §11.3）。
+# 1) quality-gate：lint（契约 + 边界静态检查）、typecheck、test、prisma validate
+# 2) migration-repeatable：pgvector 空库上连续跑两次 migrate deploy
+#
+# 任何一步红即禁止合并。迁移文件只增不改（docs/15 §9.4）。
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # prisma validate / generate 需要 datasource url 存在；不建立实际连接。
+  DATABASE_URL: postgresql://dssaas:dssaas_dev_pw@localhost:5432/dssaas?schema=public
+
+jobs:
+  quality-gate:
+    name: lint / typecheck / test / prisma validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint（契约 + 边界静态检查）
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test（QA 规则单测 + 各包单测）
+        run: pnpm test
+
+      - name: Prisma validate
+        run: pnpm db:validate
+
+  migration-repeatable:
+    name: migration repeatable（空库连续两次 migrate）
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dssaas_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d dssaas_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      MIGRATE_CHECK_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dssaas_ci?schema=public
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 迁移可重复（空库连续两次 migrate deploy）
+        run: pnpm check:migrations

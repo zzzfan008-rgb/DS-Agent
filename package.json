@@ -1,0 +1,35 @@
+{
+  "name": "dssaas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "服装电商双平台运营系统（拼多多 + 1688）",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "lint": "node scripts/qa/static-check.mjs",
+    "check:contracts": "node scripts/qa/static-check.mjs --contracts",
+    "check:boundaries": "node scripts/qa/static-check.mjs --boundaries",
+    "check:migrations": "node scripts/qa/check-migrations.mjs",
+    "test": "node --test \"scripts/qa/__tests__/*.test.mjs\" && node scripts/qa/workspace-task.mjs test",
+    "test:qa": "node --test \"scripts/qa/__tests__/*.test.mjs\"",
+    "typecheck": "node scripts/qa/workspace-task.mjs typecheck",
+    "ci": "node scripts/qa/ci.mjs",
+    "verify": "node scripts/qa/ci.mjs",
+    "db:validate": "node scripts/qa/prisma-cli.mjs validate --schema prisma/schema.prisma",
+    "db:migrate:check": "node scripts/qa/check-migrations.mjs",
+    "db:format": "node scripts/qa/prisma-cli.mjs format --schema prisma/schema.prisma",
+    "db:generate": "node scripts/qa/prisma-cli.mjs generate --schema prisma/schema.prisma",
+    "db:migrate": "node scripts/qa/prisma-cli.mjs migrate dev --schema prisma/schema.prisma",
+    "db:deploy": "node scripts/qa/prisma-cli.mjs migrate deploy --schema prisma/schema.prisma",
+    "db:status": "node scripts/qa/prisma-cli.mjs migrate status --schema prisma/schema.prisma",
+    "infra:config": "docker compose -f infra/docker-compose.yml config",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.yml down"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.3"
+  }
+}

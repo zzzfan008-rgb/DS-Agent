@@ -1,0 +1,986 @@
+// =============================================================
+// 服装电商双平台运营系统 · Prisma 物理模型（M1）
+//
+// 依据：docs/06-领域模型与数据字典.md（表/列基础）+ docs/21-接口契约裁决.md
+//   （docs/21 为冲突唯一权威：金额 *_cents 整数分、uuid v7 主键、workflow_run.state /
+//    listing.status 词表、model_route 作用域与配额列、provider.credential_ref 无外键、
+//    media_quota 表）。共 30 张 docs/06 表 + 1 张 docs/21 新增表 = 31 张。
+//
+// 分工（重要）：
+//   - 本文件只映射「表 + 列 + 类型 + 默认值」，保证 Prisma Client 可用；
+//   - 枚举用 text（§0.5），不用 PostgreSQL 原生 ENUM；
+//   - 所有 CHECK、复合/部分唯一索引、外键、触发器、函数、HNSW/GIN 索引、
+//     `vector` 扩展、种子数据，都在迁移 SQL 中显式创建
+//     （见 prisma/migrations/20261020142000_init/migration.sql）；
+//   - 不在本文件声明 relation / @@index / @@unique：docs/06 的唯一性与索引
+//     大量是部分索引（WHERE archived_at IS NULL），Prisma 无法表达，
+//     声明后会在迁移里生成全量唯一索引，与 docs/06 冲突。
+//
+// Prisma 能力边界（已在 docs/验收记录-M1-骨架.md 登记为差异项）：
+//   - users.email 的 citext：Prisma 6.19.3 不支持 @db.Citext，
+//     落库为 text + `lower(email)` 唯一索引（语义等价：大小写不敏感唯一）；
+//   - audit_log.ip 的 inet：Prisma 不支持 @db.Inet，落库为 text + inet 格式 CHECK；
+//   - kb_chunk.embedding 用 Unsupported("vector(1024)")，读写必须走 $queryRaw；
+//   - kb_chunk.tsv 用 Unsupported("tsvector")，由应用侧分词后写入。
+// =============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -------------------------------------------------------------
+// 0. 公共字段（docs/06 §0.6）
+//   id uuid PK (gen_random_uuid) / org_id bigint default 1 /
+//   created_at / updated_at / created_by / version default 1 / archived_at
+// 例外见各表注释（§0.7）。
+// -------------------------------------------------------------
+
+// =============================================================
+// 4.8 治理
+// =============================================================
+
+/// users — 账号（docs/06 §4.8.1）。email 登录名，citext → text + lower(email) 唯一。
+model User {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  orgId          BigInt    @default(1) @map("org_id")
+  email          String
+  displayName    String    @map("display_name")
+  passwordHash   String    @map("password_hash")
+  totpSecretRef  String?   @map("totp_secret_ref")
+  totpEnabled    Boolean   @default(false) @map("totp_enabled")
+  status         String    @default("active")
+  lastLoginAt    DateTime? @map("last_login_at") @db.Timestamptz
+  failedAttempts Int       @default(0) @map("failed_attempts") @db.SmallInt
+  lockedUntil    DateTime? @map("locked_until") @db.Timestamptz
+  locale         String    @default("zh-CN")
+  timezone       String    @default("Asia/Shanghai")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy      String?   @map("created_by") @db.Uuid
+  version        Int       @default(1)
+  archivedAt     DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("users")
+}
+
+/// roles — 角色（docs/06 §4.8.2）。viewer / operator / admin，种子数据由迁移写入。
+model Role {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  orgId       BigInt    @default(1) @map("org_id")
+  code        String
+  name        String
+  permissions String[]  @default([])
+  isSystem    Boolean   @default(true) @map("is_system")
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy   String?   @map("created_by") @db.Uuid
+  version     Int       @default(1)
+  archivedAt  DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("roles")
+}
+
+/// memberships — 授权关系（docs/06 §4.8.3）。无 created_by，用 granted_by。
+model Membership {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  orgId      BigInt    @default(1) @map("org_id")
+  userId     String    @map("user_id") @db.Uuid
+  roleId     String    @map("role_id") @db.Uuid
+  status     String    @default("active")
+  grantedBy  String?   @map("granted_by") @db.Uuid
+  grantedAt  DateTime  @default(now()) @map("granted_at") @db.Timestamptz
+  expiresAt  DateTime? @map("expires_at") @db.Timestamptz
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  version    Int       @default(1)
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("memberships")
+}
+
+/// audit_log — 审计（docs/06 §4.8.4 + docs/21 §10）。id uuid v7 主键，seq 单调序列；
+/// 只插入不更新（迁移建 trg_audit_no_update）。
+model AuditLog {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  seq          BigInt   @unique @default(autoincrement())
+  orgId        BigInt   @default(1) @map("org_id")
+  occurredAt   DateTime @default(now()) @map("occurred_at") @db.Timestamptz
+  actorType    String   @map("actor_type")
+  actorId      String?  @map("actor_id") @db.Uuid
+  action       String
+  resourceType String   @map("resource_type")
+  resourceId   String?  @map("resource_id") @db.Uuid
+  requestId    String   @map("request_id")
+  before       Json     @default("{}")
+  after        Json     @default("{}")
+  diff         Json     @default("{}")
+  irreversible Boolean  @default(false)
+  ip           String?
+  userAgent    String?  @map("user_agent")
+  chainPrev    String?  @map("chain_prev")
+  chainHash    String   @map("chain_hash")
+  meta         Json     @default("{}")
+
+  @@map("audit_log")
+}
+
+// =============================================================
+// 4.1 供应商与模型
+// =============================================================
+
+/// credential_ref — 凭据元数据（docs/21 §9）。只存名称/用途/轮换信息，真值在 DSH 凭据存储。
+model CredentialRef {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  orgId         BigInt    @default(1) @map("org_id")
+  name          String
+  purpose       String    @default("provider")
+  status        String    @default("active")
+  lastRotatedAt DateTime? @map("last_rotated_at") @db.Timestamptz
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy              String?   @map("created_by") @db.Uuid
+  version                Int       @default(1)
+  archivedAt             DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("credential_ref")
+}
+
+/// provider — 供应商账号（docs/06 §4.1.1 + docs/21 §9）。credential_ref 为 DSH 凭据名，不建外键。
+model Provider {
+  id                 String    @id @default(uuid(7)) @db.Uuid
+  orgId              BigInt    @default(1) @map("org_id")
+  name               String
+  kind               String
+  vendor             String    @default("other")
+  baseUrl            String?   @map("base_url")
+  credentialRef      String    @map("credential_ref")
+  authScheme         String    @default("bearer") @map("auth_scheme")
+  timeoutMs          Int       @default(60000) @map("timeout_ms")
+  maxConcurrency     Int       @default(8) @map("max_concurrency") @db.SmallInt
+  rateLimit          Json      @default("{}") @map("rate_limit")
+  status             String    @default("configuring")
+  connectivity       String    @default("unknown")
+  lastCheckAt        DateTime? @map("last_check_at") @db.Timestamptz
+  lastCheckLatencyMs Int?      @map("last_check_latency_ms")
+  lastErrorCode      String?   @map("last_error_code")
+  balanceCents       Int?      @map("balance_cents")
+  balanceCheckedAt   DateTime? @map("balance_checked_at") @db.Timestamptz
+  region             String?
+  extra              Json      @default("{}")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy          String?   @map("created_by") @db.Uuid
+  version            Int       @default(1)
+  archivedAt         DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("provider")
+}
+
+/// model — 模型与参数价格（docs/21 §1）。price 为 jsonb 计价单：
+/// { text:{input_per_1k_cents,output_per_1k_cents}, image:{per_image_cents,per_megapixel_cents},
+///   video:{per_second_cents}, embed:{per_1k_tokens_cents} }
+model Model {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  orgId           BigInt    @default(1) @map("org_id")
+  providerId      String    @map("provider_id") @db.Uuid
+  name            String
+  externalModelId String    @map("external_model_id")
+  displayName     String    @map("display_name")
+  capability      String
+  purposeSupport  String[]  @default([]) @map("purpose_support")
+  paramsSchema    Json      @map("params_schema")
+  defaultParams   Json      @default("{}") @map("default_params")
+  price           Json
+  priceVersion    Int       @default(1) @map("price_version")
+  rateLimit       Json      @default("{}") @map("rate_limit")
+  contextTokens   Int?      @map("context_tokens")
+  maxOutputTokens Int?      @map("max_output_tokens")
+  embedDim        Int?      @map("embed_dim") @db.SmallInt
+  status          String    @default("draft")
+  publishedAt     DateTime? @map("published_at") @db.Timestamptz
+  publishedBy     String?   @map("published_by") @db.Uuid
+  deprecatedAt    DateTime? @map("deprecated_at") @db.Timestamptz
+  sunsetAt        DateTime? @map("sunset_at") @db.Timestamptz
+  docsUrl         String?   @map("docs_url")
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy       String?   @map("created_by") @db.Uuid
+  version         Int       @default(1)
+  archivedAt      DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("model")
+}
+
+/// model_route — 用途路由与降级链（docs/06 §4.1.3 + docs/21 §5/§8）。作用域拆列；配额用显式列。
+model ModelRoute {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  orgId         BigInt    @default(1) @map("org_id")
+  scopeType     String    @default("org") @map("scope_type")
+  scopeRoleId   String?   @map("scope_role_id") @db.Uuid
+  scopeUserId   String?   @map("scope_user_id") @db.Uuid
+  purpose       String
+  modelId       String    @map("model_id") @db.Uuid
+  fallbackIds   String[]  @default([]) @map("fallback_ids") @db.Uuid
+  priority      Int       @default(100)
+  rpm              Int?
+  tpm              Int?
+  concurrency      Int?
+  dailyCalls       Int?      @map("daily_calls")
+  dailyCostCents   Int?      @map("daily_cost_cents")
+  monthlyCostCents Int?      @map("monthly_cost_cents")
+  status        String    @default("draft")
+  effectiveFrom DateTime? @map("effective_from") @db.Timestamptz
+  effectiveTo   DateTime? @map("effective_to") @db.Timestamptz
+  label         String?
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy     String?   @map("created_by") @db.Uuid
+  version       Int       @default(1)
+  archivedAt    DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("model_route")
+}
+
+/// model_call_log — 调用流水（docs/06 §4.1.5 + docs/21 §1）。price_snapshot 为调用时价目快照。
+model ModelCallLog {
+  id                  String    @id @default(uuid(7)) @db.Uuid
+  orgId               BigInt    @default(1) @map("org_id")
+  requestId           String    @map("request_id")
+  purpose             String
+  providerId          String    @map("provider_id") @db.Uuid
+  modelId             String    @map("model_id") @db.Uuid
+  routeId             String?   @map("route_id") @db.Uuid
+  fallbackFromModelId String?   @map("fallback_from_model_id") @db.Uuid
+  actorType           String    @map("actor_type")
+  actorId             String?   @map("actor_id") @db.Uuid
+  subjectType         String    @default("other") @map("subject_type")
+  subjectId           String?   @map("subject_id") @db.Uuid
+  promptVersion       String?   @map("prompt_version")
+  inputTokens         Int       @default(0) @map("input_tokens")
+  outputTokens        Int       @default(0) @map("output_tokens")
+  cachedInputTokens   Int       @default(0) @map("cached_input_tokens")
+  imageCount          Int       @default(0) @map("image_count")
+  imagePixels         BigInt?   @map("image_pixels")
+  videoSeconds        Decimal   @default(0) @map("video_seconds") @db.Decimal(10, 3)
+  latencyMs           Int       @default(0) @map("latency_ms")
+  status              String
+  errorCode           String?   @map("error_code")
+  tokensSource        String    @default("provider_usage") @map("tokens_source")
+  costCents           Int       @default(0) @map("cost_cents")
+  priceSnapshot       Json      @default("{}") @map("price_snapshot")
+  startedAt           DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  finishedAt          DateTime? @map("finished_at") @db.Timestamptz
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?   @map("created_by") @db.Uuid
+
+  @@map("model_call_log")
+}
+
+// =============================================================
+// 4.2 商品
+// =============================================================
+
+/// platform_category — 平台类目字典（docs/06 §4.2.5）。
+model PlatformCategory {
+  id                        String    @id @default(uuid(7)) @db.Uuid
+  orgId                     BigInt    @default(1) @map("org_id")
+  platform                  String
+  externalCategoryId        String    @map("external_category_id")
+  name                      String
+  path                      String[]  @default([])
+  level                     Int       @default(1) @db.SmallInt
+  parentExternalId          String?   @map("parent_external_id")
+  isLeaf                    Boolean   @default(true) @map("is_leaf")
+  requiredAttrs             Json      @default("[]") @map("required_attrs")
+  qualificationRequirements Json      @default("[]") @map("qualification_requirements")
+  feeRules                  Json      @default("{}") @map("fee_rules")
+  status                    String    @default("active")
+  fetchedAt                 DateTime  @default(now()) @map("fetched_at") @db.Timestamptz
+  contractVersion           String?   @map("contract_version")
+  raw                       Json?
+  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                 DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy                 String?   @map("created_by") @db.Uuid
+  version                   Int       @default(1)
+  archivedAt                DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("platform_category")
+}
+
+/// product — SPU 主数据（docs/06 §4.2.1 + docs/21 §6）。内部类目用 category_code，平台类目走 platform_category。
+model Product {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  orgId            BigInt    @default(1) @map("org_id")
+  spuCode          String    @map("spu_code")
+  name             String
+  brand            String?
+  season           String    @default("all")
+  year             Int?      @db.SmallInt
+  fit              String?
+  styleTags        String[]  @default([]) @map("style_tags")
+  categoryCode     String    @map("category_code")
+  status           String    @default("draft")
+  qualification    Json      @default("{}")
+  careInstructions Json      @default("{}") @map("care_instructions")
+  originCountry    String?   @map("origin_country") @db.Char(2)
+  launchDate       DateTime? @map("launch_date") @db.Date
+  mainAssetId      String?   @map("main_asset_id") @db.Uuid
+  attributes       Json      @default("{}")
+  factVersion      Int       @default(1) @map("fact_version")
+  dataSource       String    @default("import") @map("data_source")
+  notes            String?
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy        String?   @map("created_by") @db.Uuid
+  version          Int       @default(1)
+  archivedAt       DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("product")
+}
+
+/// product_sku — SKU 主数据（docs/06 §4.2.2）。价格/库存/成分/尺码为硬事实。
+model ProductSku {
+  id                 String    @id @default(uuid(7)) @db.Uuid
+  orgId              BigInt    @default(1) @map("org_id")
+  skuCode            String    @map("sku_code")
+  productId          String    @map("product_id") @db.Uuid
+  colorId            String    @map("color_id")
+  colorName          String    @map("color_name")
+  sizeCode           String    @map("size_code")
+  fabricId           String    @map("fabric_id") @db.Uuid
+  barcode            String?
+  priceCents         Int       @map("price_cents")
+  listPriceCents     Int?      @map("list_price_cents")
+  salePriceCents     Int?      @map("sale_price_cents")
+  priceTiers         Json      @default("[]") @map("price_tiers")
+  priceSource        String    @default("import") @map("price_source")
+  costCents          Int?      @map("cost_cents")
+  stockQty           Int       @default(0) @map("stock_qty")
+  safetyStock        Int       @default(0) @map("safety_stock")
+  stockSource        String    @default("import") @map("stock_source")
+  minOrderQty        Int       @default(1) @map("min_order_qty")
+  leadTimeDays       Int?      @map("lead_time_days") @db.SmallInt
+  weightG            Int?      @map("weight_g")
+  status             String    @default("active")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy          String?   @map("created_by") @db.Uuid
+  version            Int       @default(1)
+  archivedAt         DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("product_sku")
+}
+
+/// size_chart — 尺码表（docs/06 §4.2.3 + docs/21 §6）。一尺码一行（sku_size_code），version_no + effective_from(timestamptz)。
+model SizeChart {
+  id                 String    @id @default(uuid(7)) @db.Uuid
+  orgId              BigInt    @default(1) @map("org_id")
+  productId          String    @map("product_id") @db.Uuid
+  versionNo          Int       @default(1) @map("version_no")
+  status             String    @default("draft")
+  sizeSystem         String    @default("alpha") @map("size_system")
+  skuSizeCode        String    @map("sku_size_code")
+  sizeOrder          Int       @default(0) @map("size_order") @db.SmallInt
+  measurements       Json
+  recommendHeightMin Int?      @map("recommend_height_min") @db.SmallInt
+  recommendHeightMax Int?      @map("recommend_height_max") @db.SmallInt
+  recommendWeightMin Int?      @map("recommend_weight_min") @db.SmallInt
+  recommendWeightMax Int?      @map("recommend_weight_max") @db.SmallInt
+  fitNote            String?   @map("fit_note")
+  source             String    @default("manual")
+  effectiveFrom      DateTime  @map("effective_from") @db.Timestamptz
+  effectiveTo        DateTime? @map("effective_to") @db.Timestamptz
+  checksum           String
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy          String?   @map("created_by") @db.Uuid
+  version            Int       @default(1)
+  archivedAt         DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("size_chart")
+}
+
+/// fabric_composition — 面料成分（docs/06 §4.2.4）。一「面料」一行，materials 数组合计 100。
+model FabricComposition {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  orgId         BigInt    @default(1) @map("org_id")
+  productId     String    @map("product_id") @db.Uuid
+  versionNo     Int       @default(1) @map("version_no")
+  fabricCode    String    @map("fabric_code")
+  fabricName    String    @map("fabric_name")
+  role          String    @default("main")
+  materials     Json
+  status        String    @default("draft")
+  source        String    @default("manual")
+  effectiveFrom DateTime  @map("effective_from") @db.Date
+  effectiveTo   DateTime? @map("effective_to") @db.Date
+  checksum      String
+  notes         String?
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy     String?   @map("created_by") @db.Uuid
+  version       Int       @default(1)
+  archivedAt    DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("fabric_composition")
+}
+
+/// platform_attribute_mapping — 内部值与平台属性值映射（docs/06 §4.2.6）。
+model PlatformAttributeMapping {
+  id                 String    @id @default(uuid(7)) @db.Uuid
+  orgId              BigInt    @default(1) @map("org_id")
+  platform           String
+  platformCategoryId String    @map("platform_category_id") @db.Uuid
+  productId          String?   @map("product_id") @db.Uuid
+  skuId              String?   @map("sku_id") @db.Uuid
+  attrPath           String    @map("attr_path")
+  attrType           String    @default("enum") @map("attr_type")
+  internalField      String    @map("internal_field")
+  internalValue      String    @map("internal_value")
+  platformValueId    String?   @map("platform_value_id")
+  platformValueName  String?   @map("platform_value_name")
+  extra              Json      @default("{}")
+  status             String    @default("draft")
+  source             String    @default("manual")
+  verifiedAt         DateTime? @map("verified_at") @db.Timestamptz
+  verifiedBy         String?   @map("verified_by") @db.Uuid
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy          String?   @map("created_by") @db.Uuid
+  version            Int       @default(1)
+  archivedAt         DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("platform_attribute_mapping")
+}
+
+// =============================================================
+// 4.3 内容
+// =============================================================
+
+/// content_draft — 文案草稿（docs/21 §7）。content_type：title|selling_points|detail|faq|reply|quote；facts 为 FactEnvelopeV1。
+model ContentDraft {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  orgId         BigInt    @default(1) @map("org_id")
+  productId     String    @map("product_id") @db.Uuid
+  skuId         String?   @map("sku_id") @db.Uuid
+  platform      String
+  contentType   String    @map("content_type")
+  title         String?
+  body          String
+  structured    Json      @default("{}")
+  facts         Json
+  factCheck     Json      @default("{}") @map("fact_check")
+  status        String    @default("draft")
+  judgeId       String?   @map("judge_id") @db.Uuid
+  approvalId    String?   @map("approval_id") @db.Uuid
+  modelCallId   String?   @map("model_call_id") @db.Uuid
+  promptVersion String?   @map("prompt_version")
+  tone          String?
+  locale        String    @default("zh-CN")
+  wordCount     Int       @default(0) @map("word_count")
+  riskFlags     String[]  @default([]) @map("risk_flags")
+  supersedesId  String?   @map("supersedes_id") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy     String?   @map("created_by") @db.Uuid
+  version       Int       @default(1)
+  archivedAt    DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("content_draft")
+}
+
+/// judgment — 判定记录 L1+L2+申诉（docs/06 §4.3.2）。
+model Judgment {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  orgId          BigInt    @default(1) @map("org_id")
+  subjectType    String    @map("subject_type")
+  subjectId      String    @map("subject_id") @db.Uuid
+  platform       String
+  contentType    String    @map("content_type")
+  status         String    @default("pending")
+  verdict        String?
+  severity       String?
+  l1Result       Json      @default("{}") @map("l1_result")
+  l1HitRuleIds   String[]  @default([]) @map("l1_hit_rule_ids")
+  l2Result       Json?     @map("l2_result")
+  evidenceRefs   Json      @default("[]") @map("evidence_refs")
+  reason         String?
+  repairHint     String?   @map("repair_hint")
+  modelCallId    String?   @map("model_call_id") @db.Uuid
+  ruleSetVersion String    @map("rule_set_version")
+  lexiconVersion String?   @map("lexicon_version")
+  promptVersion  String?   @map("prompt_version")
+  factsHash      String?   @map("facts_hash")
+  costCents      Int       @default(0) @map("cost_cents")
+  latencyMs      Int?      @map("latency_ms")
+  appealStatus   String    @default("none") @map("appeal_status")
+  appealReason   String?   @map("appeal_reason")
+  appealedBy     String?   @map("appealed_by") @db.Uuid
+  appealedAt     DateTime? @map("appealed_at") @db.Timestamptz
+  reviewedBy     String?   @map("reviewed_by") @db.Uuid
+  reviewedAt     DateTime? @map("reviewed_at") @db.Timestamptz
+  finalVerdict   String?   @map("final_verdict")
+  escalated      Boolean   @default(false)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy      String?   @map("created_by") @db.Uuid
+  version        Int       @default(1)
+  archivedAt     DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("judgment")
+}
+
+// =============================================================
+// 4.4 素材
+// =============================================================
+
+/// media_asset — 素材（docs/06 §4.4.1）。MinIO 对象 + 变体 + AIGC 标识。
+model MediaAsset {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  orgId            BigInt    @default(1) @map("org_id")
+  productId        String?   @map("product_id") @db.Uuid
+  skuId            String?   @map("sku_id") @db.Uuid
+  kind             String
+  source           String
+  bucket           String    @default("dssaas-media")
+  objectKey        String    @map("object_key")
+  sha256           String
+  mime             String
+  width            Int?
+  height           Int?
+  bytes            BigInt
+  durationMs       Int?      @map("duration_ms")
+  variants         Json      @default("[]")
+  aigcLabeled      Boolean   @default(false) @map("aigc_labeled")
+  aigcMeta         Json?     @map("aigc_meta")
+  license          Json      @default("{}")
+  status           String    @default("pending_review")
+  reviewNote       String?   @map("review_note")
+  mediaJobId       String?   @map("media_job_id") @db.Uuid
+  costCents        Int       @default(0) @map("cost_cents")
+  platformAssetIds Json      @default("{}") @map("platform_asset_ids")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy        String?   @map("created_by") @db.Uuid
+  version          Int       @default(1)
+  archivedAt       DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("media_asset")
+}
+
+/// media_job — 图片/视频异步任务（docs/06 §4.4.2）。
+model MediaJob {
+  id                    String    @id @default(uuid(7)) @db.Uuid
+  orgId                 BigInt    @default(1) @map("org_id")
+  purpose               String
+  providerId            String    @map("provider_id") @db.Uuid
+  modelId               String    @map("model_id") @db.Uuid
+  routeId               String?   @map("route_id") @db.Uuid
+  params                Json      @default("{}")
+  prompt                String?
+  inputRef              Json      @default("{}") @map("input_ref")
+  status                String    @default("queued")
+  idempotencyKey        String    @map("idempotency_key")
+  externalJobId         String?   @map("external_job_id")
+  pollAfter             DateTime? @map("poll_after") @db.Timestamptz
+  pollCount             Int       @default(0) @map("poll_count")
+  resultUrl             String?   @map("result_url")
+  resultExpiresAt       DateTime? @map("result_expires_at") @db.Timestamptz
+  mediaAssetId          String?   @map("media_asset_id") @db.Uuid
+  estimatedCostCents    Int       @default(0) @map("estimated_cost_cents")
+  costCents             Int       @default(0) @map("cost_cents")
+  attempt               Int       @default(0) @db.SmallInt
+  maxAttempts           Int       @default(3) @map("max_attempts") @db.SmallInt
+  errorClass            String?   @map("error_class")
+  errorCode             String?   @map("error_code")
+  subjectType           String    @default("other") @map("subject_type")
+  subjectId             String?   @map("subject_id") @db.Uuid
+  submittedAt           DateTime? @map("submitted_at") @db.Timestamptz
+  finishedAt            DateTime? @map("finished_at") @db.Timestamptz
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy             String?   @map("created_by") @db.Uuid
+  version               Int       @default(1)
+  archivedAt            DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("media_job")
+}
+
+/// media_quota — 媒体配额（docs/21 §8）。按 SKU 或批次限制张数/秒数，独立于文本路由配额。
+model MediaQuota {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  orgId            BigInt    @default(1) @map("org_id")
+  skuId            String?   @map("sku_id") @db.Uuid
+  batchKey         String?   @map("batch_key")
+  period           String    @default("day")
+  maxImages        Int?      @map("max_images")
+  maxVideoSeconds  Int?      @map("max_video_seconds")
+  usedImages       Int       @default(0) @map("used_images")
+  usedVideoSeconds Int       @default(0) @map("used_video_seconds")
+  windowStart      DateTime  @map("window_start") @db.Timestamptz
+  windowEnd        DateTime? @map("window_end") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy        String?   @map("created_by") @db.Uuid
+  version          Int       @default(1)
+  archivedAt       DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("media_quota")
+}
+
+// =============================================================
+// 4.5 平台
+// =============================================================
+
+/// listing — 上架记录（docs/21 §2）。status 为业务 5 态；platform_state 为平台回传原始态。
+model Listing {
+  id                 String    @id @default(uuid(7)) @db.Uuid
+  orgId              BigInt    @default(1) @map("org_id")
+  platform           String
+  productId          String    @map("product_id") @db.Uuid
+  platformItemId     String?   @map("platform_item_id")
+  platformShopId     String?   @map("platform_shop_id")
+  status             String    @default("draft")
+  platformState      String?   @map("platform_state")
+  title              String?
+  categoryExternalId String?   @map("category_external_id")
+  skuBindings        Json      @default("[]") @map("sku_bindings")
+  priceTiers         Json      @default("[]") @map("price_tiers")
+  publishedSnapshot  Json      @default("{}") @map("published_snapshot")
+  snapshotAt         DateTime? @map("snapshot_at") @db.Timestamptz
+  publishedAt        DateTime? @map("published_at") @db.Timestamptz
+  lastSyncedAt       DateTime? @map("last_synced_at") @db.Timestamptz
+  rejectMeta         Json      @default("{}") @map("reject_meta")
+  lastErrorCode      String?   @map("last_error_code")
+  approvalId         String?   @map("approval_id") @db.Uuid
+  workflowRunId      String?   @map("workflow_run_id") @db.Uuid
+  contractVersion    String?   @map("contract_version")
+  stopLossAt         DateTime? @map("stop_loss_at") @db.Timestamptz
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy          String?   @map("created_by") @db.Uuid
+  version            Int       @default(1)
+  archivedAt         DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("listing")
+}
+
+/// sync_cursor — 同步位点（docs/06 §4.5.2）。
+model SyncCursor {
+  id                  String    @id @default(uuid(7)) @db.Uuid
+  orgId               BigInt    @default(1) @map("org_id")
+  platform            String
+  shopId              String    @default("default") @map("shop_id")
+  resource            String
+  cursor              String?
+  watermarkAt         DateTime? @map("watermark_at") @db.Timestamptz
+  pageSize            Int       @default(100) @map("page_size") @db.SmallInt
+  lastRunAt           DateTime? @map("last_run_at") @db.Timestamptz
+  lastSuccessAt       DateTime? @map("last_success_at") @db.Timestamptz
+  consecutiveFailures Int       @default(0) @map("consecutive_failures") @db.SmallInt
+  status              String    @default("active")
+  leaseOwner          String?   @map("lease_owner")
+  leaseUntil          DateTime? @map("lease_until") @db.Timestamptz
+  errorCode           String?   @map("error_code")
+  stats               Json      @default("{}")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy           String?   @map("created_by") @db.Uuid
+  version             Int       @default(1)
+  archivedAt          DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("sync_cursor")
+}
+
+// =============================================================
+// 4.6 客服
+// =============================================================
+
+/// conversation — 会话（docs/06 §4.6.1）。
+model Conversation {
+  id                     String    @id @default(uuid(7)) @db.Uuid
+  orgId                  BigInt    @default(1) @map("org_id")
+  platform               String
+  shopId                 String    @default("default") @map("shop_id")
+  platformConversationId String    @map("platform_conversation_id")
+  buyerRef               String    @map("buyer_ref")
+  buyerNick              String?   @map("buyer_nick")
+  kind                   String    @default("pre_sale")
+  status                 String    @default("open")
+  assignedUserId         String?   @map("assigned_user_id") @db.Uuid
+  lastMessageAt          DateTime  @default(now()) @map("last_message_at") @db.Timestamptz
+  lastInboundAt          DateTime? @map("last_inbound_at") @db.Timestamptz
+  firstResponseAt        DateTime? @map("first_response_at") @db.Timestamptz
+  firstResponseDueAt     DateTime? @map("first_response_due_at") @db.Timestamptz
+  unreadCount            Int       @default(0) @map("unread_count")
+  priority               Int       @default(0) @db.SmallInt
+  tags                   String[]  @default([])
+  relatedOrderRef        String?   @map("related_order_ref")
+  relatedProductId       String?   @map("related_product_id") @db.Uuid
+  riskFlags              String[]  @default([]) @map("risk_flags")
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy              String?   @map("created_by") @db.Uuid
+  version                Int       @default(1)
+  archivedAt             DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("conversation")
+}
+
+/// message — 消息（docs/06 §4.6.2）。出站按 outbound_idempotency_key 去重。
+model Message {
+  id                     String    @id @default(uuid(7)) @db.Uuid
+  orgId                  BigInt    @default(1) @map("org_id")
+  conversationId         String    @map("conversation_id") @db.Uuid
+  direction              String
+  platformMessageId      String?   @map("platform_message_id")
+  contentType            String    @default("text") @map("content_type")
+  content                String    @default("")
+  attachments            Json      @default("[]")
+  sentAt                 DateTime? @map("sent_at") @db.Timestamptz
+  status                 String    @default("received")
+  outboundIdempotencyKey String?   @map("outbound_idempotency_key")
+  approvalId             String?   @map("approval_id") @db.Uuid
+  judgeId                String?   @map("judge_id") @db.Uuid
+  aiGenerated            Boolean   @default(false) @map("ai_generated")
+  errorCode              String?   @map("error_code")
+  latencyMs              Int?      @map("latency_ms")
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy              String?   @map("created_by") @db.Uuid
+  version                Int       @default(1)
+  archivedAt             DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("message")
+}
+
+// =============================================================
+// 4.7 流程
+// =============================================================
+
+/// workflow_run — 工作流运行（docs/21 §2）。state 唯一词表：
+/// pending|running|waiting_human|succeeded|failed_retryable|failed_permanent|cancelled；
+/// stage 为可空子步骤标签（fact_check|judge|media|publish|stop_loss）。
+model WorkflowRun {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  orgId          BigInt    @default(1) @map("org_id")
+  type           String
+  state          String    @default("pending")
+  stage          String?
+  subjectType    String    @map("subject_type")
+  subjectId      String?   @map("subject_id") @db.Uuid
+  idempotencyKey String    @map("idempotency_key")
+  attempt        Int       @default(0) @db.SmallInt
+  maxAttempts    Int       @default(5) @map("max_attempts") @db.SmallInt
+  parentRunId    String?   @map("parent_run_id") @db.Uuid
+  nextRunAt      DateTime? @map("next_run_at") @db.Timestamptz
+  lockedBy       String?   @map("locked_by")
+  lockUntil      DateTime? @map("lock_until") @db.Timestamptz
+  deadlineAt     DateTime? @map("deadline_at") @db.Timestamptz
+  payload        Json      @default("{}")
+  result         Json      @default("{}")
+  errorClass     String?   @map("error_class")
+  errorCode      String?   @map("error_code")
+  errorMessage   String?   @map("error_message")
+  requestId      String    @map("request_id")
+  startedAt      DateTime? @map("started_at") @db.Timestamptz
+  finishedAt     DateTime? @map("finished_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy      String?   @map("created_by") @db.Uuid
+  version        Int       @default(1)
+  archivedAt     DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("workflow_run")
+}
+
+/// approval — 审批（docs/06 §4.7.2）。target_hash 与目标内容绑定，变更即失效。
+model Approval {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  orgId          BigInt    @default(1) @map("org_id")
+  subjectType    String    @map("subject_type")
+  subjectId      String    @map("subject_id") @db.Uuid
+  action         String
+  platform       String
+  operationLevel String    @default("A") @map("operation_level")
+  status         String    @default("pending")
+  decision       String?
+  decidedBy      String?   @map("decided_by") @db.Uuid
+  decidedAt      DateTime? @map("decided_at") @db.Timestamptz
+  decisionNote   String?   @map("decision_note")
+  targetHash     String    @map("target_hash")
+  factSnapshot   Json      @default("{}") @map("fact_snapshot")
+  riskMeta       Json      @default("{}") @map("risk_meta")
+  diff           Json      @default("{}")
+  judgeId        String?   @map("judge_id") @db.Uuid
+  slaDueAt       DateTime? @map("sla_due_at") @db.Timestamptz
+  escalatedTo    String?   @map("escalated_to") @db.Uuid
+  scheduledAt    DateTime? @map("scheduled_at") @db.Timestamptz
+  expiresAt      DateTime  @default(dbgenerated("now() + interval '72 hours'")) @map("expires_at") @db.Timestamptz
+  executedAt     DateTime? @map("executed_at") @db.Timestamptz
+  invalidatedAt  DateTime? @map("invalidated_at") @db.Timestamptz
+  invalidReason  String?   @map("invalid_reason")
+  requestId      String    @map("request_id")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy      String?   @map("created_by") @db.Uuid
+  version        Int       @default(1)
+  archivedAt     DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("approval")
+}
+
+/// compensating_ticket — 补偿/止损工单（docs/06 §4.7.3）。
+model CompensatingTicket {
+  id                String    @id @default(uuid(7)) @db.Uuid
+  orgId             BigInt    @default(1) @map("org_id")
+  source            String
+  relatedApprovalId String?   @map("related_approval_id") @db.Uuid
+  relatedListingId  String?   @map("related_listing_id") @db.Uuid
+  platform          String?
+  actionTaken       String    @map("action_taken")
+  status            String    @default("open")
+  severity          String    @default("medium")
+  ownerUserId       String?   @map("owner_user_id") @db.Uuid
+  dueAt             DateTime? @map("due_at") @db.Timestamptz
+  resolution        String?
+  resolvedAt        DateTime? @map("resolved_at") @db.Timestamptz
+  auditLogId        String?   @map("audit_log_id") @db.Uuid
+  impact            Json      @default("{}")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy         String?   @map("created_by") @db.Uuid
+  version           Int       @default(1)
+  archivedAt        DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("compensating_ticket")
+}
+
+/// kill_switch — 一键停写（docs/06 §4.7.4）。
+model KillSwitch {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  orgId      BigInt    @default(1) @map("org_id")
+  scopeType  String    @map("scope_type")
+  scopeKey   String    @default("*") @map("scope_key")
+  action     String
+  enabled    Boolean   @default(true)
+  reason     String
+  enabledBy  String    @map("enabled_by") @db.Uuid
+  enabledAt  DateTime  @default(now()) @map("enabled_at") @db.Timestamptz
+  disabledBy String?   @map("disabled_by") @db.Uuid
+  disabledAt DateTime? @map("disabled_at") @db.Timestamptz
+  expiresAt  DateTime? @map("expires_at") @db.Timestamptz
+  drill      Boolean   @default(false)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy  String?   @map("created_by") @db.Uuid
+  version    Int       @default(1)
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("kill_switch")
+}
+
+// =============================================================
+// 4.9 知识
+// =============================================================
+
+/// kb_document — 知识文档（docs/06 §4.9.1）。
+model KbDocument {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  orgId         BigInt    @default(1) @map("org_id")
+  sourceType    String    @map("source_type")
+  sourceId      String?   @map("source_id") @db.Uuid
+  title         String
+  docType       String    @map("doc_type")
+  domain        String
+  ownerRoleCode String    @default("operator") @map("owner_role_code")
+  ownerUserId   String?   @map("owner_user_id") @db.Uuid
+  aclRoles      String[]  @default(["viewer", "operator", "admin"]) @map("acl_roles")
+  versionNo     Int       @default(1) @map("version_no")
+  status        String    @default("draft")
+  effectiveFrom DateTime  @default(now()) @map("effective_from") @db.Timestamptz
+  effectiveTo   DateTime? @map("effective_to") @db.Timestamptz
+  reviewDueAt   DateTime? @map("review_due_at") @db.Timestamptz
+  checksum      String
+  uri           String?
+  mime          String?
+  bytes         BigInt?
+  lang          String    @default("zh-CN")
+  parserVersion String    @default("parser@1.0.0") @map("parser_version")
+  indexStatus   String    @default("pending") @map("index_status")
+  indexedAt     DateTime? @map("indexed_at") @db.Timestamptz
+  embedModelId  String?   @map("embed_model_id") @db.Uuid
+  chunkCount    Int       @default(0) @map("chunk_count")
+  supersedesId  String?   @map("supersedes_id") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy     String?   @map("created_by") @db.Uuid
+  version       Int       @default(1)
+  archivedAt    DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("kb_document")
+}
+
+/// kb_chunk — 切片（docs/06 §4.9.2）。无 version/updated_at；embedding 为 pgvector。
+/// 读写必须走 $queryRaw / $executeRaw：Prisma 不支持 vector 与 tsvector。
+model KbChunk {
+  id               String                      @id @default(uuid(7)) @db.Uuid
+  orgId            BigInt                      @default(1) @map("org_id")
+  documentId       String                      @map("document_id") @db.Uuid
+  versionNo        Int                         @map("version_no")
+  seq              Int
+  sectionPath      String[]                    @default([]) @map("section_path")
+  chunkType        String                      @default("text") @map("chunk_type")
+  content          String
+  contentHash      String                      @map("content_hash")
+  contentTokens    Int                         @default(0) @map("content_tokens")
+  embedding        Unsupported("vector(1024)")?
+  embeddingModelId String?                     @map("embedding_model_id") @db.Uuid
+  embeddingDim     Int?                        @map("embedding_dim") @db.SmallInt
+  tsv              Unsupported("tsvector")?
+  metadata         Json                        @default("{}")
+  aclRoles         String[]                    @map("acl_roles")
+  effectiveFrom    DateTime                    @map("effective_from") @db.Timestamptz
+  effectiveTo      DateTime?                   @map("effective_to") @db.Timestamptz
+  status           String                      @default("active")
+  supersededBy     String?                     @map("superseded_by") @db.Uuid
+  createdAt        DateTime                    @default(now()) @map("created_at") @db.Timestamptz
+  archivedAt       DateTime?                   @map("archived_at") @db.Timestamptz
+
+  @@map("kb_chunk")
+}
+
+/// kb_query_log — 检索留痕（docs/06 §4.9.3）。无 version/updated_at/archived_at。
+model KbQueryLog {
+  id                 String   @id @default(uuid(7)) @db.Uuid
+  orgId              BigInt   @default(1) @map("org_id")
+  requestId          String   @map("request_id")
+  actorId            String?  @map("actor_id") @db.Uuid
+  roleCode           String   @map("role_code")
+  purpose            String   @default("retrieval")
+  query              String
+  mode               String   @default("hybrid")
+  topK               Int      @default(8) @map("top_k") @db.SmallInt
+  filters            Json     @default("{}")
+  hitCount           Int      @default(0) @map("hit_count")
+  hits               Json     @default("[]")
+  citations          Json     @default("[]")
+  degraded           Boolean  @default(false)
+  degradeReason      String?  @map("degrade_reason")
+  latencyMs          Int      @default(0) @map("latency_ms")
+  rerankUsed         Boolean  @default(false) @map("rerank_used")
+  rerankCostCents    Int      @default(0) @map("rerank_cost_cents")
+  feedback           String   @default("none")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy          String?  @map("created_by") @db.Uuid
+
+  @@map("kb_query_log")
+}

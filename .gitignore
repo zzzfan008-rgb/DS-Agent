@@ -43,3 +43,8 @@ secrets/
 .agent-teams/
 .dsh-ops-*
 **/.dsh-ops-*
+
+# 临时工作目录（写作/生成中间产物）
+.tmp-*/
+tmp-*/
+.tmp*/
