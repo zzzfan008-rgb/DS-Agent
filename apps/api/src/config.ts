@@ -88,6 +88,10 @@ const EnvSchema = z.object({
   AGENT_RUN_TIMEOUT_MS: z.coerce.number().int().min(1000).max(600_000).default(120_000),
   AGENT_MAX_TIMEOUT_MS: z.coerce.number().int().min(1000).max(600_000).default(600_000),
   AGENT_FIRST_TOKEN_TIMEOUT_MS: z.coerce.number().int().min(100).max(60_000).default(8000),
+  /** F1：客服 reply_draft（support.suggest）首 token 硬档，docs/18 草稿 5s SLA。 */
+  AGENT_FIRST_TOKEN_TIMEOUT_MS_REPLY_DRAFT: z.coerce.number().int().min(100).max(60_000).default(5000),
+  /** F1：copy 类（content.draft/content.rewrite）首 token 档；其他意图用全局 8000。 */
+  AGENT_FIRST_TOKEN_TIMEOUT_MS_COPY: z.coerce.number().int().min(100).max(60_000).default(8000),
   AGENT_HEARTBEAT_MS: z.coerce.number().int().min(1000).max(60_000).default(15_000),
   /** run 终态后保留查询/事件回放的时长（docs/12 §8.3：30 分钟）。 */
   AGENT_RUN_RETENTION_MS: z.coerce.number().int().min(60_000).max(24 * 3600 * 1000).default(30 * 60 * 1000),
@@ -148,6 +152,8 @@ export interface AppConfig {
   agentRunTimeoutMs: number;
   agentMaxTimeoutMs: number;
   agentFirstTokenTimeoutMs: number;
+  agentFirstTokenTimeoutReplyDraftMs: number;
+  agentFirstTokenTimeoutCopyMs: number;
   agentHeartbeatMs: number;
   agentRunRetentionMs: number;
   agentBridgeReconnectAttempts: number;
@@ -229,6 +235,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     agentRunTimeoutMs: raw.AGENT_RUN_TIMEOUT_MS,
     agentMaxTimeoutMs: raw.AGENT_MAX_TIMEOUT_MS,
     agentFirstTokenTimeoutMs: raw.AGENT_FIRST_TOKEN_TIMEOUT_MS,
+    agentFirstTokenTimeoutReplyDraftMs: raw.AGENT_FIRST_TOKEN_TIMEOUT_MS_REPLY_DRAFT,
+    agentFirstTokenTimeoutCopyMs: raw.AGENT_FIRST_TOKEN_TIMEOUT_MS_COPY,
     agentHeartbeatMs: raw.AGENT_HEARTBEAT_MS,
     agentRunRetentionMs: raw.AGENT_RUN_RETENTION_MS,
     agentBridgeReconnectAttempts: raw.AGENT_BRIDGE_RECONNECT_ATTEMPTS,

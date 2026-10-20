@@ -3,7 +3,7 @@
 本目录实现 `docs/21-接口契约裁决.md` §11.3 与 `docs/15-测试与质量门策略.md` §9/§10 要求的
 静态检查与 PR 门禁。**零运行时依赖**：只用 Node 内置模块，`pnpm install` 后即可执行。
 
-> 状态：t10 依赖 t2，尚未正式 claim；本目录为先行落地的 CI 基建。完成后由 `docs/验收记录-QA.md` 归档。
+> 状态：t10/t16/t29 已交付；测试库隔离与运行锁见 §6。
 
 ## 1. 命令
 
@@ -17,6 +17,8 @@
 | `pnpm typecheck` | 遍历工作区执行各包 `typecheck` | 是 |
 | `pnpm db:validate` | `prisma validate` | 是 |
 | `pnpm check:migrations` | 空库连续两次 `migrate deploy` | 是 |
+| `pnpm test:api` | 测试库运行器（默认 docker；或 reuse 既有库独立库）+ API 测试 | 本地（CI 直接跑 API 测试） |
+| `pnpm test:api:local` | 自备 `TEST_DATABASE_URL` 跑 API 测试（不创建/清理库） | 本地 |
 | `pnpm verify` | 依次执行以上全部门禁（fail fast；`ci` 与 pnpm 内置命令冲突，故用 `verify`） | 本地/CI |
 
 `pnpm verify -- --skip-migrations` 可在没有本地数据库时跳过迁移项；CI **不应**跳过。
@@ -89,3 +91,51 @@ pnpm 脚本内部再调用 `pnpm` 时，会继承 `npm_execpath`；在多 agent 
 - `typecheck` / `test` / `prisma` 命令统一改为 Node 直调（`workspace-task.mjs`、`prisma-cli.mjs`、`static-check.mjs`），
   不再依赖嵌套 pnpm；
 - `ci.mjs` 直接 spawn `node`，不经过 shell 的 pnpm。
+
+## 6. 测试数据库运行器（t16/t29）
+
+`scripts/qa/with-db.mjs` 让 API 测试在本地可复现，并解决并行开发互相 `DROP SCHEMA` 的问题。
+**每次运行一个独立库**；同一台机器默认串行（运行锁），`--parallel` 才允许并发。
+
+### 6.1 三条路径
+
+| 路径 | 命令 | 库来源 | 适用 |
+|---|---|---|---|
+| A. docker（默认） | `pnpm test:api` | 一次性 `pgvector/pgvector:pg16` 容器（随机端口/库名/口令、`--rm`） | 干净机器；需要 docker |
+| B. reuse 既有库 | `DSSAAS_DB_REUSE=1 DSSAAS_PG_BASE_URL=postgresql://.../dssaas_test?schema=public pnpm test:api` | 既有 Postgres 中创建 `dssaas_test_<6hex>` 独立库，跑完 DROP | 本机已有 PG（如 WSL 容器），避免反复拉镜像 |
+| C. 自备库 | `TEST_DATABASE_URL=postgresql://.../dssaas_test_<...>?schema=public pnpm test:api:local` | 调用方自备并自行清理 | 调试/特殊环境；库名守卫仍生效 |
+
+> reuse 模式只创建/删除 `dssaas_test_<6hex>`，**不会动 base URL 指向的库**；需要 base 连接用户具备 CREATEDB 权限。
+
+### 6.2 环境变量
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `DSSAAS_DB_REUSE` | 空 | `1` 启用既有库独立库模式（需 `DSSAAS_PG_BASE_URL`） |
+| `DSSAAS_PG_BASE_URL` | 空 | 既有 Postgres URL；建议指向一个测试库作为 base（仅用于建库/连接） |
+| `DSSAAS_DOCKER_BIN` | `docker` | docker 命令；Windows 无 Docker CLI 时可用 `"wsl docker"` |
+| `DSSAAS_DB_HOST` | `127.0.0.1` | docker 容器连接主机；WSL/远程 docker 引擎时设为可达 IP |
+| `DSSAAS_TEST_IMAGE` | `pgvector/pgvector:pg16` | docker 镜像 |
+| `DSSAAS_KEEP_DB` | 空 | `1` 成功也保留库/容器并打印连接串；`0` 失败也强制清理；默认失败保留、成功清理 |
+| `DSSAAS_EXPECT_DB_PREFIX` | 由运行器设置 | `run.ts` 库名前缀守卫；手动直连时可自行设置 |
+| `TEST_DATABASE_URL` | — | 路径 C 必填；路径 A/B 由运行器注入 |
+
+### 6.3 并发与锁
+
+- 运行锁文件：`<os.tmpdir()>/dssaas-with-db-<repo-hash>.lock`，内容含 `pid` / `startedAt` / `command`；
+- 已有活跃运行时**默认串行等待**（每 10s 打印一次等待信息）；PID 已死或锁超过 2h 视为僵尸锁自动清理；
+  最长等待 30min；
+- `--parallel` 显式跳过锁并打印警告；因每次运行库独立，数据层不会互踢，但仍可能争抢 docker/端口资源；
+- 退出/失败都会释放锁；`DSSAAS_KEEP_DB=1` 或失败（默认）时保留库并打印**完整连接串**与清理命令。
+
+### 6.4 库名与守卫
+
+- reuse：`dssaas_test_<6 hex>`；
+- docker：`dssaas_<8 hex>_test`；
+- `apps/api/test/run.ts` 允许：`_test` 结尾、`dssaas_test_<6hex>`、`dssaas_ci`（CI service）；
+  若设置 `DSSAAS_EXPECT_DB_PREFIX`，库名还须以该前缀开头，否则 exit 2（防误连共享库）。
+
+### 6.5 CI 说明
+
+GitHub Actions 使用干净的 `pgvector/pgvector:pg16` service（`dssaas_ci`），**不需要**运行锁或复用机制；
+CI 的 API 测试步骤直接 `pnpm --filter @dssaas/api test`。本机制只服务本地并行开发。

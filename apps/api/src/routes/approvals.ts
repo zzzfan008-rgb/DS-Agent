@@ -28,6 +28,7 @@ const ApprovalCreate = z.object({
     'send_quote',
     'upload_video',
     'batch_offline',
+    'publish_content',
   ]),
   platform: z.enum(['pdd', '1688']),
   target_payload: z.record(z.string(), z.unknown()),

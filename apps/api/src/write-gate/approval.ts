@@ -8,6 +8,7 @@ import type { Prisma, PrismaClient } from '@dssaas/db';
 import { canonicalHash } from '@dssaas/core';
 import { ApiError } from '../lib/errors.js';
 import type { AuditService } from '../services/audit.js';
+import { contentDraftTargetHash } from '../services/content-target.js';
 import {
   computeLevel,
   getActionMeta,
@@ -67,6 +68,7 @@ const DB_ACTION_TO_CODE: Record<DbApprovalAction, string> = {
   send_quote: 'inquiry.quote',
   upload_video: 'listing.update_content',
   batch_offline: 'listing.batch_offline',
+  publish_content: 'content.publish',
 };
 
 export function actionCodeForApproval(action: DbApprovalAction): string {
@@ -138,7 +140,10 @@ export class ApprovalService {
         targetHash,
         factSnapshot: (input.fact_snapshot ?? {}) as Prisma.InputJsonValue,
         riskMeta: riskMeta as Prisma.InputJsonValue,
-        diff: (input.diff ?? {}) as Prisma.InputJsonValue,
+        diff: {
+          ...(input.diff ?? {}),
+          target_payload: input.target_payload,
+        } as Prisma.InputJsonValue,
         slaDueAt: new Date(now.getTime() + SLA_DECISION_MS[level]),
         expiresAt,
         scheduledAt,
@@ -184,6 +189,34 @@ export class ApprovalService {
   ) {
     const row = await this.prisma.approval.findFirst({ where: { id, archivedAt: null } });
     if (!row) throw new ApiError('not_found', '审批不存在');
+    if (row.subjectType === 'content_draft' || row.action === 'publish_content') {
+      const draft = await this.prisma.contentDraft.findFirst({
+        where: { id: row.subjectId, archivedAt: null },
+      });
+      if (!draft) {
+        throw new ApiError('approval_stale', '审批绑定的内容草稿已不存在', {
+          detail: { approval_id: row.id, subject_id: row.subjectId, next_action: 'resubmit' },
+        });
+      }
+      const currentHash = contentDraftTargetHash({
+        id: draft.id,
+        productId: draft.productId,
+        platform: draft.platform,
+        contentType: draft.contentType,
+        body: draft.body,
+        facts: draft.facts,
+      });
+      if (currentHash !== row.targetHash) {
+        throw new ApiError('approval_stale', '内容已变更，审批 target_hash 失效', {
+          detail: {
+            approval_id: row.id,
+            expected_hash: row.targetHash,
+            current_hash: currentHash,
+            next_action: 'resubmit',
+          },
+        });
+      }
+    }
     if (!['pending', 'escalated'].includes(row.status)) {
       throw new ApiError('conflict', '审批已决策', { detail: { status: row.status } });
     }

@@ -5,6 +5,7 @@ import type { ModelGateway } from '@dssaas/registry';
 import { ApiError } from '../lib/errors.js';
 import type { AuditService } from './audit.js';
 import { buildProductFacts } from './facts.js';
+import { contentDraftTargetHash } from './content-target.js';
 
 export type ContentType = 'title' | 'selling_points' | 'detail' | 'faq' | 'reply' | 'quote';
 const CONTENT_TYPES: ContentType[] = ['title', 'selling_points', 'detail', 'faq', 'reply', 'quote'];
@@ -180,6 +181,78 @@ export async function listContentDrafts(
       cost_cents: 0,
     })),
     nextCursor: rows.length > query.limit ? page[page.length - 1]!.id : null,
+  };
+}
+
+export async function updateContentDraft(
+  deps: ContentDeps,
+  id: string,
+  input: { content?: string; title?: string | null },
+  context: ContentContext,
+) {
+  const draft = await deps.prisma.contentDraft.findFirst({ where: { id, archivedAt: null } });
+  if (!draft) throw new ApiError('not_found', '草稿不存在');
+  if (!['generated', 'judged', 'needs_revision', 'rejected'].includes(draft.status)) {
+    throw new ApiError('conflict', '当前草稿状态不可编辑', { detail: { status: draft.status } });
+  }
+  const content = input.content === undefined ? draft.body : input.content.trim();
+  if (content.length === 0 || content.length > 20000) {
+    throw new ApiError('validation_failed', 'content 长度必须 1–20000', { detail: { field: 'content' } });
+  }
+  let facts = draft.facts;
+  try {
+    if (draft.productId) facts = (await buildProductFacts(deps.prisma, draft.productId)) as never;
+  } catch {
+    facts = draft.facts;
+  }
+  const updated = await deps.prisma.contentDraft.update({
+    where: { id: draft.id },
+    data: {
+      body: content,
+      ...(input.title === undefined ? {} : { title: input.title }),
+      wordCount: [...content].length,
+      facts: facts as Prisma.InputJsonValue,
+      status: 'generated',
+      judgeId: null,
+      riskFlags: [],
+    },
+  });
+  const targetHash = contentDraftTargetHash({
+    id: updated.id,
+    productId: updated.productId,
+    platform: updated.platform,
+    contentType: updated.contentType,
+    body: updated.body,
+    facts: updated.facts,
+  });
+  await deps.audit.record({
+    action: 'content_draft.update',
+    actorType: 'user',
+    actorId: context.userId,
+    requestId: context.requestId,
+    resourceType: 'content_draft',
+    resourceId: updated.id,
+    before: {
+      content_len: draft.body.length,
+      facts_hash: (draft.facts as { facts_hash?: string } | null)?.facts_hash ?? null,
+    },
+    after: {
+      content_len: updated.body.length,
+      facts_hash: (updated.facts as { facts_hash?: string } | null)?.facts_hash ?? null,
+      target_hash: targetHash,
+    },
+    ip: context.ip,
+    userAgent: context.userAgent,
+    meta: { actor_role: context.role },
+  });
+  return {
+    draft_id: updated.id,
+    content: updated.body,
+    title: updated.title,
+    facts_hash: (updated.facts as { facts_hash?: string } | null)?.facts_hash ?? null,
+    target_hash: targetHash,
+    status: updated.status,
+    updated_at: updated.updatedAt.toISOString(),
   };
 }
 

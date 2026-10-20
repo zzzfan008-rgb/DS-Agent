@@ -758,6 +758,7 @@ model Message {
   rawObjectKey           String?   @map("raw_object_key")
   sentAt                 DateTime? @map("sent_at") @db.Timestamptz
   status                 String    @default("received")
+  deliveryMode           String    @default("live") @map("delivery_mode")
   outboundIdempotencyKey String?   @map("outbound_idempotency_key")
   approvalId             String?   @map("approval_id") @db.Uuid
   judgeId                String?   @map("judge_id") @db.Uuid

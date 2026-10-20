@@ -18,6 +18,7 @@
  */
 
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol';
+import { loadInjectedSkills } from './skill-injection.mjs';
 
 const INTENT_ROLES = {
   'content.draft': ['operator', 'admin'],
@@ -69,10 +70,11 @@ function numberOrZero(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
-function buildPrompt(env) {
+function buildPrompt(env, skillText = '') {
   const lines = [`意图：${env.intent}`];
   if (env.context?.page) lines.push(`页面：${env.context.page}`);
   if (env.context?.objectType) lines.push(`对象：${env.context.objectType}${env.context.objectId ? `/${env.context.objectId}` : ''}`);
+  if (skillText) lines.push(skillText.trim());
   if (env.input?.text) lines.push(`用户输入：${env.input.text}`);
   if (env.input?.params && Object.keys(env.input.params).length > 0) {
     lines.push(`参数：${JSON.stringify(env.input.params).slice(0, 2000)}`);
@@ -109,6 +111,16 @@ export class BusinessAgentService extends TypertRemoteService {
     const cwd = config.cwd ?? process.cwd();
     const preset = env.bundle?.preset ?? config.preset ?? 'clothing-ops';
 
+    // F1：业务意图（默认 support.suggest）把 skill 正文前置注入，省掉 tool-skill 往返。
+    // 不注入时保持原工具加载路径（探索/管理型会话可自行调用 skill）。
+    let skillInjection = null;
+    let skillInjectionError = null;
+    try {
+      skillInjection = loadInjectedSkills(env.intent, config.skillInjection ?? {});
+    } catch (error) {
+      skillInjectionError = error instanceof Error ? error.message : String(error);
+    }
+
     let sessionId;
     try {
       const created = await this.ctx.sessionController.create({ cwd, agentPreset: preset });
@@ -135,7 +147,21 @@ export class BusinessAgentService extends TypertRemoteService {
       // 投影不可用时用配置兜底
     }
 
-    yield { type: 'meta', runId: env.runId, sessionId, bundleVersion, modelId };
+    yield {
+      type: 'meta',
+      runId: env.runId,
+      sessionId,
+      bundleVersion,
+      modelId,
+      skillInjection: skillInjection
+        ? {
+            mode: 'preinjected',
+            skills: skillInjection.skills,
+            bytes: skillInjection.bytes,
+            tokens_estimate: skillInjection.tokens_estimate,
+          }
+        : { mode: 'tool', error: skillInjectionError },
+    };
 
     const queue = [];
     let notify = null;
@@ -219,7 +245,7 @@ export class BusinessAgentService extends TypertRemoteService {
           sessionId,
           requestId: env.requestId ?? env.runId,
           mode: 'queue',
-          content: [{ type: 'text', text: buildPrompt(env) }],
+          content: [{ type: 'text', text: buildPrompt(env, skillInjection?.text ?? '') }],
         },
         signal,
       );

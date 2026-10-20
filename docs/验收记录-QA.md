@@ -199,3 +199,36 @@ pnpm db:validate && pnpm check:migrations
   - 远程/WSL docker 需设置 `DSSAAS_DB_HOST`；镜像需可拉取；就绪超时 60s；端口冲突仅重试一次；
   - 测试运行会 `DROP/CREATE SCHEMA public`（run.ts 以 `_test` 库名守卫），只能指向一次性/测试库。
 - **并行 WIP 备注**：本机 `pnpm lint` 在 14:52 被并行任务新文件 `packages/core/src/schema/garment.ts:4` 的说明性注释命中 `micro_cny`（非 t16 引入，且不是字段使用）；已报告 captain 协调，未放宽规则。
+
+## 13. 测试库隔离与并发保护（t29）
+
+日期：2026-10-20 16:20（Asia/Shanghai）
+
+- **背景**：并行开发时多个 API 测试同时 `DROP/CREATE SCHEMA public`，互相把表删掉，出现 `public.roles does not exist` 的假红。
+- **机制**：
+  - `scripts/qa/with-db.mjs` 新增 **reuse 模式**：`DSSAAS_DB_REUSE=1` + `DSSAAS_PG_BASE_URL` 时，在既有 Postgres 上为本次运行创建独立库 `dssaas_test_<6 hex>`，跑完 `DROP DATABASE ... WITH (FORCE)`；base 库不受影响。
+  - 默认 docker 路径保留；两条路径均每次独立库。
+  - **运行锁**：`<os.tmpdir()>/dssaas-with-db-<repo-hash>.lock`（pid + 时间戳 + command）；活跃运行时默认串行等待（每 10s 提示），僵尸锁（PID 死/超 2h）自动清理；`--parallel` 显式跳过并警告。
+  - **库名守卫**：`run.ts` 允许 `_test` 结尾、`dssaas_test_<6hex>`、`dssaas_ci`；若设置 `DSSAAS_EXPECT_DB_PREFIX` 而库名不匹配 → exit 2（with-db 自动注入该前缀）。同时修正了 t16 遗留的 CI `dssaas_ci` 不满足 `_test` 守卫问题。
+  - **调试保留**：失败默认保留库/容器并打印完整连接串与清理命令；`DSSAAS_KEEP_DB=1` 成功也保留；`DSSAAS_KEEP_DB=0` 失败也强制清理。
+- **三条路径**（详见 `scripts/qa/README.md` §6）：
+  1. docker 默认：`pnpm test:api`；
+  2. 既有库独立库：`DSSAAS_DB_REUSE=1 DSSAAS_PG_BASE_URL=... pnpm test:api`；
+  3. 自备库：`TEST_DATABASE_URL=... pnpm test:api:local`。
+- **真实输出**（当前全量为 **84** 条；任务书写 73 条是创建任务时的旧计数，新增用例均已包含）：
+  - **docker 路径**：`[with-db] 模式=docker（一次性容器）`，`container=dssaas-qa-2d8e3007 port=61298 db=dssaas_788a70d5_test host=172.23.33.92` → `tests 84 / pass 84 / fail 0`，容器已销毁，`总耗时 33.7s`，exit 0。
+  - **reuse 路径**：`[with-db] 模式=reuse（既有 Postgres，独立库）`，`base=postgresql://dssaas:***@172.23.33.92:55434/dssaas_test`，`独立库 dssaas_test_24e966` → `tests 84 / pass 84 / fail 0`，`independent DB 已 DROP`，`总耗时 37.9s`，exit 0。
+  - **并发（默认串行）**：同时启动两个 `pnpm test:api`：
+    - run1 输出 `另一个测试运行占用锁（pid=32504…），串行等待中…` 4 次后获得锁，库 `dssaas_test_23b127` → 84/84，耗时 **66.6s**，exit 0；
+    - run2 先获得锁，库 `dssaas_test_73fd46` → 84/84，耗时 **33.1s**，exit 0；
+    - 两库不同、先后执行、各自清理，无 `public.roles does not exist` 假红。
+  - **前缀守卫**：`TEST_DATABASE_URL=.../dssaas_test` + `DSSAAS_EXPECT_DB_PREFIX=dssaas_test_` → `[test] 拒绝执行：库名 "dssaas_test" 不以 ... 开头`，exit 2。
+  - **保留调试**：失败命令 + `DSSAAS_KEEP_DB=1` → 库 `dssaas_test_6fbdb1` 保留，打印完整连接串与 `DROP DATABASE` 清理命令，exit 1；随后手工 DROP 成功。
+  - **--parallel**：打印跳过锁警告，独立库 `dssaas_test_68ed00`，exit 0。
+  - 清理检查：无残留 `dssaas-qa` 容器、无锁文件；`dssaas_test_*` 仅剩一个非本次创建的旧库 `dssaas_test_m5`（未触碰）。
+- **剩余限制**：
+  - CI 使用 GitHub Actions 的干净 service（`dssaas_ci`），**不需要**本机制；CI 直接 `pnpm --filter @dssaas/api test`；
+  - reuse 模式要求 base 连接用户有 `CREATEDB` 权限；docker 默认路径要求 docker；
+  - 运行锁只覆盖同一台机器/同一仓库；跨机器并发由各自独立库保障，但仍需避免共用同一数据库；
+  - 失败默认保留库/容器会占用资源，需按打印的清理命令回收（或 `DSSAAS_KEEP_DB=0` 强制清理）。
+- **变更文件**：`scripts/qa/with-db.mjs`、`apps/api/test/run.ts`、`scripts/qa/README.md`、`docs/验收记录-QA.md`；未改业务代码/schema。

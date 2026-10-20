@@ -18,7 +18,8 @@ export type DbApprovalAction =
   | 'send_reply'
   | 'send_quote'
   | 'upload_video'
-  | 'batch_offline';
+  | 'batch_offline'
+  | 'publish_content';
 
 export type WorkflowType =
   | 'publish'
@@ -50,7 +51,8 @@ export type ActionCode =
   | 'inquiry.quote'
   | 'inquiry.min_order_update'
   | 'listing.stop_loss'
-  | 'listing.restore_snapshot';
+  | 'listing.restore_snapshot'
+  | 'content.publish';
 
 export interface ActionMeta {
   code: ActionCode;
@@ -69,6 +71,19 @@ export interface ActionMeta {
 }
 
 export const ACTION_REGISTRY: Record<ActionCode, ActionMeta> = {
+  'content.publish': {
+    code: 'content.publish',
+    approvalAction: 'publish_content',
+    level: 'B',
+    reversibility: 'irreversible',
+    workflowType: 'publish',
+    taskType: 'publish',
+    snapshotFields: ['title', 'published_snapshot'],
+    compensationTemplate: '撤回/重新编辑并重新审批',
+    pddInterface: 'product.update',
+    operation1688: 'item.update_content',
+    allowsSnapshotRestore: false,
+  },
   'listing.create': {
     code: 'listing.create',
     approvalAction: 'publish',

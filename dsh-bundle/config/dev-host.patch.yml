@@ -91,6 +91,18 @@
         bundleVersion: 1.0.0
         priceInCentsPer1k: 1
         priceOutCentsPer1k: 2
+        # F1：skill 前置注入（reply_draft=support.suggest 默认开；copy 两个意图也开）。
+        # 关掉 enabled 即回退 tool-skill 加载，用于对照测量。
+        skillInjection:
+          enabled: true
+          enabledIntents:
+            - support.suggest
+            - content.draft
+            - content.rewrite
+          manifestFile: D:/DSSAAS/dsh-bundle/manifest.json
+          skillRoot: D:/DSSAAS/dsh-bundle/skills
+          maxSkillBytes: 20000
+          maxTotalBytes: 30000
     - id: business-bridge
       name: file:///D:/DSSAAS/dsh-bundle/bridge/business-bridge.mjs
       config:

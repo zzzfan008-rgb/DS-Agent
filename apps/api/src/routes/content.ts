@@ -9,6 +9,7 @@ import {
   createContentDraft,
   getContentDraft,
   listContentDrafts,
+  updateContentDraft,
   type ContentDeps,
 } from '../services/content.js';
 
@@ -70,6 +71,20 @@ export function registerContentRoutes(app: FastifyInstance): void {
       limit,
     });
     return ok(request, { items: result.items }, { next_cursor: result.nextCursor });
+  });
+
+  app.put('/api/content/drafts/:id', { config: { minRole: 'operator' } }, async (request) => {
+    const params = z.object({ id: z.string().uuid() }).parse(request.params);
+    const body = z
+      .object({
+        content: z.string().min(1).max(20000).optional(),
+        title: z.string().max(200).nullable().optional(),
+      })
+      .parse(request.body ?? {});
+    const context = serviceContext(request);
+    const result = await updateContentDraft(deps, params.id, body, context);
+    request.auditLogged = true;
+    return ok(request, result);
   });
 
   app.get('/api/content/drafts/:id', { config: { minRole: 'viewer' } }, async (request) => {

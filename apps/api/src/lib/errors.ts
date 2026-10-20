@@ -47,6 +47,7 @@ export type ErrorCode =
 export type NextAction =
   | 'retry_later'
   | 'reopen_approval'
+  | 'resubmit'
   | 'fix_and_resubmit'
   | 'create_compensation'
   | 'contact_admin'
@@ -67,7 +68,7 @@ export const ERROR_DEFS: Record<ErrorCode, ErrorDefinition> = {
   validation_failed: { http: 422, retryable: false, nextAction: 'fix_and_resubmit', message: '请求参数校验失败' },
   invalid_fact: { http: 422, retryable: false, nextAction: 'fix_and_resubmit', message: '与主数据不一致的事实错误' },
   approval_required: { http: 428, retryable: false, nextAction: 'reopen_approval', message: '缺少有效审批' },
-  approval_stale: { http: 409, retryable: false, nextAction: 'reopen_approval', message: '审批对象已变更，审批失效' },
+  approval_stale: { http: 428, retryable: false, nextAction: 'resubmit', message: '审批对象已变更，审批失效' },
   irreversible: { http: 409, retryable: false, nextAction: 'create_compensation', message: '不可逆动作被拒绝' },
   conflict: { http: 409, retryable: false, nextAction: 'retry_later', message: '状态冲突，请刷新后重试' },
   idempotency_conflict: { http: 409, retryable: false, nextAction: 'fix_and_resubmit', message: '同一幂等键对应了不同请求内容' },

@@ -87,7 +87,7 @@
           "id": "contract",
           "match": ["签名", "鉴权", "密钥", "access_token", "错误码", "限流", "接口下线", "必填字段", "字段", "接口升级", "授权"],
           "interfaces": ["__all__"],
-          "extra_tests": ["test/signer.test.ts", "test/config.test.ts", "test/replay.test.ts", "test/client.test.ts"],
+          "extra_tests": ["test/signer.test.ts", "test/config.test.ts", "test/replay.test.ts", "test/client.test.ts", "test/rate-limiter.test.ts", "test/transport.test.ts"],
           "severity": "P0"
         }
       ]
@@ -176,7 +176,7 @@
           "id": "contract",
           "match": ["签名", "鉴权", "密钥", "access_token", "错误码", "限流", "接口下线", "必填字段", "字段", "接口升级", "授权"],
           "interfaces": ["__all__"],
-          "extra_tests": ["test/client.test.ts"],
+          "extra_tests": ["test/client.test.ts", "test/attributes.test.ts", "test/exporter.test.ts", "test/mapping.test.ts", "test/moq-dropship.test.ts", "test/price-tiers.test.ts"],
           "severity": "P0"
         }
       ]

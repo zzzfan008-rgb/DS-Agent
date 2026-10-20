@@ -437,8 +437,9 @@ async function watchPdd(flags) {
     parser = parseFixturePayload(raw);
     console.log(`[watch] 使用 fixture：${fixturePath}`);
   } else {
+    const sourceUrl = flags['list-url'] ?? PDD_SOURCE.listUrl;
     const body = { ...PDD_SOURCE.request_body, pageSize: positiveInt(flags['page-size'], PDD_SOURCE.request_body.pageSize, { min: 1, max: 1000, name: '--page-size' }) };
-    const json = await withNetworkRetry('PDD 公告列表', () => postJson(PDD_SOURCE.listUrl, body, { timeoutMs }), {
+    const json = await withNetworkRetry('PDD 公告列表', () => postJson(sourceUrl, body, { timeoutMs }), {
       retries,
       retryDelayMs,
     });
@@ -526,6 +527,7 @@ async function main() {
   --merge                     fixture/部分数据与已有快照合并（不删除旧条目）
   --output-dir <dir>          默认 data/notices
   --page-size <n>             PDD 单页条数，默认 500（当前 412 条可一次取回）
+  --list-url <url>            覆盖 PDD 公告列表 URL（端点迁移/故障注入用）
   --timeout-ms <n>            单请求超时，默认 20000
   --retries <n>               网络失败重试次数，默认 2
   --json                      输出机器可读摘要
