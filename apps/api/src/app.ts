@@ -39,6 +39,11 @@ import { registerApprovalRoutes } from './routes/approvals.js';
 import { registerListingRoutes } from './routes/listings.js';
 import { registerWorkflowRoutes } from './routes/workflow.js';
 import { registerGovernanceRoutes } from './routes/governance.js';
+import { registerConversationRoutes } from './routes/conversations.js';
+import { registerReplyRoutes } from './routes/replies.js';
+import { registerInquiryRoutes } from './routes/inquiries.js';
+import { registerTemplateRoutes } from './routes/templates.js';
+import { registerEventRoutes } from './routes/events.js';
 import './types.js';
 
 export interface BuildAppOptions {
@@ -226,6 +231,11 @@ export async function buildApp(config: AppConfig, options: BuildAppOptions = {})
   registerListingRoutes(app);
   registerWorkflowRoutes(app);
   registerGovernanceRoutes(app);
+  registerConversationRoutes(app);
+  registerReplyRoutes(app);
+  registerInquiryRoutes(app);
+  registerTemplateRoutes(app);
+  registerEventRoutes(app);
   registerAgentRoutes(app);
 
   app.addHook('onClose', async () => {

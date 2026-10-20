@@ -5,6 +5,7 @@ import { parseLimit } from '../lib/cursor.js';
 import { ok } from '../lib/response.js';
 import { serviceContext } from '../lib/service-context.js';
 import { getWriteGateServices } from '../write-gate/services.js';
+import { emitRealtime } from '../realtime/hub.js';
 
 const ApprovalCreate = z.object({
   subject_type: z.enum([
@@ -75,6 +76,19 @@ export function registerApprovalRoutes(app: FastifyInstance): void {
     const body = ApprovalCreate.parse(request.body ?? {});
     const row = await approvals.create(body, context);
     request.auditLogged = true;
+    await emitRealtime(app, {
+      type: 'approval.pending',
+      aggregateId: row.id,
+      payload: {
+        approval_id: row.id,
+        subject_type: row.subjectType,
+        subject_id: row.subjectId,
+        action: row.action,
+        platform: row.platform,
+        level: row.operationLevel,
+        sla_due_at: row.slaDueAt?.toISOString() ?? null,
+      },
+    });
     reply.code(201);
     return ok(request, {
       id: row.id,
