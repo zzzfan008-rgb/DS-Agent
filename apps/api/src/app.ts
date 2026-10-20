@@ -44,6 +44,7 @@ import { registerReplyRoutes } from './routes/replies.js';
 import { registerInquiryRoutes } from './routes/inquiries.js';
 import { registerTemplateRoutes } from './routes/templates.js';
 import { registerEventRoutes } from './routes/events.js';
+import { registerMediaRoutes } from './routes/media.js';
 import { registerKnowledgeRoutes } from './routes/knowledge.js';
 import { KnowledgeService } from './knowledge/service.js';
 import './types.js';
@@ -246,6 +247,7 @@ export async function buildApp(config: AppConfig, options: BuildAppOptions = {})
   registerInquiryRoutes(app);
   registerTemplateRoutes(app);
   registerEventRoutes(app);
+  registerMediaRoutes(app);
   registerKnowledgeRoutes(app);
   registerAgentRoutes(app);
 

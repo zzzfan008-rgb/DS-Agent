@@ -176,3 +176,49 @@ export function renderRealtimeFrame(event: RealtimeEvent, requestId: string): st
     payload: event.payload,
   })}\n\n`;
 }
+
+/**
+ * 从 Postgres `event_log` 做 Last-Event-ID 重放（重启/跨实例可用）。
+ * `event_log.seq` 是事件级游标，与 `message.event_seq` 不是同一条序列，禁止混用。
+ */
+export async function loadEventLogReplay(
+  prisma: PrismaClient,
+  lastEventId: string | null,
+): Promise<ReplayResult> {
+  const latest = await prisma.eventLog.findFirst({ orderBy: { seq: 'desc' }, select: { seq: true } });
+  const oldest = await prisma.eventLog.findFirst({ orderBy: { seq: 'asc' }, select: { seq: true } });
+  const currentSeq = latest ? Number(latest.seq) : 0;
+  const oldestSeq = oldest ? Number(oldest.seq) : null;
+  if (lastEventId === null || lastEventId === '') {
+    return { events: [], resyncReason: null, oldestSeq, currentSeq };
+  }
+  if (!/^\d{1,18}$/.test(lastEventId)) {
+    return { events: [], resyncReason: 'unknown_id', oldestSeq, currentSeq };
+  }
+  const last = BigInt(lastEventId);
+  if (!latest) return { events: [], resyncReason: 'expired', oldestSeq, currentSeq };
+  if (last > latest.seq) return { events: [], resyncReason: 'ahead', oldestSeq, currentSeq };
+  if (oldest && last < oldest.seq - 1n) {
+    return { events: [], resyncReason: 'expired', oldestSeq, currentSeq };
+  }
+  const rows = await prisma.eventLog.findMany({
+    where: { seq: { gt: last } },
+    orderBy: { seq: 'asc' },
+    take: 501,
+  });
+  if (rows.length > 500) {
+    return { events: [], resyncReason: 'expired', oldestSeq, currentSeq };
+  }
+  const events = rows.map<RealtimeEvent>((row) => ({
+    seq: Number(row.seq),
+    eventId: String(row.seq),
+    type: row.topic as RealtimeEvent['type'],
+    ts: row.createdAt.toISOString(),
+    payload: (row.payload ?? {}) as Record<string, unknown>,
+  }));
+  const first = events[0];
+  if (first && first.seq > Number(last) + 1) {
+    return { events, resyncReason: 'gap', oldestSeq, currentSeq };
+  }
+  return { events, resyncReason: null, oldestSeq, currentSeq };
+}

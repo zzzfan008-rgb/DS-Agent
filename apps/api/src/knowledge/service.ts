@@ -283,6 +283,11 @@ export class KnowledgeService {
     if (title.length === 0 || [...title].length > 200) {
       throw new ApiError('validation_failed', 'title 长度必须为 1–200', { detail: { field: 'title' } });
     }
+    if (input.docType && !(KB_DOC_TYPES as readonly string[]).includes(input.docType)) {
+      throw new ApiError('validation_failed', `doc_type 非法：${input.docType}`, {
+        detail: { field: 'doc_type', allowed: KB_DOC_TYPES },
+      });
+    }
     const sourceType = deriveSourceType(input.domain, input.sourceType);
     const sourceRef = (input.sourceRef?.trim() || `upload:${sourceType}:${title}`).slice(0, 500);
     const sourceId = uuidv5(`kb:${sourceType}:${sourceRef}`);
@@ -311,7 +316,12 @@ export class KnowledgeService {
       where: { orgId: 1n, sourceType, sourceId, archivedAt: null },
       orderBy: { versionNo: 'desc' },
     });
-    if (existing && existing.checksum === parsed.checksum && existing.archivedAt === null) {
+    if (
+      existing &&
+      existing.status === 'active' &&
+      existing.checksum === parsed.checksum &&
+      existing.archivedAt === null
+    ) {
       return {
         document_id: existing.id,
         chunks: existing.chunkCount,
@@ -625,13 +635,8 @@ export class KnowledgeService {
       });
       queryVector = l2Normalize(embedded.vectors[0]!);
       if (!queryVector) vectorFailure = 'zero_vector';
-    } catch (error) {
-      vectorFailure =
-        error instanceof EmbeddingUnavailableError
-          ? 'no_vector'
-          : error instanceof Error
-            ? error.message
-            : 'no_vector';
+    } catch {
+      vectorFailure = 'embed_unavailable';
     }
 
     let vectorRows: ChunkRow[] = [];
@@ -639,9 +644,9 @@ export class KnowledgeService {
     if (queryVector) {
       try {
         vectorRows = await this.vectorSearch(queryVector, role, filters, asOf);
-      } catch (error) {
+      } catch {
         vectorUsed = false;
-        vectorFailure = error instanceof Error ? error.message : 'vector_search_failed';
+        vectorFailure = 'no_vector';
       }
     }
 
@@ -651,10 +656,12 @@ export class KnowledgeService {
     let degradeReason: string | null = null;
     if (!vectorUsed) {
       degraded = true;
-      degradeReason = vectorFailure === 'no_vector' ? 'no_vector' : vectorFailure ?? 'no_vector';
+      degradeReason = vectorFailure === 'embed_unavailable' ? 'embed_unavailable' : 'no_vector';
     } else if (vectorRows.length === 0) {
       const embeddedCount = await this.countEmbeddings(role, filters, asOf);
       if (embeddedCount === 0) {
+        // 向量列全空：等同 embedding 不可用，走纯关键词（docs/09 §11 D2）。
+        vectorUsed = false;
         degraded = true;
         degradeReason = 'no_vector';
       }
@@ -949,7 +956,7 @@ export class KnowledgeService {
           requestId: `kb-${uuidv7()}`,
           roleCode: input.role,
           purpose: input.purpose,
-          query: input.query.slice(0, 1000),
+          query: input.query.slice(0, 500),
           mode: input.mode,
           topK: input.k,
           filters: {

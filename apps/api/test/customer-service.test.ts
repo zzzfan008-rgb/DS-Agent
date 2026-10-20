@@ -17,6 +17,7 @@ import { getM5Services } from '../src/services/m5.js';
 import { createReplyDraft } from '../src/services/replies.js';
 import { quoteTargetPayload } from '../src/services/quotes.js';
 import { RealtimeHub } from '../src/realtime/hub.js';
+import { loadEventLogReplay } from '../src/realtime/hub.js';
 
 const ADMIN_PASSWORD = 'TestAdminPassword!2026';
 const OPERATOR_PASSWORD = 'TestOperatorPassword!2026';
@@ -439,4 +440,23 @@ test('SSE 事件中枢：Last-Event-ID 重放、空洞/超前返回 resync 原�
   assert.equal(hub.replay('999').resyncReason, 'ahead');
   const empty = new RealtimeHub();
   assert.equal(empty.replay('5').resyncReason, 'ahead');
+});
+
+test('重启后 Last-Event-ID 从 event_log 重放（事件级 seq，不依赖进程内 ring）', async () => {
+  const first = await prisma.eventLog.create({
+    data: { topic: 'message.created', payload: { marker: 'restart-a' } },
+    select: { seq: true },
+  });
+  const second = await prisma.eventLog.create({
+    data: { topic: 'draft.updated', payload: { marker: 'restart-b' } },
+    select: { seq: true },
+  });
+  const replay = await loadEventLogReplay(prisma, String(first.seq));
+  assert.equal(replay.resyncReason, null);
+  assert.ok(replay.events.some((event) => event.seq === Number(second.seq)));
+  assert.ok(!replay.events.some((event) => event.seq === Number(first.seq)));
+  const missing = await loadEventLogReplay(prisma, 'not-a-seq');
+  assert.equal(missing.resyncReason, 'unknown_id');
+  const ahead = await loadEventLogReplay(prisma, String(Number(second.seq) + 10_000));
+  assert.equal(ahead.resyncReason, 'ahead');
 });

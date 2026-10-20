@@ -113,7 +113,10 @@ function markdownSections(title: string, body: string): ParsedSection[] {
       stack.push({ level, text });
       // 新 section 从该标题开始；之前的 section 收尾。
       if (current.blocks.length > 0 || current.path.length > 1) sections.push(current);
-      current = { path: [title, ...stack.map((item) => item.text)].slice(0, 6), blocks: [] };
+      const headingPath = stack
+        .map((item) => item.text)
+        .filter((text, index) => !(index === 0 && text === title));
+      current = { path: [title, ...headingPath].slice(0, 6), blocks: [] };
       continue;
     }
     if (line.trim() === '') {

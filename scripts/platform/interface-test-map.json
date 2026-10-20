@@ -1,0 +1,185 @@
+{
+  "schema_version": "interface-test-map-v1",
+  "note": "接口 → docs 条目 / adapter 测试文件的显式映射。工单只引用这里注册过的 key；新增接口必须先补映射，避免‘工单写了接口但没有回归测试’。",
+  "platforms": {
+    "pdd": {
+      "package": "@dssaas/adapters-pdd",
+      "test_command": "pnpm --filter @dssaas/adapters-pdd test",
+      "doc": "docs/01-平台接入侦察-拼多多.md",
+      "default_interfaces": ["product.publish", "product.update", "product.listing_status"],
+      "default_tests": ["test/registry.test.ts", "test/client.test.ts"],
+      "severity_by_category": {
+        "1": "P2",
+        "2": "P1",
+        "3": "P1",
+        "4": "P2",
+        "5": "P1"
+      },
+      "p0_keywords": ["签名", "鉴权", "密钥", "access_token", "错误码", "限流", "接口下线", "必填字段", "字段删除", "字段变更", "接口升级", "授权"],
+      "p2_keywords": ["文案", "澄清", "说明", "活动公告"],
+      "interfaces": {
+        "product.publish": { "doc_ref": "docs/01 §2.1 第1行", "tests": ["test/listing-package.test.ts", "test/registry.test.ts", "test/client.test.ts"] },
+        "product.update": { "doc_ref": "docs/01 §2.1 第2行", "tests": ["test/registry.test.ts", "test/listing-package.test.ts"] },
+        "product.listing_status": { "doc_ref": "docs/01 §2.1 第3行", "tests": ["test/registry.test.ts", "test/client.test.ts"] },
+        "product.query": { "doc_ref": "docs/01 §2.1 第4行", "tests": ["test/client.test.ts", "test/registry.test.ts"] },
+        "category.attribute_query": { "doc_ref": "docs/01 §2.1 第5行", "tests": ["test/registry.test.ts", "test/listing-package.test.ts"] },
+        "product.qualification_bind": { "doc_ref": "docs/01 §2.1 第6行", "tests": ["test/listing-package.test.ts"] },
+        "price.sku_update": { "doc_ref": "docs/01 §2.2 第1行", "tests": ["test/client.test.ts", "test/registry.test.ts"] },
+        "price.promotion": { "doc_ref": "docs/01 §2.2 第2行", "tests": ["test/client.test.ts"] },
+        "price.query": { "doc_ref": "docs/01 §2.2 第3行", "tests": ["test/client.test.ts"] },
+        "stock.update": { "doc_ref": "docs/01 §2.3 第1行", "tests": ["test/client.test.ts"] },
+        "stock.query": { "doc_ref": "docs/01 §2.3 第2行", "tests": ["test/client.test.ts"] },
+        "stock.alert_rule": { "doc_ref": "docs/01 §2.3 第3行", "tests": ["test/registry.test.ts"] },
+        "order.list": { "doc_ref": "docs/01 §2.4 第1行", "tests": ["test/client.test.ts", "test/replay.test.ts"] },
+        "order.detail": { "doc_ref": "docs/01 §2.4 第2行", "tests": ["test/client.test.ts", "test/replay.test.ts"] },
+        "order.ship": { "doc_ref": "docs/01 §2.4 第3行", "tests": ["test/client.test.ts"] },
+        "order.change_sku": { "doc_ref": "docs/01 §2.4 第4行", "tests": ["test/client.test.ts", "test/replay.test.ts"] },
+        "aftersale.manage": { "doc_ref": "docs/01 §2.4 第5行", "tests": ["test/client.test.ts"] },
+        "logistics.track": { "doc_ref": "docs/01 §2.4 第6行", "tests": ["test/client.test.ts"] },
+        "message.pull": { "doc_ref": "docs/01 §2.5 第1行", "tests": ["test/client.test.ts", "test/replay.test.ts"] },
+        "message.send": { "doc_ref": "docs/01 §2.5 第2行", "tests": ["test/client.test.ts", "test/replay.test.ts"] },
+        "message.callback_subscribe": { "doc_ref": "docs/01 §2.5 第3行", "tests": ["test/client.test.ts", "test/signer.test.ts"] },
+        "service_account.manage": { "doc_ref": "docs/01 §2.5 第4行", "tests": ["test/client.test.ts"] },
+        "auto_reply.manage": { "doc_ref": "docs/01 §2.5 第5行", "tests": ["test/client.test.ts"] },
+        "media.image_upload": { "doc_ref": "docs/01 §2.6 第1行", "tests": ["test/listing-package.test.ts", "test/client.test.ts"] },
+        "media.video_multipart_upload": { "doc_ref": "docs/01 §2.6 第2行", "tests": ["test/client.test.ts"] },
+        "media.video_transcode_status": { "doc_ref": "docs/01 §2.6 第3行", "tests": ["test/client.test.ts"] },
+        "storage.quota_query": { "doc_ref": "docs/01 §2.6 第4行", "tests": ["test/client.test.ts"] },
+        "media.delete": { "doc_ref": "docs/01 §2.6 第5行", "tests": ["test/client.test.ts"] }
+      },
+      "routes": [
+        {
+          "id": "order",
+          "match": ["订单", "发货", "物流", "售后", "退款", "保密发货", "换SKU", "换 SKU"],
+          "interfaces": ["order.list", "order.detail", "order.ship", "order.change_sku", "aftersale.manage", "logistics.track"],
+          "extra_tests": ["test/replay.test.ts"],
+          "severity": "P1"
+        },
+        {
+          "id": "product",
+          "match": ["商品", "资质", "类目", "属性", "上架", "发布", "编辑", "主图", "详情", "标题", "SKU", "尺码", "成分"],
+          "interfaces": ["product.publish", "product.update", "product.listing_status", "product.query", "category.attribute_query", "product.qualification_bind"],
+          "extra_tests": ["test/listing-package.test.ts", "test/registry.test.ts"],
+          "severity": "P1"
+        },
+        {
+          "id": "price-stock",
+          "match": ["改价", "价格", "促销", "活动价", "库存", "售罄", "限购"],
+          "interfaces": ["price.sku_update", "price.promotion", "price.query", "stock.update", "stock.query", "stock.alert_rule"],
+          "extra_tests": ["test/client.test.ts"],
+          "severity": "P1"
+        },
+        {
+          "id": "message",
+          "match": ["消息", "客服", "推送", "回调", "会话", "自动回复", "飞鸽"],
+          "interfaces": ["message.pull", "message.send", "message.callback_subscribe", "service_account.manage", "auto_reply.manage"],
+          "extra_tests": ["test/replay.test.ts"],
+          "severity": "P1"
+        },
+        {
+          "id": "media-storage",
+          "match": ["素材", "图片", "视频", "转码", "存储", "容量", "云存储"],
+          "interfaces": ["media.image_upload", "media.video_multipart_upload", "media.video_transcode_status", "storage.quota_query", "media.delete"],
+          "extra_tests": ["test/listing-package.test.ts"],
+          "severity": "P1"
+        },
+        {
+          "id": "contract",
+          "match": ["签名", "鉴权", "密钥", "access_token", "错误码", "限流", "接口下线", "必填字段", "字段", "接口升级", "授权"],
+          "interfaces": ["__all__"],
+          "extra_tests": ["test/signer.test.ts", "test/config.test.ts", "test/replay.test.ts", "test/client.test.ts"],
+          "severity": "P0"
+        }
+      ]
+    },
+    "1688": {
+      "package": "@dssaas/adapters-1688",
+      "test_command": "pnpm --filter @dssaas/adapters-1688 test",
+      "doc": "docs/02-平台接入侦察-1688.md",
+      "default_interfaces": ["item.publish", "item.update_content", "item.set_online"],
+      "default_tests": ["test/client.test.ts", "test/exporter.test.ts"],
+      "severity_by_category": {
+        "1": "P2",
+        "2": "P1",
+        "3": "P1",
+        "4": "P2",
+        "5": "P1"
+      },
+      "p0_keywords": ["签名", "鉴权", "密钥", "access_token", "错误码", "限流", "接口下线", "必填字段", "字段删除", "字段变更", "接口升级", "授权"],
+      "p2_keywords": ["文案", "澄清", "说明", "活动公告"],
+      "interfaces": {
+        "item.publish": { "doc_ref": "docs/02 §2.1#1", "tests": ["test/exporter.test.ts", "test/attributes.test.ts", "test/client.test.ts"] },
+        "item.update_content": { "doc_ref": "docs/02 §2.1#2", "tests": ["test/exporter.test.ts", "test/client.test.ts"] },
+        "item.set_online": { "doc_ref": "docs/02 §2.1#3", "tests": ["test/client.test.ts"] },
+        "item.set_offline": { "doc_ref": "docs/02 §2.1#3", "tests": ["test/client.test.ts"] },
+        "item.query": { "doc_ref": "docs/02 §2.1#4", "tests": ["test/client.test.ts", "test/exporter.test.ts"] },
+        "category.tree": { "doc_ref": "docs/02 §2.1#5", "tests": ["test/attributes.test.ts", "test/mapping.test.ts"] },
+        "item.import_package": { "doc_ref": "docs/02 §2.1#6", "tests": ["test/exporter.test.ts"] },
+        "item.update_stock": { "doc_ref": "docs/02 §2.2#1", "tests": ["test/client.test.ts"] },
+        "stock.query": { "doc_ref": "docs/02 §2.2#2", "tests": ["test/client.test.ts"] },
+        "order.list": { "doc_ref": "docs/02 §2.3#1", "tests": ["test/client.test.ts"] },
+        "order.detail": { "doc_ref": "docs/02 §2.3#2", "tests": ["test/client.test.ts"] },
+        "order.ship": { "doc_ref": "docs/02 §2.3#3", "tests": ["test/client.test.ts"] },
+        "dropship.purchase_order": { "doc_ref": "docs/02 §2.3#4", "tests": ["test/moq-dropship.test.ts", "test/client.test.ts"] },
+        "aftersale.list": { "doc_ref": "docs/02 §2.3#5", "tests": ["test/client.test.ts"] },
+        "logistics.track": { "doc_ref": "docs/02 §2.3#6", "tests": ["test/client.test.ts"] },
+        "price.query": { "doc_ref": "docs/02 §2.4#2", "tests": ["test/price-tiers.test.ts", "test/client.test.ts"] },
+        "item.update_price": { "doc_ref": "docs/02 §2.4#1", "tests": ["test/price-tiers.test.ts", "test/client.test.ts"] },
+        "inquiry.min_order_update": { "doc_ref": "docs/02 §2.7#4", "tests": ["test/moq-dropship.test.ts"] },
+        "quote.create": { "doc_ref": "docs/02 §2.4#3", "tests": ["test/client.test.ts", "test/price-tiers.test.ts"] },
+        "inquiry.list": { "doc_ref": "docs/02 §2.5#1", "tests": ["test/client.test.ts"] },
+        "message.send": { "doc_ref": "docs/02 §2.5#2", "tests": ["test/client.test.ts"] },
+        "message.subscribe": { "doc_ref": "docs/02 §2.5#3", "tests": ["test/client.test.ts"] },
+        "service.account": { "doc_ref": "docs/02 §2.5#4", "tests": ["test/client.test.ts"] },
+        "media.upload_image": { "doc_ref": "docs/02 §2.6#1", "tests": ["test/exporter.test.ts", "test/client.test.ts"] },
+        "media.upload_video": { "doc_ref": "docs/02 §2.6#2", "tests": ["test/exporter.test.ts", "test/client.test.ts"] },
+        "media.library": { "doc_ref": "docs/02 §2.6#3", "tests": ["test/exporter.test.ts"] },
+        "media.detail_html": { "doc_ref": "docs/02 §2.6#4", "tests": ["test/exporter.test.ts"] }
+      },
+      "routes": [
+        {
+          "id": "order",
+          "match": ["订单", "发货", "物流", "售后", "退款", "代发", "采购单", "账期"],
+          "interfaces": ["order.list", "order.detail", "order.ship", "dropship.purchase_order", "aftersale.list", "logistics.track"],
+          "extra_tests": ["test/moq-dropship.test.ts"],
+          "severity": "P1"
+        },
+        {
+          "id": "product",
+          "match": ["商品", "资质", "类目", "属性", "上架", "发布", "起批", "阶梯价", "规格", "货号", "详情"],
+          "interfaces": ["item.publish", "item.update_content", "item.set_online", "item.set_offline", "item.query", "category.tree", "item.import_package"],
+          "extra_tests": ["test/exporter.test.ts", "test/attributes.test.ts"],
+          "severity": "P1"
+        },
+        {
+          "id": "price-stock",
+          "match": ["改价", "价格", "库存", "档位", "区间", "促销"],
+          "interfaces": ["item.update_price", "price.query", "item.update_stock", "stock.query"],
+          "extra_tests": ["test/price-tiers.test.ts"],
+          "severity": "P1"
+        },
+        {
+          "id": "inquiry-message",
+          "match": ["询盘", "报价", "旺旺", "客服", "消息", "订阅", "分流"],
+          "interfaces": ["inquiry.list", "inquiry.min_order_update", "quote.create", "message.send", "message.subscribe", "service.account"],
+          "extra_tests": ["test/client.test.ts"],
+          "severity": "P1"
+        },
+        {
+          "id": "media",
+          "match": ["素材", "图片", "视频", "详情页", "容量"],
+          "interfaces": ["media.upload_image", "media.upload_video", "media.library", "media.detail_html"],
+          "extra_tests": ["test/exporter.test.ts"],
+          "severity": "P1"
+        },
+        {
+          "id": "contract",
+          "match": ["签名", "鉴权", "密钥", "access_token", "错误码", "限流", "接口下线", "必填字段", "字段", "接口升级", "授权"],
+          "interfaces": ["__all__"],
+          "extra_tests": ["test/client.test.ts"],
+          "severity": "P0"
+        }
+      ]
+    }
+  }
+}

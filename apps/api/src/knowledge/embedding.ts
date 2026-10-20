@@ -76,7 +76,8 @@ export class KnowledgeEmbedder {
         requestId: context.requestId,
         actorType: 'system',
         actorId: null,
-        subjectType: 'kb_document',
+        // schema 的 ck_mcl_subject_type 不含 kb_document（只有 kb_query/other），用 other；详见验收记录 D2。
+        subjectType: 'other',
         params: { inputs: texts, dim: EMBEDDING_DIM },
         estimate: { tokensIn: estimateTokensIn },
       });

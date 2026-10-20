@@ -11,6 +11,8 @@
     "audit:verify": "tsx src/scripts/verify-audit.ts",
     "test": "tsx test/run.ts",
     "test:agent": "tsx --test --test-concurrency=1 --test-reporter=spec test/agent.test.ts",
+    "test:knowledge": "tsx --test --test-concurrency=1 --test-reporter=spec test/knowledge.test.ts",
+    "smoke:knowledge": "tsx test/knowledge-smoke.ts",
     "smoke:agent": "tsx test/agent-smoke.ts",
     "test:file": "tsx --test",
     "typecheck": "tsc -p tsconfig.json"

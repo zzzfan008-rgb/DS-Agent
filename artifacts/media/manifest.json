@@ -1,0 +1,86 @@
+{
+  "generated_at": "2026-10-20T08:14:56.384Z",
+  "pipeline": {
+    "image_job": {
+      "id": "demo-image-job",
+      "status": "succeeded",
+      "asset_id": "d1183996-2906-4201-a67a-bd8ab3498a8d",
+      "aigc_labeled": true,
+      "cost_cents": 4,
+      "variants": [
+        {
+          "key": "thumb_320",
+          "bucket": "media-variants",
+          "object_key": "scene/1/2026/10/d1183996-2906-4201-a67a-bd8ab3498a8d/thumb_320.webp",
+          "width": 320,
+          "height": 320,
+          "bytes": 1198,
+          "sha256": "c73b99389d8bdf1b1432741d4a62797e071d78140f35113dbd094c742b99996c",
+          "aigc_labeled": true
+        },
+        {
+          "key": "detail_1200",
+          "bucket": "media-variants",
+          "object_key": "scene/1/2026/10/d1183996-2906-4201-a67a-bd8ab3498a8d/detail_1200.webp",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 4874,
+          "sha256": "a791009823ee79a9c70ece10ec0ff56093539a8ee319ceb9783d20baad70bb6a",
+          "aigc_labeled": true
+        },
+        {
+          "key": "main_800",
+          "bucket": "media-variants",
+          "object_key": "scene/1/2026/10/d1183996-2906-4201-a67a-bd8ab3498a8d/main_800.webp",
+          "width": 800,
+          "height": 800,
+          "bytes": 2776,
+          "sha256": "2ce58a961c03f9423d74c88923d452161607c92067f4cc8c5fa6cbb8a65d1fcc",
+          "aigc_labeled": true
+        }
+      ]
+    },
+    "size_chart_job": {
+      "id": "demo-size-chart-job",
+      "status": "succeeded",
+      "asset_id": "adec4632-536e-416b-a9c1-a8070ce8649f",
+      "data_version": "v20261020T101500Z",
+      "spec_hash": "55697aa8c921d9753ee8bf4ef7055c8b566ec70d07c3f6d37d19e9d7cdd63a76",
+      "variants": [
+        {
+          "key": "chart_750",
+          "bucket": "media-variants",
+          "object_key": "size_chart/1/2026/10/adec4632-536e-416b-a9c1-a8070ce8649f/chart_v20261020T101500Z.png",
+          "width": 750,
+          "height": 490,
+          "bytes": 43657,
+          "sha256": "cbc81ed66c2349c784611a6892d27144e07a6b2fbbf8c2072803a90193f2b116"
+        },
+        {
+          "key": "chart_1200",
+          "bucket": "media-variants",
+          "object_key": "size_chart/1/2026/10/adec4632-536e-416b-a9c1-a8070ce8649f/chart_v20261020T101500Z_1200.png",
+          "width": 1200,
+          "height": 782,
+          "bytes": 75341,
+          "sha256": "c28238682e47928995d06b7c2901b1510ce66df6c1eab5c839b4c1c8b38a5fea"
+        }
+      ]
+    }
+  },
+  "idempotent_rerender": true,
+  "cost_ledger": [
+    {
+      "ref_id": "demo-image-job",
+      "kind": "media",
+      "amount_cents": 4,
+      "seconds": 0
+    },
+    {
+      "ref_id": "demo-size-chart-job",
+      "kind": "media",
+      "amount_cents": 0,
+      "seconds": 0.5
+    }
+  ]
+}

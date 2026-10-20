@@ -1,0 +1,289 @@
+{
+  "model_route": {
+    "id": "01a1585f-daaa-7092-8527-61cb55ecec19",
+    "model_id": "01a1585f-da6d-74e1-a5d7-ba18ab60bc89",
+    "priority": 243
+  },
+  "documents": {
+    "policy": {
+      "status": 201,
+      "body": {
+        "document_id": "01a1585f-dad7-7141-83b7-0ac00c37fc94",
+        "chunks": 2,
+        "version": 1,
+        "deduplicated": false,
+        "index_status": "indexed",
+        "embedded": true,
+        "embedding_degraded": false,
+        "cost_cents": 1
+      }
+    },
+    "product": {
+      "status": 201,
+      "body": {
+        "document_id": "01a1585f-db00-7e69-be52-b0956a5e75ca",
+        "chunks": 2,
+        "version": 1,
+        "deduplicated": false,
+        "index_status": "indexed",
+        "embedded": true,
+        "embedding_degraded": false,
+        "cost_cents": 1
+      }
+    },
+    "size": {
+      "status": 201,
+      "body": {
+        "document_id": "01a1585f-db23-7d09-90ae-ab46eb781774",
+        "chunks": 2,
+        "version": 1,
+        "deduplicated": false,
+        "index_status": "indexed",
+        "embedded": true,
+        "embedding_degraded": false,
+        "cost_cents": 1
+      }
+    }
+  },
+  "searches": [
+    {
+      "label": "外套→风衣",
+      "query": "外套",
+      "expected_position": 1,
+      "degraded": false,
+      "mode": "hybrid",
+      "took_ms": 17,
+      "top3": [
+        {
+          "title": "风衣商品资料",
+          "score": 0.0164,
+          "vector_rank": 1,
+          "keyword_rank": null,
+          "citation": {
+            "doc_id": "01a1585f-db00-7e69-be52-b0956a5e75ca",
+            "chunk_id": "01a1585f-db06-72a0-85bd-518eb2e9876b",
+            "doc_version": 1,
+            "quote": "2026 秋季女士中长款风衣，收腰显瘦，适合通勤。",
+            "effective_from": "2026-10-20T08:13:59.412Z",
+            "title": "风衣商品资料",
+            "source_type": "product",
+            "section_path": [
+              "风衣商品资料",
+              "版型"
+            ],
+            "score": 0.0164,
+            "uri": "product://smoke-e6e97920"
+          }
+        },
+        {
+          "title": "风衣商品资料",
+          "score": 0.0161,
+          "vector_rank": 2,
+          "keyword_rank": null,
+          "citation": {
+            "doc_id": "01a1585f-db00-7e69-be52-b0956a5e75ca",
+            "chunk_id": "01a1585f-db08-7b3f-a1cc-104b3ef97b56",
+            "doc_version": 1,
+            "quote": "聚酯纤维 95%，氨纶 5%，防风防泼水，克重 320g。",
+            "effective_from": "2026-10-20T08:13:59.412Z",
+            "title": "风衣商品资料",
+            "source_type": "product",
+            "section_path": [
+              "风衣商品资料",
+              "面料"
+            ],
+            "score": 0.0161,
+            "uri": "product://smoke-e6e97920"
+          }
+        },
+        {
+          "title": "尺码表",
+          "score": 0.0159,
+          "vector_rank": 3,
+          "keyword_rank": null,
+          "citation": {
+            "doc_id": "01a1585f-db23-7d09-90ae-ab46eb781774",
+            "chunk_id": "01a1585f-db29-75c6-9b68-f3d645dd75a7",
+            "doc_version": 1,
+            "quote": "尺码 2XL：衣长 68cm，胸围 104cm，肩宽 46cm，袖长 61cm。建议身高 165–172cm。",
+            "effective_from": "2026-10-20T08:13:59.446Z",
+            "title": "尺码表",
+            "source_type": "size_chart",
+            "section_path": [
+              "尺码表",
+              "2XL"
+            ],
+            "score": 0.0159,
+            "uri": "size://smoke-e6e97920"
+          }
+        }
+      ]
+    },
+    {
+      "label": "退换→退货",
+      "query": "退换",
+      "expected_position": 1,
+      "degraded": false,
+      "mode": "hybrid",
+      "took_ms": 15,
+      "top3": [
+        {
+          "title": "退换货政策",
+          "score": 0.0293,
+          "vector_rank": 1,
+          "keyword_rank": 2,
+          "citation": {
+            "doc_id": "01a1585f-dad7-7141-83b7-0ac00c37fc94",
+            "chunk_id": "01a1585f-dadf-7638-afb3-44b8c8d57e1a",
+            "doc_version": 1,
+            "quote": "自签收次日起 7 天内，商品完好可申请退货退款。吊牌、包装必须完整。",
+            "effective_from": "2026-10-20T08:13:59.357Z",
+            "title": "退换货政策",
+            "source_type": "policy",
+            "section_path": [
+              "退换货政策",
+              "七天无理由"
+            ],
+            "score": 0.0293,
+            "uri": "policy://smoke-e6e97920"
+          }
+        },
+        {
+          "title": "退换货政策",
+          "score": 0.0292,
+          "vector_rank": 2,
+          "keyword_rank": 1,
+          "citation": {
+            "doc_id": "01a1585f-dad7-7141-83b7-0ac00c37fc94",
+            "chunk_id": "01a1585f-dae4-738a-b6db-4df264fab800",
+            "doc_version": 1,
+            "quote": "出现破损、色差、起球等质量问题，拍照留证后可退换，运费由卖家承担。",
+            "effective_from": "2026-10-20T08:13:59.357Z",
+            "title": "退换货政策",
+            "source_type": "policy",
+            "section_path": [
+              "退换货政策",
+              "质量问题"
+            ],
+            "score": 0.0292,
+            "uri": "policy://smoke-e6e97920"
+          }
+        },
+        {
+          "title": "尺码表",
+          "score": 0.0159,
+          "vector_rank": 3,
+          "keyword_rank": null,
+          "citation": {
+            "doc_id": "01a1585f-db23-7d09-90ae-ab46eb781774",
+            "chunk_id": "01a1585f-db29-75c6-9b68-f3d645dd75a7",
+            "doc_version": 1,
+            "quote": "尺码 2XL：衣长 68cm，胸围 104cm，肩宽 46cm，袖长 61cm。建议身高 165–172cm。",
+            "effective_from": "2026-10-20T08:13:59.446Z",
+            "title": "尺码表",
+            "source_type": "size_chart",
+            "section_path": [
+              "尺码表",
+              "2XL"
+            ],
+            "score": 0.0159,
+            "uri": "size://smoke-e6e97920"
+          }
+        }
+      ]
+    },
+    {
+      "label": "尺寸→尺码",
+      "query": "尺寸",
+      "expected_position": 1,
+      "degraded": false,
+      "mode": "hybrid",
+      "took_ms": 14,
+      "top3": [
+        {
+          "title": "尺码表",
+          "score": 0.0293,
+          "vector_rank": 1,
+          "keyword_rank": 2,
+          "citation": {
+            "doc_id": "01a1585f-db23-7d09-90ae-ab46eb781774",
+            "chunk_id": "01a1585f-db29-75c6-9b68-f3d645dd75a7",
+            "doc_version": 1,
+            "quote": "尺码 2XL：衣长 68cm，胸围 104cm，肩宽 46cm，袖长 61cm。建议身高 165–172cm。",
+            "effective_from": "2026-10-20T08:13:59.446Z",
+            "title": "尺码表",
+            "source_type": "size_chart",
+            "section_path": [
+              "尺码表",
+              "2XL"
+            ],
+            "score": 0.0293,
+            "uri": "size://smoke-e6e97920"
+          }
+        },
+        {
+          "title": "尺码表",
+          "score": 0.0292,
+          "vector_rank": 2,
+          "keyword_rank": 1,
+          "citation": {
+            "doc_id": "01a1585f-db23-7d09-90ae-ab46eb781774",
+            "chunk_id": "01a1585f-db2b-72ad-858b-871825460181",
+            "doc_version": 1,
+            "quote": "尺码 XL：衣长 66cm，胸围 100cm，肩宽 45cm，袖长 60cm。建议身高 160–168cm。",
+            "effective_from": "2026-10-20T08:13:59.446Z",
+            "title": "尺码表",
+            "source_type": "size_chart",
+            "section_path": [
+              "尺码表",
+              "XL"
+            ],
+            "score": 0.0292,
+            "uri": "size://smoke-e6e97920"
+          }
+        },
+        {
+          "title": "风衣商品资料",
+          "score": 0.0159,
+          "vector_rank": 3,
+          "keyword_rank": null,
+          "citation": {
+            "doc_id": "01a1585f-db00-7e69-be52-b0956a5e75ca",
+            "chunk_id": "01a1585f-db06-72a0-85bd-518eb2e9876b",
+            "doc_version": 1,
+            "quote": "2026 秋季女士中长款风衣，收腰显瘦，适合通勤。",
+            "effective_from": "2026-10-20T08:13:59.412Z",
+            "title": "风衣商品资料",
+            "source_type": "product",
+            "section_path": [
+              "风衣商品资料",
+              "版型"
+            ],
+            "score": 0.0159,
+            "uri": "product://smoke-e6e97920"
+          }
+        }
+      ]
+    }
+  ],
+  "degrade": {
+    "degraded": true,
+    "mode": "keyword",
+    "reason": "embed_unavailable",
+    "hit_count": 2
+  },
+  "soft_delete": {
+    "delete_status": 200,
+    "delete_body": {
+      "request_id": "req_01M5C5ZPWRDB98J6ATRYBY94B7",
+      "data": {
+        "id": "01a1585f-dad7-7141-83b7-0ac00c37fc94",
+        "status": "archived",
+        "archived_at": "2026-10-20T08:13:59.578Z"
+      }
+    },
+    "before_hits": 5,
+    "after_hits": 4,
+    "policy_still_hit": false
+  }
+}

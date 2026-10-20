@@ -1,7 +1,24 @@
 /**
- * apps/worker —— BullMQ worker 入口（M1 骨架）。
+ * apps/worker —— worker 入口。
  *
- * 后续在此注册队列：media / sync / reconcile / notify / batch。
- * 约束：worker 不对外提供 API，只消费队列并把状态写回 Postgres。
+ * M6：媒体管线已实现（轮询 media_job → mock provider → MinIO → 变体 → 成本/配额）。
+ * 设置 MEDIA_WORKER_ENABLED=1 时启动媒体轮询循环；未设置时只导出模块，便于测试与后续
+ * BullMQ 队列接入（sync / reconcile / notify / batch 仍待实现）。
  */
-export const WORKER_SERVICE = '@dssaas/worker';
+export { WORKER_SERVICE } from './service.js';
+
+export * from './media/index.js';
+
+import { startMediaWorker } from './media/poller.js';
+
+if (process.env.MEDIA_WORKER_ENABLED === '1') {
+  const stop = startMediaWorker();
+  process.on('SIGINT', () => {
+    stop();
+    process.exit(0);
+  });
+  process.on('SIGTERM', () => {
+    stop();
+    process.exit(0);
+  });
+}

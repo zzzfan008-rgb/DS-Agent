@@ -7,7 +7,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { serviceContext } from '../lib/service-context.js';
-import { getRealtimeHub, renderRealtimeFrame, type RealtimeEvent } from '../realtime/hub.js';
+import { getRealtimeHub, loadEventLogReplay, renderRealtimeFrame, type RealtimeEvent } from '../realtime/hub.js';
 import { unreadSnapshot } from '../services/conversations.js';
 import { getM5Services } from '../services/m5.js';
 import {
@@ -102,49 +102,12 @@ export function registerEventRoutes(app: FastifyInstance): void {
 
       res.on('close', cleanup);
       try {
-        const latest = await app.prisma.eventLog.findFirst({ orderBy: { seq: 'desc' }, select: { seq: true } });
-        const oldest = await app.prisma.eventLog.findFirst({ orderBy: { seq: 'asc' }, select: { seq: true } });
-        const currentSeq = latest ? Number(latest.seq) : hub.currentSeq;
+        const replay = await loadEventLogReplay(app.prisma, lastEventId);
+        const currentSeq = replay.currentSeq || hub.currentSeq;
         const snapshot = await unreadSnapshot(conversations, context.userId, currentSeq);
         write(snapshotFrame(snapshot as unknown as Record<string, unknown>, currentSeq));
-
-        let resyncReason: string | null = null;
-        const replayEvents: RealtimeEvent[] = [];
-        if (lastEventId && lastEventId !== '') {
-          if (!/^\d{1,18}$/.test(lastEventId)) {
-            resyncReason = 'unknown_id';
-          } else {
-            const last = BigInt(lastEventId);
-            if (!latest) {
-              resyncReason = 'expired';
-            } else if (last > latest.seq) {
-              resyncReason = 'ahead';
-            } else if (oldest && last < oldest.seq - 1n) {
-              resyncReason = 'expired';
-            } else {
-              const rows = await app.prisma.eventLog.findMany({
-                where: { seq: { gt: last } },
-                orderBy: { seq: 'asc' },
-                take: 501,
-              });
-              if (rows.length > 500) {
-                resyncReason = 'expired';
-              } else {
-                for (const row of rows) {
-                  replayEvents.push({
-                    seq: Number(row.seq),
-                    eventId: String(row.seq),
-                    type: row.topic as RealtimeEvent['type'],
-                    ts: row.createdAt.toISOString(),
-                    payload: (row.payload ?? {}) as Record<string, unknown>,
-                  });
-                }
-              }
-            }
-          }
-        }
-        if (resyncReason) write(resyncFrame(resyncReason, currentSeq));
-        for (const event of replayEvents) {
+        if (replay.resyncReason) write(resyncFrame(replay.resyncReason, currentSeq));
+        for (const event of replay.events) {
           if (topicAllowed(event.type)) write(renderRealtimeFrame(event, request.requestId));
         }
         unsubscribe = hub.subscribe((event: RealtimeEvent) => {

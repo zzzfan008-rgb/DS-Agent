@@ -1,0 +1,626 @@
+/* 商品库（列表 / 详情 / 新建 / 导入） */
+
+.tableCard {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.spuLink {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--brand-700);
+  white-space: nowrap;
+}
+
+.nameLink {
+  color: var(--ink-900);
+  font-weight: 500;
+}
+
+.nameLink:hover {
+  color: var(--brand-700);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.categoryInput {
+  width: 110px;
+  height: 34px;
+  min-height: 34px;
+  font-size: 12.5px;
+  text-transform: uppercase;
+}
+
+.missingRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* ---------------- 详情 ---------------- */
+
+.backRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-500);
+  font-size: 12.5px;
+}
+
+.backLink:hover {
+  color: var(--brand-600);
+}
+
+.detailHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.detailTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.detailTitle {
+  color: var(--ink-900);
+  font-size: 20px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.detailMeta {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  color: var(--ink-500);
+  font-size: 12px;
+}
+
+.tabBar {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabBar::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  position: relative;
+  padding: 9px 13px 10px;
+  color: var(--ink-500);
+  font-size: 12.5px;
+  white-space: nowrap;
+  border-radius: 7px 7px 0 0;
+}
+
+.tab:hover {
+  background: var(--surface-muted);
+  color: var(--ink-900);
+}
+
+.tabActive,
+.tabActive:hover {
+  color: var(--brand-700);
+  font-weight: 600;
+  background: transparent;
+}
+
+.tabActive::after {
+  content: "";
+  position: absolute;
+  left: 11px;
+  right: 11px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--brand-600);
+}
+
+.colorCell {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.swatch {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.colorMeta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.colorCode {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-500);
+}
+
+.swatchHint {
+  color: var(--ink-400);
+  font-size: 10.5px;
+}
+
+/* 尺码表 */
+
+.versionTabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.versionTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-600, #475569);
+  font-size: 12px;
+}
+
+.versionTab:hover {
+  border-color: var(--brand-600);
+  color: var(--brand-700);
+}
+
+.versionActive {
+  border-color: #bfdbfe;
+  background: var(--brand-50);
+  color: var(--brand-700);
+  font-weight: 600;
+}
+
+.inferenceNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+  color: var(--ink-500);
+  font-size: 11.5px;
+  line-height: 1.6;
+  background: #fbfdff;
+}
+
+.sizeTableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.sizeTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 680px;
+}
+
+.sizeTable th,
+.sizeTable td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sizeTable th:first-child,
+.sizeTable td:first-child {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+
+.sizeTable thead th {
+  background: var(--surface-muted);
+  color: var(--ink-500);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+.sizeTable tbody tr:last-child th,
+.sizeTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* 成分 */
+
+.fabricGroup {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.fabricGroup + .fabricGroup {
+  margin-top: 10px;
+}
+
+.fabricHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.fabricTitle {
+  color: var(--ink-900);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.fabricRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fabricRow {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 64px;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.fabricName {
+  color: var(--ink-700);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fabricPercent {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-700);
+}
+
+.fabricBar {
+  height: 9px;
+  border-radius: 999px;
+  background: #eef2f7;
+  overflow: hidden;
+}
+
+.fabricBarInner {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #93c5fd, #2563eb);
+}
+
+.fabricBarWarn {
+  background: linear-gradient(90deg, #fcd34d, #d97706);
+}
+
+/* 素材 */
+
+.mediaPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--ink-500);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+/* ---------------- 新建 ---------------- */
+
+.formStack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.formGrid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.skuEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.skuHead,
+.skuRow {
+  display: grid;
+  grid-template-columns: 92px 100px 72px 92px 92px 92px 70px 64px 86px 32px;
+  gap: 7px;
+  align-items: center;
+  min-width: 880px;
+}
+
+.skuHead {
+  color: var(--ink-500);
+  font-size: 10.5px;
+}
+
+.skuRow input,
+.skuRow select {
+  height: 34px;
+  min-height: 34px;
+  padding: 0 8px;
+  font-size: 12px;
+  width: 100%;
+}
+
+.rowDelete {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  color: var(--ink-400);
+}
+
+.rowDelete:hover {
+  background: #fef2f2;
+  color: var(--danger);
+}
+
+.materialRow {
+  display: grid;
+  grid-template-columns: 150px 84px 100px minmax(0, 1fr) 32px;
+  gap: 8px;
+  align-items: center;
+}
+
+.materialRow select,
+.materialRow input {
+  height: 34px;
+  min-height: 34px;
+  font-size: 12px;
+  width: 100%;
+}
+
+.totalMeter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.totalOk {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.totalBad {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.sizeRow {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.sizeRowHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.sizeMeasureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 8px;
+}
+
+.sizeMeasureGrid label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--ink-500);
+  font-size: 10.5px;
+}
+
+.sizeMeasureGrid input {
+  height: 30px;
+  min-height: 30px;
+  padding: 0 7px;
+  font-size: 12px;
+}
+
+.stickyFoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -6px 18px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(6px);
+}
+
+.helperNote {
+  color: var(--ink-500);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+/* ---------------- 导入 ---------------- */
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 36px 20px;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 12px;
+  background: #fbfdff;
+  text-align: center;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.dropzone:hover {
+  border-color: var(--brand-600);
+  background: var(--brand-50);
+}
+
+.dropzoneTitle {
+  color: var(--ink-900);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dropzoneHint {
+  color: var(--ink-500);
+  font-size: 11.5px;
+  line-height: 1.7;
+  max-width: 560px;
+}
+
+.fileInput {
+  display: none;
+}
+
+.fileName {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-700);
+  word-break: break-all;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.summaryCard {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-muted);
+}
+
+.summaryValue {
+  color: var(--ink-900);
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.summaryLabel {
+  color: var(--ink-500);
+  font-size: 11px;
+}
+
+.failedTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.failedTable th,
+.failedTable td {
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.failedTable th {
+  color: var(--ink-500);
+  font-size: 10.5px;
+  font-weight: 500;
+  background: var(--surface-muted);
+}
+
+@media (max-width: 900px) {
+  .formGrid,
+  .formGrid3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .materialRow {
+    grid-template-columns: 1fr 80px 90px 32px;
+  }
+
+  .materialRow > :nth-child(4) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 767px) {
+  .detailTitle {
+    font-size: 17px;
+  }
+
+  .fabricRow {
+    grid-template-columns: 80px minmax(0, 1fr) 56px;
+  }
+
+  .stickyFoot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stickyFoot button {
+    width: 100%;
+  }
+}

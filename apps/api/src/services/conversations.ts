@@ -259,21 +259,21 @@ export async function getConversation(
   });
   if (!conversation) throw new ApiError('not_found', '会话不存在');
 
-  let afterAt: Date | null = null;
+  let afterSeq: bigint | null = null;
   if (query.messages_after) {
     const after = await deps.prisma.message.findFirst({
       where: { id: query.messages_after, conversationId: id },
-      select: { sentAt: true, createdAt: true },
+      select: { eventSeq: true },
     });
-    afterAt = after?.sentAt ?? after?.createdAt ?? null;
+    afterSeq = after?.eventSeq ?? null;
   }
   const messages = await deps.prisma.message.findMany({
     where: {
       conversationId: id,
       archivedAt: null,
-      ...(afterAt ? { sentAt: { gt: afterAt } } : {}),
+      ...(afterSeq ? { eventSeq: { gt: afterSeq } } : {}),
     },
-    orderBy: [{ sentAt: 'asc' }, { createdAt: 'asc' }],
+    orderBy: [{ eventSeq: 'asc' }],
     take: query.limit,
   });
   const messageIds = messages.map((message) => message.id);
