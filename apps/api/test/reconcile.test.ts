@@ -45,6 +45,7 @@ import { uuidv7 } from '../src/lib/ids.js';
 import { ApiError } from '../src/lib/errors.js';
 import { assertRecordedAllowed } from '../src/lib/adapter-refusal.js';
 import type {
+  DetectedDrift,
   LocalAfterSaleSnapshot,
   LocalListingSnapshot,
   LocalOrderSnapshot,
@@ -225,20 +226,71 @@ test('订单差异：平台有本地无 / 本地有平台无 / 金额 / 状态�
   assert.deepEqual(again.map((drift) => drift.drift_key), drifts.map((drift) => drift.drift_key));
 });
 
-test('售后差异：退款金额不符 / 平台已关闭本地仍 open 2 类各一条', async () => {
+test('售后差异：退款金额不符 / 平台已关闭本地仍 open / 平台有本地无（D12）3 类各一条', async () => {
   const snapshot = await recordedSnapshot();
   const drifts = diffAfterSales(LOCAL_AFTER_SALES, snapshot, { platform: '1688', day: DAY, now: '2026-10-20T02:30:00.000Z' });
-  assert.deepEqual(drifts.map((drift) => drift.kind).sort(), ['after_sale_amount_mismatch', 'after_sale_status_mismatch']);
+  assert.deepEqual(drifts.map((drift) => drift.kind).sort(), [
+    'after_sale_amount_mismatch',
+    'after_sale_platform_only',
+    'after_sale_status_mismatch',
+  ]);
   const status = drifts.find((drift) => drift.kind === 'after_sale_status_mismatch');
   assert.match(status!.detail, /平台已关闭，本地仍 open/);
   assert.equal(status?.severity, 'high');
+
+  // D12：平台有 ALI-AS-9003，本地完全没有 → 报 high + manual，local 为 null
+  const platformOnly = drifts.find((drift) => drift.kind === 'after_sale_platform_only');
+  assert.equal(platformOnly?.subject.platform_after_sale_id, 'ALI-AS-9003');
+  assert.equal(platformOnly?.subject.platform_order_id, 'ALI-ORDER-1003');
+  assert.equal(platformOnly?.severity, 'high');
+  assert.equal(platformOnly?.local, null);
+  assert.deepEqual(platformOnly?.suggested_action, { level: 'B', kind: 'manual' });
+  assert.match(platformOnly!.detail, /没有任何记录/);
+  assert.match(platformOnly!.detail, /绕过系统退款/);
+
+  // 本地有同 id 的售后单（9001/9002）只报金额/状态差异，不重复报"本地无"
+  const reportedIds = drifts
+    .filter((drift) => drift.kind === 'after_sale_platform_only')
+    .map((drift) => drift.subject.platform_after_sale_id);
+  assert.deepEqual(reportedIds, ['ALI-AS-9003']);
+
   for (const drift of drifts) {
     assert.equal(drift.suggestion.auto_fixable, false);
     assert.equal(drift.subject.type, 'after_sale');
+    assert.equal(drift.key_version, 2);
   }
 });
 
-test('全维度对账：商品 6 + 订单 5 + 售后 2 = 13 条，drift_key 唯一', async () => {
+test('D12 三种情形：平台有本地无 → 报；平台有本地有但金额不同 → 只报金额；一致 → 不报', async () => {
+  const snapshot = await recordedSnapshot();
+  const options = { platform: '1688' as const, day: DAY, now: '2026-10-20T02:30:00.000Z' };
+
+  // ① 平台有、本地无（9003 本地没有任何记录）
+  const onlyPlatform = diffAfterSales(LOCAL_AFTER_SALES, snapshot, options);
+  assert.deepEqual(
+    onlyPlatform.filter((drift) => drift.kind === 'after_sale_platform_only').map((drift) => drift.subject.platform_after_sale_id),
+    ['ALI-AS-9003'],
+  );
+
+  // ② 平台有、本地有但金额不同（9001）：只报 amount，不报 platform_only
+  const localWithMismatch = [{ ...LOCAL_AFTER_SALES[0]!, amountCents: 4000 }];
+  const mismatch = diffAfterSales(localWithMismatch, snapshot, options);
+  const kindsFor9001 = mismatch
+    .filter((drift) => drift.subject.platform_after_sale_id === 'ALI-AS-9001')
+    .map((drift) => drift.kind)
+    .sort();
+  assert.deepEqual(kindsFor9001, ['after_sale_amount_mismatch']);
+
+  // ③ 两边都有且完全一致 → 该售后单零差异（9002 平台 closed / 本地也 closed / 金额同）
+  const allConsistent = [
+    { afterSaleId: 'l-9001', platformAfterSaleId: 'ALI-AS-9001', platformOrderId: 'ALI-ORDER-1004', status: 'open', amountCents: 5000 },
+    { afterSaleId: 'l-9002', platformAfterSaleId: 'ALI-AS-9002', platformOrderId: 'ALI-ORDER-1005', status: 'closed', amountCents: 15800 },
+    { afterSaleId: 'l-9003', platformAfterSaleId: 'ALI-AS-9003', platformOrderId: 'ALI-ORDER-1003', status: 'refunding', amountCents: 15800 },
+  ];
+  assert.deepEqual(diffAfterSales(allConsistent, snapshot, options), []);
+});
+
+test('全维度对账：商品 6 + 订单 5 + 售后 3 = 14 条，drift_key 唯一', async () => {
   const snapshot = await recordedSnapshot();
   const drifts = diffAll(
     {
@@ -249,8 +301,8 @@ test('全维度对账：商品 6 + 订单 5 + 售后 2 = 13 条，drift_key 唯�
     snapshot,
     { platform: '1688', day: DAY, now: '2026-10-20T02:30:00.000Z' },
   );
-  assert.equal(drifts.length, 13);
-  assert.equal(new Set(drifts.map((drift) => drift.drift_key)).size, 13);
+  assert.equal(drifts.length, 14);
+  assert.equal(new Set(drifts.map((drift) => drift.drift_key)).size, 14);
   assert.deepEqual(countByKind(drifts), {
     platform_only_listing: 1,
     local_published_missing_platform: 1,
@@ -265,6 +317,7 @@ test('全维度对账：商品 6 + 订单 5 + 售后 2 = 13 条，drift_key 唯�
     order_item_mismatch: 1,
     after_sale_amount_mismatch: 1,
     after_sale_status_mismatch: 1,
+    after_sale_platform_only: 1,
   });
 });
 
@@ -297,7 +350,7 @@ test('drift_key 规则：商品/订单/售后分别由对象 id 定位；空值�
   );
 });
 
-test('suggested_action：13 类差异都带 {level,kind}，级别取最重的写/人工动作', async () => {
+test('suggested_action：14 类差异都带 {level,kind}，级别取最重的写/人工动作', async () => {
   const snapshot = await recordedSnapshot();
   const drifts = diffAll(
     {
@@ -322,9 +375,10 @@ test('suggested_action：13 类差异都带 {level,kind}，级别取最重的写
     order_amount_mismatch: { level: 'B', kind: 'manual' },
     order_status_mismatch: { level: 'B', kind: 'manual' },
     order_item_mismatch: { level: 'B', kind: 'manual' },
-    // 售后维度：退款金额涉及资金 → C 级人工；状态 B 级人工
+    // 售后维度：退款金额涉及资金 → C 级人工；状态 B 级人工；平台独有 → 人工核对同步/绕过系统
     after_sale_amount_mismatch: { level: 'C', kind: 'manual' },
     after_sale_status_mismatch: { level: 'B', kind: 'manual' },
+    after_sale_platform_only: { level: 'B', kind: 'manual' },
   };
   assert.equal(drifts.length, Object.keys(expected).length);
   for (const drift of drifts) {
@@ -346,7 +400,8 @@ test('suggested_action：13 类差异都带 {level,kind}，级别取最重的写
   )[0]!.suggested_action);
 });
 
-test('不完整快照：跳过“本地有平台无”的推断（商品/订单/售后），避免样本不全误报', async () => {  const incomplete: PlatformSnapshot = {
+test('不完整快照：跳过“本地有平台无”的推断（商品/订单/售后），避免样本不全误报', async () => {
+  const incomplete: PlatformSnapshot = {
     platform: 'pdd',
     capturedAt: '2026-10-20T02:00:00.000Z',
     source: 'recorded',
@@ -435,12 +490,87 @@ test('PgDriftStore：真实 drift_log upsert 幂等、detail jsonb 承载扩展�
     assert.ok(row);
     assert.equal(row!.subject.type, 'sku');
     assert.equal(row!.suggestion.auto_fixable, false);
+    assert.equal(row!.key_version, 2, 'detail->>key_version 必须写当前版本');
     assert.equal(row!.seen_count, 2);
     assert.equal(row!.first_detected_at, row!.detected_at);
     assert.equal(await store.count(day, '1688', 'price_mismatch'), 1);
     assert.equal((await store.countByKind(day, '1688')).price_mismatch, 1);
   } finally {
     await prisma.$executeRawUnsafe(`DELETE FROM drift_log WHERE day = $1::date AND platform = '1688'`, day);
+  }
+});
+
+test('D13：旧 key_version 行保留但不参与统计；切版本零风险（无需人工清理）', async () => {
+  const store = new PgDriftStore(prisma);
+  const snapshot = await recordedSnapshot();
+  const day = addDays(DAY, 2);
+  const detected = diffSnapshots(LOCAL_LISTINGS, snapshot, { platform: '1688', day, now: '2026-10-22T02:30:00.000Z' });
+  const v2Count = detected.length;
+  try {
+    await store.upsert('1688', day, detected);
+    assert.equal(await store.count(day, '1688'), v2Count);
+
+    // 手工插入一条 v1 行（模拟切换前遗留）：不同 drift_key，detail 里没有 key_version。
+    const legacyKey = `dk_${'1'.repeat(32)}`;
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO drift_log (id, org_id, platform, day, drift_key, kind, severity, detail, detected_at)
+       VALUES (gen_random_uuid(), 1, '1688', $1::date, $2, 'price_mismatch', 'medium',
+               '{"text":"v1 遗留行","status":"open","seen_count":1,"first_detected_at":"2026-10-22T00:00:00.000Z","last_detected_at":"2026-10-22T00:00:00.000Z"}'::jsonb,
+               '2026-10-22T00:00:00.000Z'::timestamptz)`,
+      day,
+      legacyKey,
+    );
+
+    // 统计只计当前版本 → v1 行被排除，总数不变。
+    assert.equal(await store.count(day, '1688'), v2Count, 'v1 行不得计入统计');
+    assert.equal((await store.countByKind(day, '1688')).price_mismatch, 1, 'v1 行的 kind 不得计入');
+    const listed = await store.list(day, '1688');
+    assert.equal(listed.length, v2Count);
+    assert.ok(listed.every((row) => row.key_version === 2));
+
+    // 库里两版共存（v1 没被删），证明"保留但不参与"而不是"删掉"。
+    const physical = await prisma.$queryRawUnsafe<Array<{ n: number }>>(
+      `SELECT count(*)::int AS n FROM drift_log WHERE platform = '1688' AND day = $1::date AND archived_at IS NULL`,
+      day,
+    );
+    assert.equal(physical[0]?.n, v2Count + 1, 'v1 行必须仍在表里（不删）');
+
+    // 同日重跑：只更新 v2 行，不因 v1 存在而多出行。
+    const again = await store.upsert('1688', day, detected);
+    assert.equal(again.inserted, 0);
+    assert.equal(await store.count(day, '1688'), v2Count);
+    const after = await prisma.$queryRawUnsafe<Array<{ n: number }>>(
+      `SELECT count(*)::int AS n FROM drift_log WHERE platform = '1688' AND day = $1::date AND archived_at IS NULL`,
+      day,
+    );
+    assert.equal(after[0]?.n, v2Count + 1, '重跑不得新增行');
+  } finally {
+    await prisma.$executeRawUnsafe(`DELETE FROM drift_log WHERE day = $1::date AND platform = '1688'`, day);
+  }
+});
+
+test('D13：内存/文件存储同样只统计当前 key_version', async () => {
+  const snapshot = await recordedSnapshot();
+  const detected = diffSnapshots(LOCAL_LISTINGS, snapshot, { platform: '1688', day: DAY, now: '2026-10-20T02:30:00.000Z' });
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'dssaas-drift-keyver-'));
+  try {
+    for (const store of [new MemoryDriftStore(), new FileDriftStore(dir)]) {
+      await store.upsert('1688', DAY, detected);
+      const current = detected.length;
+      assert.equal(await store.count(DAY, '1688'), current);
+      // 混入一条 v1 记录：list/count 都只取当前版本。
+      const legacy: DetectedDrift = {
+        ...detected[0]!,
+        drift_key: `dk_${'2'.repeat(32)}`,
+        key_version: 1,
+      };
+      await store.upsert('1688', DAY, [legacy]);
+      assert.equal(await store.count(DAY, '1688'), current, `${store.name}: v1 行不得计入统计`);
+      const rows = await store.list(DAY, '1688');
+      assert.ok(rows.every((row) => row.key_version === 2), `${store.name}: list 只返回当前版本`);
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
   }
 });
 
@@ -789,7 +919,7 @@ after(async () => {
 
 // ---------------------------------------------------------------- 集成：对账（postgres）
 
-test('POST /api/reconcile/1688（postgres）：13 条差异（商品6+订单5+售后2），同日重复 inserted=0/updated=13', async () => {
+test('POST /api/reconcile/1688（postgres）：14 条差异（商品6+订单5+售后3），同日重复 inserted=0/updated=14', async () => {
   const first = await fixture.app.inject({
     method: 'POST',
     url: '/api/reconcile/1688',
@@ -803,6 +933,7 @@ test('POST /api/reconcile/1688（postgres）：13 条差异（商品6+订单5+�
     drift: { inserted: number; updated: number; unchanged: number };
     store: string;
     store_note: string;
+    key_version: number;
     snapshot: { source: string; verified: boolean; complete: boolean; orders_complete: boolean };
     checked: {
       orders: { checked: boolean; local_orders: number; platform_orders: number };
@@ -820,7 +951,7 @@ test('POST /api/reconcile/1688（postgres）：13 条差异（商品6+订单5+�
   };
   assert.equal(body.store, 'postgres');
   assert.equal(body.store_note, 'RECONCILE_STORE=postgres（drift_log）');
-  assert.equal(body.summary.total, 13);
+  assert.equal(body.summary.total, 14);
   assert.equal(body.summary.by_kind.price_mismatch, 1);
   assert.equal(body.summary.by_kind.order_platform_only, 1);
   assert.equal(body.summary.by_kind.order_local_only, 1);
@@ -829,19 +960,21 @@ test('POST /api/reconcile/1688（postgres）：13 条差异（商品6+订单5+�
   assert.equal(body.summary.by_kind.order_item_mismatch, 1);
   assert.equal(body.summary.by_kind.after_sale_amount_mismatch, 1);
   assert.equal(body.summary.by_kind.after_sale_status_mismatch, 1);
+  assert.equal(body.summary.by_kind.after_sale_platform_only, 1, 'D12：平台有本地无的售后必须报');
+  assert.equal(body.key_version, 2, 'D13：响应必须声明当前 key_version');
   assert.equal(body.checked.orders.checked, true);
   assert.equal(body.checked.orders.local_orders, 5);
   assert.equal(body.checked.orders.platform_orders, 5);
   assert.equal(body.checked.after_sale.checked, true);
   assert.equal(body.checked.after_sale.local_after_sales, 2);
-  assert.equal(body.checked.after_sale.platform_after_sales, 2);
+  assert.equal(body.checked.after_sale.platform_after_sales, 3);
   assert.equal(body.snapshot.orders_complete, true);
-  assert.equal(body.persisted.inserted, 13);
+  assert.equal(body.persisted.inserted, 14);
   assert.ok(body.diffs.every((drift) => Array.isArray(drift.suggestion.actions)));
-  assert.equal(new Set(body.diffs.map((drift) => drift.drift_key)).size, 13);
+  assert.equal(new Set(body.diffs.map((drift) => drift.drift_key)).size, 14);
 
   // docs/12 §3.11 契约视图：items[{drift_key,kind,severity,subject_ref,suggested_action,auto_fixable}]
-  assert.equal(body.items.length, 13);
+  assert.equal(body.items.length, 14);
   assert.deepEqual(
     body.items.map((item) => item.drift_key).sort(),
     body.diffs.map((drift) => drift.drift_key).sort(),
@@ -852,13 +985,13 @@ test('POST /api/reconcile/1688（postgres）：13 条差异（商品6+订单5+�
   assert.equal(orderOnlyItem?.subject_ref.type, 'order');
   assert.equal(orderOnlyItem?.subject_ref.platform_order_id, 'ALI-ORDER-1003');
   assert.deepEqual(orderOnlyItem?.suggested_action, { level: null, kind: 'manual' });
-  assert.deepEqual(body.drift, { inserted: 13, updated: 0, unchanged: 0 });
+  assert.deepEqual(body.drift, { inserted: 14, updated: 0, unchanged: 0 });
 
   const dbRows = await prisma.$queryRawUnsafe<Array<{ kind: string; n: number }>>(
     `SELECT kind, count(*)::int AS n FROM drift_log WHERE platform = '1688' AND day = $1::date AND archived_at IS NULL GROUP BY kind`,
     DAY,
   );
-  assert.equal(dbRows.reduce((sum, row) => sum + row.n, 0), 13);
+  assert.equal(dbRows.reduce((sum, row) => sum + row.n, 0), 14);
   assert.ok(dbRows.some((row) => row.kind === 'after_sale_status_mismatch'));
 
   const second = await fixture.app.inject({
@@ -872,15 +1005,15 @@ test('POST /api/reconcile/1688（postgres）：13 条差异（商品6+订单5+�
     persisted: { inserted: number; updated: number };
     summary: { total: number };
   };
-  assert.equal(secondBody.summary.total, 13);
+  assert.equal(secondBody.summary.total, 14);
   assert.equal(secondBody.persisted.inserted, 0, '同日重复对账不得新增');
-  assert.equal(secondBody.persisted.updated, 13);
+  assert.equal(secondBody.persisted.updated, 14);
 
   const count = await prisma.$queryRawUnsafe<Array<{ n: number }>>(
     `SELECT count(*)::int AS n FROM drift_log WHERE platform = '1688' AND day = $1::date AND archived_at IS NULL`,
     DAY,
   );
-  assert.equal(count[0]?.n, 13);
+  assert.equal(count[0]?.n, 14);
   const seen = await prisma.$queryRawUnsafe<Array<{ seen: string | null }>>(
     `SELECT detail->>'seen_count' AS seen FROM drift_log WHERE platform = '1688' AND day = $1::date AND kind = 'price_mismatch' LIMIT 1`,
     DAY,
@@ -888,7 +1021,7 @@ test('POST /api/reconcile/1688（postgres）：13 条差异（商品6+订单5+�
   assert.equal(seen[0]?.seen, '2');
 });
 
-test('POST /api/reconcile/1688（file，显式）：store=file、13 条、同日重复不新增', async () => {
+test('POST /api/reconcile/1688（file，显式）：store=file、14 条、同日重复不新增', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'dssaas-t43-file-'));
   const fileApp = await buildTestApp({
     RECONCILE_STORE: 'file',
@@ -909,8 +1042,8 @@ test('POST /api/reconcile/1688（file，显式）：store=file、13 条、同日
     assert.equal(first.statusCode, 200, first.body);
     const firstBody = JSON.parse(first.body).data as { store: string; summary: { total: number }; persisted: { inserted: number } };
     assert.equal(firstBody.store, 'file');
-    assert.equal(firstBody.summary.total, 13);
-    assert.equal(firstBody.persisted.inserted, 13);
+    assert.equal(firstBody.summary.total, 14);
+    assert.equal(firstBody.persisted.inserted, 14);
 
     const second = await fileApp.inject({
       method: 'POST',
@@ -920,12 +1053,12 @@ test('POST /api/reconcile/1688（file，显式）：store=file、13 条、同日
     });
     const secondBody = JSON.parse(second.body).data as { persisted: { inserted: number; updated: number } };
     assert.equal(secondBody.persisted.inserted, 0);
-    assert.equal(secondBody.persisted.updated, 13);
+    assert.equal(secondBody.persisted.updated, 14);
 
     const file = JSON.parse(await readFile(path.join(dir, DAY, '1688.json'), 'utf8')) as {
       items: Array<{ seen_count: number; kind: string }>;
     };
-    assert.equal(file.items.length, 13);
+    assert.equal(file.items.length, 14);
     assert.ok(file.items.every((item) => item.seen_count >= 2));
     assert.ok(file.items.some((item) => item.kind === 'order_item_mismatch'));
   } finally {
@@ -1045,7 +1178,7 @@ test('POST /api/sync/pdd stock：无 sink → 只推进游标，dry_run=true', a
 
 // ---------------------------------------------------------------- 集成：日报
 
-test('GET /api/dashboard/daily：指标完整、差异数来自 drift_log（13）、阈值告警随响应', async () => {
+test('GET /api/dashboard/daily：指标完整、差异数来自 drift_log（14）、阈值告警随响应', async () => {
   const response = await fixture.app.inject({
     method: 'GET',
     url: `/api/dashboard/daily?date=${DAY}&platform=1688`,
@@ -1071,11 +1204,11 @@ test('GET /api/dashboard/daily：指标完整、差异数来自 drift_log（13�
   assert.ok(data.metrics.approvals_pending >= 1);
   assert.ok(data.metrics.messages >= 1);
   assert.ok(data.metrics.media_cost_cents >= 1234, '媒体成本为全局口径，可能包含其他用例写入');
-  assert.equal(data.metrics.drift_total, 13);
+  assert.equal(data.metrics.drift_total, 14);
   assert.equal(data.metrics.drift_by_kind.order_item_mismatch, 1);
   assert.equal(data.thresholds_configured, true);
   assert.equal(data.drift_store.name, 'postgres');
-  assert.ok(data.alerts.some((alert) => alert.metric === 'drift_total' && alert.value === 13 && alert.threshold === 12));
+  assert.ok(data.alerts.some((alert) => alert.metric === 'drift_total' && alert.value === 14 && alert.threshold === 12));
 });
 
 test('日报组装 + 告警落库幂等：同日同指标只写一条 event_log', async () => {
@@ -1088,7 +1221,7 @@ test('日报组装 + 告警落库幂等：同日同指标只写一条 event_log'
     platform: null,
     thresholds: { drift_total: 12 },
   });
-  assert.equal(report.metrics.drift_total, 13);
+  assert.equal(report.metrics.drift_total, 14);
   assert.ok(report.alerts.some((alert) => alert.metric === 'drift_total'));
 
   const first = await persistAlerts({ prisma, day: DAY, platform: null, alerts: report.alerts });
@@ -1112,7 +1245,7 @@ test('未配置阈值：日报只报事实、alerts 为空', async () => {
   });
   assert.equal(report.alerts.length, 0);
   assert.equal(report.thresholds_configured, false);
-  assert.equal(report.metrics.drift_total, 13);
+  assert.equal(report.metrics.drift_total, 14);
 });
 
 test('日报指标：平台过滤与成本口径（global）', async () => {

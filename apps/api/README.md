@@ -20,14 +20,15 @@ pnpm --filter @dssaas/api typecheck
 |---|---|---|---|
 | POST | `/api/sync/:platform` | operator | 同步（`{resource, since?, cursor?}`）；`orders` 真实落库 `orders`+`order_items`（`dry_run:false`），其余资源只推进游标（`dry_run:true`）；返回 202、`sync_id/cursor/pages/stats` |
 | GET | `/api/sync/status` | viewer | `items[{platform,resource,status,last_success_at,cursor,lag_seconds,errors}]` + `stale` |
-| POST | `/api/reconcile/:platform` | admin | 平台快照 vs 本地 listing/订单/售后 → 差异清单（商品 6 + 订单 5 + 售后 2 类）；`{day?, mode?:"recorded"\|"adapter"}` |
+| POST | `/api/reconcile/:platform` | admin | 平台快照 vs 本地 listing/订单/售后 → 差异清单（商品 6 + 订单 5 + 售后 3 类）；`{day?, mode?:"recorded"\|"adapter"}` |
 | GET | `/api/dashboard/daily` | viewer | `?date=YYYY-MM-DD&platform=pdd\|1688`：上架/驳回/审批积压/消息/媒体成本/差异数 + 告警 |
 
 `POST /api/reconcile/:platform` 响应同时给两种视图（同源，不重复计算）：
 
 - `items[{drift_key,kind,severity,subject_ref,suggested_action{level,kind},auto_fixable:false}]` —— docs/12 §3.11 契约视图；
 - `diffs[...]` —— 完整差异（含 `local/platform_value/detail/suggestion.actions`），供人工核对与归档；
-- `drift{inserted,updated,unchanged}` 是 `persisted` 的契约别名。
+- `drift{inserted,updated,unchanged}` 是 `persisted` 的契约别名；
+- `key_version` —— 当前 `drift_key` 规则版本；统计只取该版本的行（旧版本行保留不删、不参与统计）。
 
 ### 每日任务
 

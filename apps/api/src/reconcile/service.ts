@@ -22,6 +22,7 @@ import type {
   Platform,
   PlatformSnapshot,
 } from './types.js';
+import { CURRENT_DRIFT_KEY_VERSION } from './types.js';
 
 export interface ReconcileRunInput {
   day: string;
@@ -49,6 +50,11 @@ export interface ReconcileRunResult {
   };
   store: DriftStore['name'];
   store_note: string;
+  /**
+   * `drift_key` 规则版本（D13）。统计与日报只取该版本的行；旧版本行保留但不参与，
+   * 因此版本切换不需要人工清理。
+   */
+  key_version: number;
   checked: {
     local_listings: number;
     platform_items: number;
@@ -323,6 +329,7 @@ export class ReconcileService {
       },
       store: this.store.name,
       store_note: this.storeNote,
+      key_version: CURRENT_DRIFT_KEY_VERSION,
       checked: {
         local_listings: local.length,
         platform_items: snapshot.items.length,

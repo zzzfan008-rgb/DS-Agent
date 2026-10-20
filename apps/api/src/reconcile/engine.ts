@@ -28,6 +28,7 @@ import {
   type PlatformOrderSnapshot,
   type PlatformSnapshot,
   DRIFT_KINDS,
+  CURRENT_DRIFT_KEY_VERSION,
   isLocallyLive,
   normalizePlatformState,
   primaryAction,
@@ -372,6 +373,32 @@ const SUGGESTIONS: Record<DriftKind, FixSuggestion> = {
     doc_refs: ['docs/12 §3.9', 'docs/06 §4.5（t37 after_sale）'],
     auto_fixable: false,
   },
+  // ---------------- 售后维度：平台有、本地无（t48 / D12） ----------------
+  after_sale_platform_only: {
+    summary:
+      '平台存在售后单、本地完全没有记录：先核对是同步失败（漏拉/游标丢）还是有人绕过系统退款，' +
+      '确认后人工补录或按异常处置（不自动落库、不自动退款）',
+    actions: [
+      {
+        kind: 'read',
+        action: 'after_sale.detail',
+        level: null,
+        requires_approval: false,
+        endpoint: null,
+        note: '先查 sync_cursor 的 after_sale 游标与最近成功时间，判断是否同步中断',
+      },
+      {
+        kind: 'manual',
+        action: 'after_sale.adopt_or_ticket',
+        level: 'B',
+        requires_approval: true,
+        endpoint: null,
+        note: '同步失败 → 修游标后重跑；疑似绕过系统 → 建异常工单并人工补录，禁止自动补单/退款',
+      },
+    ],
+    doc_refs: ['docs/12 §3.9', 'docs/06 §4.5（t37 after_sale）', 'docs/18 §4'],
+    auto_fixable: false,
+  },
 };
 
 export function suggestionFor(kind: DriftKind): FixSuggestion {
@@ -427,6 +454,7 @@ function baseRecord(
   const suggestion = suggestionFor(input.kind);
   return {
     drift_key,
+    key_version: CURRENT_DRIFT_KEY_VERSION,
     platform: options.platform,
     day: options.day,
     kind: input.kind,
@@ -834,8 +862,12 @@ export function diffOrders(
 // ---------------------------------------------------------------- 售后维度（t43）
 
 /**
- * 售后差异：退款金额不符、售后状态不符（平台已关闭而本地仍 open 必须报出）。
- * 仅比对两侧都存在的售后单；平台独有/本地独有的售后单不在本轮范围（避免重复退款类误报）。
+ * 售后差异（t43 + t48/D12）：
+ * - 退款金额不符、售后状态不符（平台已关闭而本地仍 open 必须报出）；
+ * - **平台有、本地完全没有**（`after_sale_platform_only`）：这类差异的代价被低估过 ——
+ *   平台上有一笔退款而本地零记录，意味着同步失败或有人绕过系统退款，是**最该报警**的一类。
+ *   因此宁可多报也不漏报；但**本地已有同 `platform_after_sale_id`** 时只走金额/状态差异，
+ *   不重复报"本地无"（那是字段不一致，不是缺失）。
  */
 export function diffAfterSales(
   localAfterSales: readonly LocalAfterSaleSnapshot[],
@@ -848,8 +880,37 @@ export function diffAfterSales(
 
   for (const afterSale of snapshot.afterSales) {
     const local = localBy.get(afterSale.platformAfterSaleId);
-    if (!local) continue;
     const order = platformByOrder.get(afterSale.platformOrderId) ?? null;
+
+    if (!local) {
+      // D12：平台有、本地完全没有这条售后记录 → 报（不自动补录，交人工判断同步失败还是绕过系统）。
+      drifts.push(
+        baseRecord(options, {
+          kind: 'after_sale_platform_only',
+          severity: 'high',
+          listingId: null,
+          platformItemId: null,
+          platformSkuId: null,
+          skuId: null,
+          platformAfterSaleId: afterSale.platformAfterSaleId,
+          platformOrderId: afterSale.platformOrderId,
+          local: null,
+          platformValue: {
+            platform_after_sale_id: afterSale.platformAfterSaleId,
+            platform_order_id: afterSale.platformOrderId,
+            kind: afterSale.kind,
+            status: afterSale.status,
+            amount_cents: afterSale.amountCents,
+            order_status: order?.status ?? null,
+          },
+          detail:
+            `平台售后 ${afterSale.platformAfterSaleId}（订单 ${afterSale.platformOrderId}，` +
+            `${afterSale.kind}，${afterSale.status}，退款 ${afterSale.amountCents} 分）在本地没有任何记录：` +
+            '先核对是否同步失败，再确认是否有人绕过系统退款',
+        }),
+      );
+      continue;
+    }
 
     if (local.amountCents !== afterSale.amountCents) {
       drifts.push(

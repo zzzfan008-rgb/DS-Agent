@@ -27,7 +27,7 @@ export const RECORDED_PLATFORM_SNAPSHOTS: Record<'pdd' | '1688', PlatformSnapsho
     complete: true,
     ordersComplete: true,
     afterSalesComplete: true,
-    note: '合成样本：覆盖 6 类商品差异 + 5 类订单差异 + 2 类售后差异；非 1688 真实报文（TODO-1688-001/012）',
+    note: '合成样本：覆盖 6 类商品差异 + 5 类订单差异 + 3 类售后差异；非 1688 真实报文（TODO-1688-001/012）',
     items: [
       {
         itemId: 'ALI-2026-0001',
@@ -95,7 +95,8 @@ export const RECORDED_PLATFORM_SNAPSHOTS: Record<'pdd' | '1688', PlatformSnapsho
         status: 'shipped',
         totalCents: 15800,
         paidCents: 15800,
-        refundStatus: 'none',
+        // 该订单在平台侧有一笔退款售后（ALI-AS-9003），所以平台退款状态是 refunding。
+        refundStatus: 'refunding',
         platformCreatedAt: '2026-10-19T02:00:00.000Z',
         items: [{ platformSkuRef: 'ALI-SKU-0001', qty: 1, unitPriceCents: 15800, amountCents: 15800 }],
       },
@@ -127,7 +128,7 @@ export const RECORDED_PLATFORM_SNAPSHOTS: Record<'pdd' | '1688', PlatformSnapsho
         items: [{ platformSkuRef: 'ALI-SKU-0001', qty: 2, unitPriceCents: 15800, amountCents: 31600 }],
       },
     ],
-    // 售后样本：9001 退款金额不符；9002 平台已关闭而本地仍 open。
+    // 售后样本：9001 退款金额不符；9002 平台已关闭而本地仍 open；9003 平台有、本地完全没有（D12）。
     afterSales: [
       {
         platformAfterSaleId: 'ALI-AS-9001',
@@ -141,6 +142,15 @@ export const RECORDED_PLATFORM_SNAPSHOTS: Record<'pdd' | '1688', PlatformSnapsho
         platformOrderId: 'ALI-ORDER-1005',
         kind: 'return_refund',
         status: 'closed',
+        amountCents: 15800,
+      },
+      {
+        // 挂在 ALI-ORDER-1003 上：该订单在本地完全不存在，售后自然也没有 ——
+        // 这正是"平台有、本地无"要报的场景（同步失败或绕过系统退款）。
+        platformAfterSaleId: 'ALI-AS-9003',
+        platformOrderId: 'ALI-ORDER-1003',
+        kind: 'refund_only',
+        status: 'refunding',
         amountCents: 15800,
       },
     ],

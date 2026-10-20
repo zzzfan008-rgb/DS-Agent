@@ -27,7 +27,9 @@ export type DriftKind =
   | 'order_item_mismatch'
   // 售后维度（t43）
   | 'after_sale_amount_mismatch'
-  | 'after_sale_status_mismatch';
+  | 'after_sale_status_mismatch'
+  // 售后维度：平台有、本地完全没有（t48 / D12）
+  | 'after_sale_platform_only';
 
 export const DRIFT_KINDS: readonly DriftKind[] = [
   'platform_only_listing',
@@ -43,7 +45,19 @@ export const DRIFT_KINDS: readonly DriftKind[] = [
   'order_item_mismatch',
   'after_sale_amount_mismatch',
   'after_sale_status_mismatch',
+  'after_sale_platform_only',
 ];
+
+/**
+ * `drift_key` 规则版本（D13，t48）。
+ *
+ * - v1：`platform|kind|listing_id|platform_item_id|platform_sku_id`（t36）；
+ * - v2：末尾追加 `platform_order_id|platform_after_sale_id`（t43/t46）。
+ *
+ * 版本写进 `drift_log.detail->>'key_version'`（**不加列**）。对账统计与日报**只取当前版本**：
+ * v1 旧行保留不删、也不再参与统计，因此版本切换零风险，不需要"上线日记得清理"。
+ */
+export const CURRENT_DRIFT_KEY_VERSION = 2;
 
 /** 本地 listing 的只读快照（来自 `listing` + `sku_bindings`）。 */
 export interface LocalListingSnapshot {
@@ -224,6 +238,8 @@ export interface DriftSubject {
 export interface DriftRecord {
   /** 去重键；同一天同 key 只更新不新增（构造规则见 docs/验收记录-M8-对账日报.md §4）。 */
   drift_key: string;
+  /** `drift_key` 规则版本（D13）；统计只取 `CURRENT_DRIFT_KEY_VERSION` 的行。 */
+  key_version: number;
   platform: Platform;
   day: string;
   kind: DriftKind;

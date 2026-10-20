@@ -19,6 +19,7 @@ import path from 'node:path';
 import type { PrismaClient } from '@dssaas/db';
 import { uuidv7 } from '../lib/ids.js';
 import {
+  CURRENT_DRIFT_KEY_VERSION,
   DRIFT_KINDS,
   primaryAction,
   type DetectedDrift,
@@ -146,8 +147,14 @@ export class MemoryDriftStore implements DriftStore {
   }
 
   async list(day: string, platform?: Platform): Promise<DriftRecord[]> {
+    // D13：只返回当前 key_version 的行（与 PgDriftStore 同口径）。
     return [...this.rows.values()]
-      .filter((row) => row.day === day && (platform === undefined || row.platform === platform))
+      .filter(
+        (row) =>
+          row.day === day &&
+          (platform === undefined || row.platform === platform) &&
+          row.key_version === CURRENT_DRIFT_KEY_VERSION,
+      )
       .sort((a, b) => a.drift_key.localeCompare(b.drift_key))
       .map(withSuggestedAction);
   }
@@ -225,7 +232,12 @@ export class FileDriftStore implements DriftStore {
     const rows: DriftRecord[] = [];
     for (const candidate of platforms) {
       const payload = await this.read(candidate, day);
-      rows.push(...payload.items.map(withSuggestedAction));
+      // D13：旧版本行仍留在文件里（不删），但不参与统计/展示。
+      rows.push(
+        ...payload.items
+          .map(withSuggestedAction)
+          .filter((row) => row.key_version === CURRENT_DRIFT_KEY_VERSION),
+      );
     }
     return rows.sort((a, b) => a.drift_key.localeCompare(b.drift_key));
   }
@@ -304,6 +316,8 @@ export class PgDriftStore implements DriftStore {
       suggestion: drift.suggestion,
       // 冗余存一份，便于直接查 drift_log 看"该走什么级别"；读取时仍以 suggestion 派生为准。
       suggested_action: drift.suggested_action,
+      // D13：drift_key 规则版本。统计只取当前版本，旧版本行保留但不参与（不需要人工清理）。
+      key_version: drift.key_version,
       status: 'open',
       first_detected_at: drift.detected_at,
       last_detected_at: drift.detected_at,
@@ -330,6 +344,7 @@ export class PgDriftStore implements DriftStore {
                  'platform_value', EXCLUDED.detail->'platform_value',
                  'suggestion', EXCLUDED.detail->'suggestion',
                  'suggested_action', EXCLUDED.detail->'suggested_action',
+                 'key_version', COALESCE(EXCLUDED.detail->>'key_version', '${CURRENT_DRIFT_KEY_VERSION}'),
                  'status', COALESCE(drift_log.detail->>'status', 'open'),
                  'first_detected_at', COALESCE(drift_log.detail->>'first_detected_at', EXCLUDED.detail->>'first_detected_at'),
                  'last_detected_at', EXCLUDED.detail->>'last_detected_at',
@@ -354,13 +369,17 @@ export class PgDriftStore implements DriftStore {
 
   async list(day: string, platform?: Platform): Promise<DriftRecord[]> {
     await this.ensure();
+    // D13：只取当前 key_version 的行；旧版本行保留在表里但不参与统计/展示。
     const rows = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
       `SELECT platform, day::text AS day, drift_key, kind, severity, detail, detected_at
          FROM drift_log
         WHERE org_id = $1 AND day = $2::date AND archived_at IS NULL
-          ${platform ? 'AND platform = $3' : ''}
+          AND COALESCE(detail->>'key_version', '1') = $3
+          ${platform ? 'AND platform = $4' : ''}
         ORDER BY drift_key`,
-      ...(platform ? [this.orgId, day, platform] : [this.orgId, day]),
+      ...(platform
+        ? [this.orgId, day, String(CURRENT_DRIFT_KEY_VERSION), platform]
+        : [this.orgId, day, String(CURRENT_DRIFT_KEY_VERSION)]),
     );
     return rows.map((row) => this.mapRow(row));
   }
@@ -373,6 +392,8 @@ export class PgDriftStore implements DriftStore {
     const suggestion = (detail.suggestion ?? {}) as DriftRecord['suggestion'];
     return withSuggestedAction({
       drift_key: String(row.drift_key),
+      // 老行没有 key_version 字段 → 视为 v1（迁移前的历史数据）。
+      key_version: Number(detail.key_version ?? 1),
       platform: row.platform as Platform,
       day: String(row.day),
       kind: row.kind as DriftKind,
@@ -398,14 +419,27 @@ export class PgDriftStore implements DriftStore {
 
   async countByKind(day: string, platform?: Platform, kind?: DriftKind): Promise<Record<string, number>> {
     await this.ensure();
+    const params: unknown[] = [this.orgId, day, String(CURRENT_DRIFT_KEY_VERSION)];
+    const conditions = [
+      'org_id = $1',
+      'day = $2::date',
+      'archived_at IS NULL',
+      `COALESCE(detail->>'key_version', '1') = $3`,
+    ];
+    if (platform) {
+      params.push(platform);
+      conditions.push(`platform = $${params.length}`);
+    }
+    if (kind) {
+      params.push(kind);
+      conditions.push(`kind = $${params.length}`);
+    }
     const rows = await this.prisma.$queryRawUnsafe<Array<{ kind: string; count: number }>>(
       `SELECT kind, count(*)::int AS count
          FROM drift_log
-        WHERE org_id = $1 AND day = $2::date AND archived_at IS NULL
-          ${platform ? 'AND platform = $3' : ''}
-          ${kind ? `AND kind = $${platform ? 4 : 3}` : ''}
+        WHERE ${conditions.join(' AND ')}
         GROUP BY kind`,
-      ...(platform && kind ? [this.orgId, day, platform, kind] : platform ? [this.orgId, day, platform] : kind ? [this.orgId, day, kind] : [this.orgId, day]),
+      ...params,
     );
     return Object.fromEntries(rows.map((row) => [row.kind, Number(row.count)]));
   }
