@@ -50,7 +50,12 @@ export interface LoginData {
 }
 
 export interface HealthCheck {
-  status: 'ok' | 'degraded' | 'down';
+  /**
+   * API 实际返回 `healthy | degraded | down`（apps/api/src/routes/health.ts）；
+   * 前端早先按 `ok | degraded | down` 写，导致登录页永远显示「系统维护中」并禁用按钮。
+   * 这里以 API 为准，同时兼容旧值 `ok`，避免两处枚举再次漂移。
+   */
+  status: 'healthy' | 'ok' | 'degraded' | 'down';
   checks?: Record<string, unknown>;
   version?: string;
   build?: string;

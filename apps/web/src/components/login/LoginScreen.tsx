@@ -18,7 +18,8 @@ function healthInfo(health: HealthCheck | null) {
       apiDown: true,
     };
   }
-  if (health.status === 'ok') {
+  // API 返回 `healthy`；兼容历史写法 `ok`，两处枚举以 API 为准（见 contracts.ts）。
+  if (health.status === 'healthy' || health.status === 'ok') {
     return { tone: styles.healthOk, text: '系统正常', detail: 'API 与数据库连接正常', apiDown: false };
   }
   if (health.status === 'degraded') {
