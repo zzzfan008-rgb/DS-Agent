@@ -5,6 +5,8 @@
 //   （docs/21 为冲突唯一权威：金额 *_cents 整数分、uuid v7 主键、workflow_run.state /
 //    listing.status 词表、model_route 作用域与配额列、provider.credential_ref 无外键、
 //    media_quota 表）。共 30 张 docs/06 表 + 1 张 docs/21 新增表 = 31 张。
+//   t12 补 8 张支撑表 → 39 张；t53 补 1 张 platform_account（「平台连接」页凭据配置，
+//   只存引用名不存明文）→ 当前 45 张。
 //
 // 分工（重要）：
 //   - 本文件只映射「表 + 列 + 类型 + 默认值」，保证 Prisma Client 可用；
@@ -702,6 +704,37 @@ model SyncCursor {
   archivedAt          DateTime? @map("archived_at") @db.Timestamptz
 
   @@map("sync_cursor")
+}
+
+/// platform_account — 平台凭据配置（docs/13 §3.9「平台连接」页；t53 新增）。
+/// **只存引用名，不存明文**：app_secret_ref / access_token_ref / refresh_token_ref
+/// 是环境变量名或 Vault 路径（与 provider.credential_ref、users.totp_secret_ref 同构），
+/// 真值在 env / DSH 凭据存储；本表刻意没有明文列。
+/// 唯一性 (org_id, platform, shop_id) WHERE archived_at IS NULL 与 CHECK / 触发器见迁移 SQL。
+model PlatformAccount {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  orgId           BigInt    @default(1) @map("org_id")
+  platform        String
+  shopId          String?   @map("shop_id")
+  shopName        String?   @map("shop_name")
+  appKey          String    @map("app_key")
+  appSecretRef    String    @map("app_secret_ref")
+  accessTokenRef  String?   @map("access_token_ref")
+  refreshTokenRef String?   @map("refresh_token_ref")
+  tokenExpiresAt  DateTime? @map("token_expires_at") @db.Timestamptz
+  status          String    @default("active")
+  connectivity    String    @default("unknown")
+  lastTestedAt    DateTime? @map("last_tested_at") @db.Timestamptz
+  lastTestError   String?   @map("last_test_error")
+  contractVersion Int       @default(2) @map("contract_version")
+  extra           Json      @default("{}")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy       String?   @map("created_by") @db.Uuid
+  version         Int       @default(1)
+  archivedAt      DateTime? @map("archived_at") @db.Timestamptz
+
+  @@map("platform_account")
 }
 
 // =============================================================
