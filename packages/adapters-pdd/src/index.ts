@@ -69,6 +69,21 @@ export {
   type PddClientOptions,
 } from './http/client.js';
 export { FetchTransport, assertSafeHttpUrl, type HttpTransport, type TransportRequest, type TransportResponse } from './http/transport.js';
+
+// 真实签名与连通性探针（按官方文档实现，见 pdd-signer.ts 头部注释）
+export {
+  PDD_GATEWAY,
+  PDD_SIGNATURE_SCHEME,
+  buildPddRequestBody,
+  computePddSign,
+  type PddSignableValue,
+} from './http/pdd-signer.js';
+export {
+  probePddConnection,
+  type PddProbeOptions,
+  type PddProbeOutcome,
+  type PddProbeResult,
+} from './http/pdd-probe.js';
 export {
   ReplayTransport,
   RecordingTransport,

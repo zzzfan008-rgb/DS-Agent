@@ -12,6 +12,7 @@
  *    测试连通只能返回 `interfaces_unverified`，不得伪造 `ok:true`。
  */
 import type { Prisma, PrismaClient } from '@dssaas/db';
+import { probePddConnection } from '@dssaas/adapters-pdd';
 import { credentialMask } from '@dssaas/registry';
 import { ApiError } from '../lib/errors.js';
 import type { AuditService } from './audit.js';
@@ -19,6 +20,24 @@ import type { AuditService } from './audit.js';
 export type Platform = 'pdd' | '1688';
 export type PlatformAccountStatus = 'active' | 'disabled' | 'expired';
 export type Connectivity = 'unknown' | 'ok' | 'auth_invalid' | 'upstream_5xx' | 'unreachable';
+
+/** 探针结果 → DB 的 connectivity 枚举（DB CHECK 只允许这 5 个值）。 */
+function mapOutcomeToConnectivity(outcome: string): Connectivity {
+  switch (outcome) {
+    case 'ok':
+      return 'ok';
+    case 'credential_invalid':
+    case 'signature_invalid':
+    case 'token_invalid':
+    case 'permission_denied':
+      return 'auth_invalid';
+    case 'unreachable':
+      return 'unreachable';
+    default:
+      // unknown_error / interfaces_unverified 都归 unknown：没测出结论就不下结论。
+      return 'unknown';
+  }
+}
 
 export interface PlatformAccountContext {
   requestId: string;
@@ -31,8 +50,12 @@ export interface PlatformAccountContext {
 export interface PlatformAccountDeps {
   prisma: PrismaClient;
   audit: AuditService;
-  /** 平台接口核验状态（默认未核验）；用于 test 端点的诚实返回。 */
+  /** 平台接口核验状态（默认未核验）；1688 探针未实现时用于诚实返回。 */
   interfacesVerified?: boolean;
+  /** 探针超时（毫秒），默认 10s。测试可调小。 */
+  probeTimeoutMs?: number;
+  /** 测试注入点：替换 fetch 以离线验证六态分类，不触网。 */
+  probeFetchImpl?: typeof fetch;
 }
 
 /**
@@ -197,11 +220,15 @@ export class PlatformAccountService {
   private readonly prisma: PrismaClient;
   private readonly audit: AuditService;
   private readonly interfacesVerified: boolean;
+  private readonly probeTimeoutMs: number;
+  private readonly probeFetchImpl: typeof fetch | undefined;
 
   constructor(deps: PlatformAccountDeps) {
     this.prisma = deps.prisma;
     this.audit = deps.audit;
     this.interfacesVerified = deps.interfacesVerified ?? false;
+    this.probeTimeoutMs = deps.probeTimeoutMs ?? 10_000;
+    this.probeFetchImpl = deps.probeFetchImpl;
   }
 
   async list(platform?: Platform) {
@@ -343,33 +370,107 @@ export class PlatformAccountService {
   }
 
   /**
-   * 测试连通 —— **诚实失败**。
+   * 测试连通 —— 真实探针（PDD），按官方文档签名后打到真实网关。
    *
-   * 平台接口的 method 全部未核验（docs/02 §4：1688 的 `TODO-1688-001…012`、
-   * PDD 的 `TODO-PDD-CONTRACT-VERIFY` 都还开着），此时任何"真实请求"都是猜的。
-   * 猜出来的成功会让运维以为链路通了 —— 比报错危险得多。
-   *
-   * 所以这里固定返回 `interfaces_unverified`，并且**把这次尝试写回库**
-   * （last_tested_at / last_test_error / connectivity=unknown），让"试过了、还是不通"
-   * 这件事在列表里可见，而不是只停留在一次响应里。
+   * 设计要点（与旧版「固定 interfaces_unverified」的区别）：
+   * 1. 先解析三个 `*_ref` 到实值；**任何一个缺失都明确报出变量名**，不发请求。
+   * 2. PDD 走 `probePddConnection`（官方 MD5 签名 + `pdd.time.get`），
+   *    六种结果各自映射为可诊断的 connectivity 与用户处置建议。
+   * 3. 1688 尚未实现探针（docs/02 TODO-1688-001…012 仍开），
+   *    仍返回 `interfaces_unverified` —— 不伪造成功。
+   * 4. 无论成功失败，都把这次尝试写回库（last_tested_at / last_test_error / connectivity），
+   *    让「试过了、还是不通」在列表里长期可见。
    */
   async testConnectivity(id: string, context: PlatformAccountContext) {
     const row = await this.prisma.platformAccount.findFirst({ where: { id, orgId: 1n, archivedAt: null } });
     if (!row) throw new ApiError('not_found', '平台账号不存在');
 
     const testedAt = new Date();
-    const reason = this.interfacesVerified ? 'probe_not_implemented' : 'interfaces_unverified';
-    const message = this.interfacesVerified
-      ? '接口已核验但探针尚未接入该平台的连通性检查'
-      : '55 个平台接口尚未核验 method，无法发起真实请求';
 
+    // ---- 1) 解析引用名到实值（缺失即失败，不发请求） ----
+    const resolved = this.resolveCredentials(row);
+    if (!resolved.ok) {
+      const message = resolved.message;
+      await this.prisma.platformAccount.update({
+        where: { id },
+        data: {
+          connectivity: 'auth_invalid',
+          lastTestedAt: testedAt,
+          lastTestError: `missing_credential: ${message}`.slice(0, 2000),
+        },
+      });
+      await this.audit.record({
+        action: 'platform_account.test',
+        actorType: 'user',
+        actorId: context.userId,
+        requestId: context.requestId,
+        resourceType: 'platform_account',
+        resourceId: id,
+        before: { connectivity: row.connectivity, last_tested_at: row.lastTestedAt?.toISOString() ?? null },
+        after: { ok: false, connectivity: 'auth_invalid', reason: 'missing_credential' },
+        ip: context.ip,
+        userAgent: context.userAgent,
+        meta: { actor_role: context.role, platform: row.platform, reason: 'missing_credential' },
+      });
+      return {
+        ok: false,
+        connectivity: 'auth_invalid' as Connectivity,
+        reason: 'missing_credential',
+        message,
+        tested_at: testedAt.toISOString(),
+      };
+    }
+
+    // ---- 2) 真实探针 ----
+    let probe: { ok: boolean; outcome: string; message: string; nextAction: string; connectivity: Connectivity; detail: Record<string, unknown> };
+
+    if (row.platform === 'pdd') {
+      const result = await probePddConnection({
+        clientId: resolved.clientId,
+        clientSecret: resolved.clientSecret,
+        accessToken: resolved.accessToken,
+        timeoutMs: this.probeTimeoutMs,
+        ...(this.probeFetchImpl ? { fetchImpl: this.probeFetchImpl } : {}),
+      });
+      probe = {
+        ok: result.ok,
+        outcome: result.outcome,
+        message: result.message,
+        nextAction: result.nextAction,
+        connectivity: mapOutcomeToConnectivity(result.outcome),
+        detail: {
+          api_type: result.apiType,
+          gateway: result.gateway,
+          http_status: result.httpStatus,
+          elapsed_ms: result.elapsedMs,
+          error_code: result.errorCode,
+          error_sub_code: result.errorSubCode,
+          error_message: result.errorMessage,
+          raw_response: result.rawResponse,
+        },
+      };
+    } else {
+      // 1688 探针未实现：诚实失败，不伪造成功。
+      probe = {
+        ok: false,
+        outcome: 'interfaces_unverified',
+        message: '1688 接口尚未核验（TODO-1688-001…012），无法发起真实请求',
+        nextAction: 'verify_interfaces',
+        connectivity: 'unknown',
+        detail: { platform: '1688' },
+      };
+    }
+
+    // ---- 3) 写回库（成功失败都写，让"试过了"可见） ----
+    const errorText = probe.ok
+      ? null
+      : `${probe.outcome}: ${probe.message}`.slice(0, 2000);
     await this.prisma.platformAccount.update({
       where: { id },
       data: {
-        // connectivity 保持 unknown：没测出结论就不能写成 ok/auth_invalid（DB 也要求非 unknown 必须有时间戳）。
-        connectivity: 'unknown',
+        connectivity: probe.connectivity,
         lastTestedAt: testedAt,
-        lastTestError: `${reason}: ${message}`.slice(0, 2000),
+        lastTestError: errorText,
       },
     });
 
@@ -381,19 +482,79 @@ export class PlatformAccountService {
       resourceType: 'platform_account',
       resourceId: id,
       before: { connectivity: row.connectivity, last_tested_at: row.lastTestedAt?.toISOString() ?? null },
-      after: { ok: false, connectivity: 'unknown', reason, tested_at: testedAt.toISOString() },
+      after: {
+        ok: probe.ok,
+        connectivity: probe.connectivity,
+        reason: probe.outcome,
+        tested_at: testedAt.toISOString(),
+        elapsed_ms: probe.detail.elapsed_ms ?? null,
+      },
       ip: context.ip,
       userAgent: context.userAgent,
-      meta: { actor_role: context.role, platform: row.platform, reason },
+      meta: { actor_role: context.role, platform: row.platform, reason: probe.outcome },
     });
 
     return {
-      ok: false,
-      connectivity: 'unknown' as Connectivity,
-      reason,
-      message,
+      ok: probe.ok,
+      connectivity: probe.connectivity,
+      reason: probe.outcome,
+      message: probe.message,
+      next_action: probe.nextAction,
       tested_at: testedAt.toISOString(),
+      detail: probe.detail,
     };
+  }
+
+  /**
+   * 把 `*_ref` 解析为实值。
+   *
+   * 支持两种引用形式：
+   * - 环境变量名（如 `PDD_APP_SECRET`）：从 `process.env` 读
+   * - `vault://path/to/secret`：当前未接入 Vault，明确报"未接入"而不是静默失败
+   *
+   * **实值只存在于返回值里，不写日志、不进审计、不进响应。**
+   */
+  private resolveCredentials(row: {
+    appKey: string;
+    appSecretRef: string;
+    accessTokenRef: string | null;
+  }):
+    | { ok: true; clientId: string; clientSecret: string; accessToken: string | null }
+    | { ok: false; message: string } {
+    const resolveOne = (ref: string, label: string): { ok: true; value: string } | { ok: false; message: string } => {
+      if (ref.startsWith('vault://')) {
+        return {
+          ok: false,
+          message: `${label} 使用 Vault 引用（${ref}），但本环境未接入 Vault；请改用环境变量名`,
+        };
+      }
+      const value = process.env[ref];
+      if (!value || value.trim() === '') {
+        return {
+          ok: false,
+          message: `${label} 引用的环境变量 ${ref} 未设置或为空；请在 .env 中配置 ${ref}=<真实值> 后重启服务`,
+        };
+      }
+      return { ok: true, value: value.trim() };
+    };
+
+    // app_key 直接存在表里（它不是密钥），作为 client_id 使用。
+    const clientId = row.appKey?.trim();
+    if (!clientId) {
+      return { ok: false, message: 'app_key（client_id）为空，请先在编辑中填写' };
+    }
+
+    const secret = resolveOne(row.appSecretRef, 'app_secret');
+    if (!secret.ok) return { ok: false, message: secret.message };
+
+    let accessToken: string | null = null;
+    if (row.accessTokenRef) {
+      const token = resolveOne(row.accessTokenRef, 'access_token');
+      if (!token.ok) return { ok: false, message: token.message };
+      accessToken = token.value;
+    }
+
+    return { ok: true, clientId, clientSecret: secret.value, accessToken };
   }
 
   /** 归档（不物理删除：凭据配置要留痕，且 uq 索引是 archived_at IS NULL 部分索引）。 */

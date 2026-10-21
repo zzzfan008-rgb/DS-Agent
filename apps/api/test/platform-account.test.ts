@@ -247,7 +247,7 @@ test('PATCH：正确 If-Match → 200；旧 version → 409；缺 If-Match → 4
   assert.equal(plaintextPatch.statusCode, 400, plaintextPatch.body);
 });
 
-test('测试连通：必须诚实返回 ok:false + interfaces_unverified，绝不伪造成功', async () => {
+test('测试连通：凭据未配置时必须诚实失败，明确指出缺哪个环境变量，绝不伪造成功', async () => {
   const shopId = `SHOP-${SUFFIX}-TEST`;
   const created = await post(
     '/api/platform-accounts',
@@ -256,6 +256,10 @@ test('测试连通：必须诚实返回 ok:false + interfaces_unverified，绝�
   );
   assert.equal(created.statusCode, 201, created.body);
   const { id } = JSON.parse(created.body).data as { id: string };
+
+  // 确保该环境变量确实不存在，让这条用例不依赖运行环境的偶然配置。
+  const saved = process.env.PDD_APP_SECRET;
+  delete process.env.PDD_APP_SECRET;
 
   const tested = await post(`/api/platform-accounts/${id}/test`, {}, adminHeaders);
   assert.equal(tested.statusCode, 200, tested.body);
@@ -266,28 +270,34 @@ test('测试连通：必须诚实返回 ok:false + interfaces_unverified，绝�
     message: string;
     tested_at: string;
   };
-  // 核心断言：不许 ok:true
-  assert.equal(body.ok, false, '接口未核验时不得返回 ok:true');
-  assert.equal(body.connectivity, 'unknown', '没测出结论就必须是 unknown');
-  assert.equal(body.reason, 'interfaces_unverified');
-  assert.match(body.message, /尚未核验/);
+
+  // 核心断言 1：不许 ok:true（凭据都没配，不可能连上）
+  assert.equal(body.ok, false, '凭据缺失时不得返回 ok:true');
+  // 核心断言 2：必须是 auth_invalid，而不是含糊的 unknown —— 用户需要知道是凭据问题
+  assert.equal(body.connectivity, 'auth_invalid', '凭据缺失应归为 auth_invalid');
+  assert.equal(body.reason, 'missing_credential');
+  // 核心断言 3：消息里必须点出具体变量名，否则用户不知道去配哪个
+  assert.match(body.message, /PDD_APP_SECRET/, '必须指出缺失的环境变量名');
   assert.ok(body.tested_at);
 
-  // 结果写回库：last_tested_at 有值、connectivity 仍是 unknown、error 可读
+  if (saved !== undefined) process.env.PDD_APP_SECRET = saved;
+
+  // 结果写回库：last_tested_at 有值、connectivity=auth_invalid、error 指出缺失的变量
   const row = await prisma.platformAccount.findUniqueOrThrow({ where: { id } });
   assert.ok(row.lastTestedAt, 'last_tested_at 必须写回');
-  assert.equal(row.connectivity, 'unknown', 'connectivity 不得被写成 ok');
-  assert.match(row.lastTestError ?? '', /interfaces_unverified/);
+  assert.equal(row.connectivity, 'auth_invalid', '凭据缺失应记为 auth_invalid（绝不是 ok）');
+  assert.match(row.lastTestError ?? '', /missing_credential/);
+  assert.match(row.lastTestError ?? '', /PDD_APP_SECRET/);
 
-  // 列表里能看到"试过了但还是 unknown"
+  // 列表里能看到"试过了但还是 auth_invalid"
   const list = await app.inject({ method: 'GET', url: `/api/platform-accounts?platform=pdd`, headers: viewerHeaders });
   const item = (JSON.parse(list.body).data as {
     items: Array<{ id: string; connectivity: string; last_tested_at: string | null; last_test_error: string | null }>;
   }).items.find((entry) => entry.id === id);
   assert.ok(item);
-  assert.equal(item!.connectivity, 'unknown');
+  assert.equal(item!.connectivity, 'auth_invalid');
   assert.ok(item!.last_tested_at);
-  assert.match(item!.last_test_error ?? '', /interfaces_unverified/);
+  assert.match(item!.last_test_error ?? '', /PDD_APP_SECRET/);
 });
 
 test('归档：归档后不出现在列表，且可重新接入同一店铺', async () => {
