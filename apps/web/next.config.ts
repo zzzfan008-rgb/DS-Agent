@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import path from 'node:path';
 
 /**
  * M1 前端骨架配置。
@@ -7,7 +8,29 @@ import type { NextConfig } from 'next';
  * 开发期由 Next rewrite 转发到 Fastify；生产由 Caddy 的 `/api/*` 反代（infra/Caddyfile）。
  * 服务端组件取 `/me` 走 `API_INTERNAL_URL`，不依赖 rewrite。
  */
-const apiInternalUrl = process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:3001';
+
+/**
+ * 解析后端地址（D2 修复）：优先 `API_INTERNAL_URL`，否则从仓库根 `.env`
+ * 读 `API_PORT` 拼出地址。
+ *
+ * 之前这里硬编码 fallback `:3001`，而 `.env` 里 `API_PORT=3010`——不带环境
+ * 变量起 `next dev` 时，同源 `/api/*` 会打到 3001 上的**别的服务**，页面表现
+ * 为"接口不存在"，极难排查。现在以 `.env` 为准，端口只有一处真相。
+ */
+function resolveApiInternalUrl(): string {
+  if (process.env.API_INTERNAL_URL) return process.env.API_INTERNAL_URL;
+  try {
+    // 仓库根 .env（Next 只自动加载 apps/web/.env*，根目录的需手动读）
+    const rootEnv = path.resolve(process.cwd(), '../../.env');
+    process.loadEnvFile(rootEnv);
+  } catch {
+    /* 文件不存在时静默；下面的默认值兜底 */
+  }
+  const port = process.env.API_PORT ?? '3001';
+  return `http://127.0.0.1:${port}`;
+}
+
+const apiInternalUrl = resolveApiInternalUrl();
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
