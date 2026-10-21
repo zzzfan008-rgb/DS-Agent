@@ -16,6 +16,7 @@ import type {
 } from './types.js';
 import { LEXICON_VERSION, RULE_SET_VERSION, maxSeverity } from './types.js';
 import { normalizeText, spanToOriginal, type NormalizedText } from './normalize.js';
+import { DEFAULT_NEGATION_WINDOW, detectNegation } from './negation.js';
 
 interface RuleContext {
   input: JudgeInput;
@@ -40,8 +41,38 @@ function applies(rule: Rule, input: JudgeInput): boolean {
   return true;
 }
 
-function termHits(context: RuleContext, terms: string[], ruleId: string, severity: Severity, suggestion: string): L1Hit[] {
+/**
+ * 否定语境降级（t42）：命中词处于否定语境时 severity → info，保留命中记录与 span。
+ *
+ * 只对「承诺类」规则开启（POL/REP/STK/LEX-003）：这些规则的违规本质是**做出承诺**，
+ * 而「不能承诺当天发货」是正确话术。
+ *
+ * L0 法定/平台绝对禁词（LEX-001 极限词、LEX-002 医疗功效、LEX-005 联系方式、
+ * LEX-006 站外交易、LEX-007 平台敏感词）**不豁免**：平台机审不识别否定语境，
+ * 文案里出现该词即被拦截，正确做法是改写为不含该词的表述（docs/08 §5.1）。
+ */
+const NEGATION_AWARE = new Set([
+  'L1-LEX-003',
+  'L1-STK-001',
+  'L1-POL-001',
+  'L1-POL-002',
+  'L1-REP-001',
+  'L1-REP-002',
+]);
+
+function negationWindowFor(ruleId: string): number | null {
+  return NEGATION_AWARE.has(ruleId) ? DEFAULT_NEGATION_WINDOW : null;
+}
+
+function termHits(
+  context: RuleContext,
+  terms: string[],
+  ruleId: string,
+  severity: Severity,
+  suggestion: string,
+): L1Hit[] {
   const hits: L1Hit[] = [];
+  const negationWindow = negationWindowFor(ruleId);
   for (const term of terms) {
     let from = 0;
     for (;;) {
@@ -53,13 +84,18 @@ function termHits(context: RuleContext, terms: string[], ruleId: string, severit
         index + term.length,
         context.originalLength,
       );
+      const negation =
+        negationWindow === null
+          ? null
+          : detectNegation(context.normalized.normalized, index, negationWindow);
       hits.push({
         rule_id: ruleId,
-        severity,
+        severity: negation?.negated ? 'info' : severity,
         field: 'text',
         span,
         matched: context.input.text.slice(span[0], span[1]),
         suggestion,
+        ...(negation?.negated ? { negated: true, negation_marker: negation.marker } : {}),
       });
       from = index + term.length;
     }
@@ -76,6 +112,7 @@ function regexHits(
   accept?: (match: RegExpExecArray) => boolean,
 ): L1Hit[] {
   const hits: L1Hit[] = [];
+  const negationWindow = negationWindowFor(ruleId);
   const global = new RegExp(regex.source, regex.flags.includes('g') ? regex.flags : `${regex.flags}g`);
   let match: RegExpExecArray | null;
   while ((match = global.exec(context.normalized.normalized)) !== null) {
@@ -86,13 +123,18 @@ function regexHits(
       match.index + match[0].length,
       context.originalLength,
     );
+    const negation =
+      negationWindow === null
+        ? null
+        : detectNegation(context.normalized.normalized, match.index, negationWindow);
     hits.push({
       rule_id: ruleId,
-      severity,
+      severity: negation?.negated ? 'info' : severity,
       field: 'text',
       span,
       matched: context.input.text.slice(span[0], span[1]) || match[0],
       suggestion,
+      ...(negation?.negated ? { negated: true, negation_marker: negation.marker } : {}),
     });
     if (match[0].length === 0) global.lastIndex += 1;
   }
@@ -453,6 +495,52 @@ const RULES: Rule[] = [
           suggestion: `尺码表缺少 SKU 码：${missing.join(',')}`,
         },
       ];
+    },
+  },
+  {
+    id: 'L1-POL-002',
+    severity: 'high',
+    platforms: ALL,
+    contentTypes: ALL,
+    suggestion: '改为政策允许的时效（发货 ≤N 天按事实快照），或说明需人工确认',
+    evaluate: (context) => {
+      // 时效承诺（docs/08 §4.2 L1-POL-002）：不得优于 facts.lead_time_days。
+      // 当天/24 小时/次日 这类「绝对时效」在没有事实支撑时一律算承诺，
+      // 但「不能承诺当天发货」这类否定语境会降级为 info（见 negation.ts）。
+      const leadTime = context.input.facts.lead_time_days;
+      const sameDayPattern = /当天发货|当日发货|当天发出|当日发出|当天发|当日发|24小时内发货|24小时发货|24h内发货|当天送达|当日送达/g;
+      const nextDayPattern = /次日达|隔日达|次日送达|保证次日/g;
+      const hits: L1Hit[] = [];
+      const collect = (pattern: RegExp, allowedLeadTime: number) => {
+        if (typeof leadTime === 'number' && leadTime <= allowedLeadTime) return;
+        const global = new RegExp(pattern.source, 'g');
+        let match: RegExpExecArray | null;
+        while ((match = global.exec(context.normalized.normalized)) !== null) {
+          const span = spanToOriginal(
+            context.normalized.map,
+            match.index,
+            match.index + match[0].length,
+            context.originalLength,
+          );
+          const negation = detectNegation(
+            context.normalized.normalized,
+            match.index,
+            DEFAULT_NEGATION_WINDOW,
+          );
+          hits.push({
+            rule_id: 'L1-POL-002',
+            severity: negation.negated ? 'info' : 'high',
+            field: 'text',
+            span,
+            matched: context.input.text.slice(span[0], span[1]) || match[0],
+            suggestion: '改为政策允许的时效（发货 ≤N 天按事实快照），或说明需人工确认',
+            ...(negation.negated ? { negated: true, negation_marker: negation.marker } : {}),
+          });
+        }
+      };
+      collect(sameDayPattern, 0);
+      collect(nextDayPattern, 1);
+      return hits;
     },
   },
   {

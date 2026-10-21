@@ -25,6 +25,13 @@ export interface L1Hit {
   span: [number, number];
   matched: string;
   suggestion: string;
+  /**
+   * 命中词处于否定语境（如「不能承诺当天发货」）时为 true：
+   * severity 已降级为 info，不计入 blocker；保留命中记录便于误报复核（docs/08 §5.3）。
+   */
+  negated?: boolean;
+  /** 触发降级的否定标记原文（如「不能」「无法保证」），仅 negated=true 时存在。 */
+  negation_marker?: string;
 }
 
 export interface L1Result {
@@ -116,7 +123,8 @@ export interface MergedVerdict {
   short_circuit?: 'L1_BLOCKER' | 'NO_EVIDENCE' | 'L2_SKIPPED';
 }
 
-export const RULE_SET_VERSION = 'rules@1.0.0';
+/** 规则集版本：行为变更必须升版本并重跑回归（docs/08 §12.1）。1.1.0 = 否定语境判定（t42）。 */
+export const RULE_SET_VERSION = 'rules@1.1.0';
 export const LEXICON_VERSION = 'lexicon@1.0.0';
 export const JUDGE_PROMPT_VERSION = 'judge@1.0.0';
 

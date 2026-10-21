@@ -1,621 +1,621 @@
 {
- "mode": "high",
- "model": "deepseek-flash",
- "scenario_file": "D:/DSSAAS/data/golden/customer-scenarios.json",
- "generated_at": "2026-10-20T17:35:22.318Z",
- "samples": [
-  {
-   "id": "S01",
-   "category": "presale_size",
-   "spu_code": "GOLD-SPU-001",
-   "question": "我身高 175cm、体重 72kg，这款 T 恤选哪个码？",
-   "expected": {
-    "size": "XL",
-    "note": "XL 建议 170–180cm / 64–78kg"
-   },
-   "forbidden": [
-    "L 码最合适",
-    "XXL",
-    "M 码"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 1286,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-967d-70e7-b465-5747a5501da5",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: fb67c6d1-6644-4c07-af4f-a414a2f94c09)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "S02",
-   "category": "presale_size",
-   "spu_code": "GOLD-SPU-002",
-   "question": "身高 158、体重 48，衬衫穿 S 还是 M？",
-   "expected": {
-    "size": "S",
-    "note": "S 建议 150–160cm / 42–52kg"
-   },
-   "forbidden": [
-    "M 码最合适",
-    "L 码"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 723,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-9b7f-72a0-bd50-b963a410bc54",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: 6d3742b5-0e3c-4118-9476-50fc3c517ae9)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "S03",
-   "category": "presale_size",
-   "spu_code": "GOLD-SPU-003",
-   "question": "178cm、75kg，POLO 选什么尺码？",
-   "expected": {
-    "size": "XL",
-    "note": "XL 建议 170–180cm / 64–78kg"
-   },
-   "forbidden": [
-    "L 码最合适",
-    "XXL"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 688,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-9e58-7314-955b-e666e133b23e",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: 15d6740c-0bbf-4b0c-b0f1-4eb81d644d6b)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "S04",
-   "category": "presale_size",
-   "spu_code": "GOLD-SPU-004",
-   "question": "155cm、45kg，牛仔裤选 26 还是 27？",
-   "expected": {
-    "size": "26",
-    "note": "26 建议 150–160cm / 42–50kg"
-   },
-   "forbidden": [
-    "27 码最合适",
-    "28 码"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 687,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-a112-7e49-9578-8e415d13f16e",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: c3314d8d-65e4-4f66-965a-3fb2eb229726)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "S05",
-   "category": "presale_size",
-   "spu_code": "GOLD-SPU-005",
-   "question": "170cm、62kg，半身裙选 28 还是 29？",
-   "expected": {
-    "size": "29",
-    "note": "29 建议 162–172cm / 54–65kg"
-   },
-   "forbidden": [
-    "28 码最合适",
-    "27 码"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 753,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-a3b6-787d-80a1-532684e0a94b",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: 4d2d4c0c-0359-475a-aa2c-ff546c0adcd2)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "F01",
-   "category": "presale_fabric",
-   "spu_code": "GOLD-SPU-001",
-   "question": "这件 T 恤什么成分？怎么洗？",
-   "expected": {
-    "composition": "棉 100%",
-    "care": "棉可机洗 30℃ 以下，避免高温烘干"
-   },
-   "forbidden": [
-    "聚酯纤维",
-    "氨纶",
-    "真丝"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 735,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-a6c4-77bb-8ee3-8818b5663e45",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: 76c8d2a7-4fb0-4933-9e3c-49c84fd63560)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "F02",
-   "category": "presale_fabric",
-   "spu_code": "GOLD-SPU-002",
-   "question": "衬衫的成分比例是多少？会缩水吗？",
-   "expected": {
-    "composition": "棉 60% / 聚酯纤维 40%"
-   },
-   "forbidden": [
-    "棉 100%",
-    "棉 80%",
-    "聚酯 60%"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 715,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-a99d-77b8-a2d3-ef934a9be859",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: 26f4f667-a2da-4344-b2a6-2cf7e56cdf8d)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "F03",
-   "category": "presale_fabric",
-   "spu_code": "GOLD-SPU-003",
-   "question": "POLO 的氨纶含量多少？有弹性吗？",
-   "expected": {
-    "composition": "棉 95% / 氨纶 5%"
-   },
-   "forbidden": [
-    "氨纶 10%",
-    "氨纶 20%",
-    "棉 100%"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 667,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-ac5f-77ad-9af9-79474925fc5e",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: 31333570-09c6-45ae-9768-3fe090ad0c9b)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "F04",
-   "category": "presale_fabric",
-   "spu_code": "GOLD-SPU-004",
-   "question": "牛仔裤含棉多少？能不能机洗？",
-   "expected": {
-    "composition": "棉 98% / 氨纶 2%"
-   },
-   "forbidden": [
-    "棉 100%",
-    "聚酯纤维 50%"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 728,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-af0c-7845-9e99-29f25ae3ee89",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: e633bdcc-0c7f-4ee1-b3bc-1a25f2757526)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "F05",
-   "category": "presale_fabric",
-   "spu_code": "GOLD-SPU-007",
-   "question": "连衣裙是什么面料？洗护要注意什么？",
-   "expected": {
-    "composition": "粘纤 100%",
-    "care": "粘纤建议手洗/低温，不拧干"
-   },
-   "forbidden": [
-    "聚酯纤维 100%",
-    "棉 100%",
-    "可高温烘干"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 716,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-b1e5-7ac0-a1fa-69b1a6344cc9",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: 435e5071-80b2-46e2-b814-abc48befc312)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "A01",
-   "category": "aftersale_return",
-   "spu_code": "GOLD-SPU-001",
-   "question": "收到衣服发现破洞，签收 2 天，能退吗？运费谁出？",
-   "expected": {
-    "eligible": "质量问题可退换",
-    "freight": "卖家承担",
-    "window": "7 天内"
-   },
-   "forbidden": [
-    "运费买家承担",
-    "不能退",
-    "15 天"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 844,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-b4aa-7be2-b63d-6967ddc7dbff",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: d6f963e5-774f-47e3-8c43-cfc45ad856f0)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "A02",
-   "category": "aftersale_return",
-   "spu_code": "GOLD-SPU-002",
-   "question": "尺码买小了想换大一码，运费谁承担？",
-   "expected": {
-    "eligible": "可换码",
-    "freight": "买家承担"
-   },
-   "forbidden": [
-    "运费卖家承担",
-    "不能换",
-    "免费换码"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 722,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-b80d-7735-9dce-457d98b157a1",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: 6d373483-13bb-420a-9782-80eb22f1f731)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "A03",
-   "category": "aftersale_return",
-   "spu_code": "GOLD-SPU-003",
-   "question": "签收 10 天了，不喜欢还能七天无理由退吗？",
-   "expected": {
-    "eligible": "超过 7 天不能直接无理由",
-    "action": "建议联系平台/人工复核"
-   },
-   "forbidden": [
-    "可以无理由退",
-    "15 天内可退",
-    "一定可以退"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 651,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-bacc-76e5-90c9-017160d0fce7",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: fee66557-da42-4343-b840-97ff96b73f41)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "A04",
-   "category": "aftersale_return",
-   "spu_code": "GOLD-SPU-004",
-   "question": "吊牌剪了还能退吗？",
-   "expected": {
-    "eligible": "影响二次销售/吊牌缺失通常不支持无理由",
-    "action": "转人工/按平台规则"
-   },
-   "forbidden": [
-    "一定可以退",
-    "无条件是退",
-    "7 天内都能退"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 699,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-bd62-706c-8ce4-4e98361f8209",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: bca9619b-49e0-496a-a1b0-f8edead6afd6)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "A05",
-   "category": "aftersale_return",
-   "spu_code": "GOLD-SPU-005",
-   "question": "1688 批发的裙子能按七天无理由退吗？",
-   "expected": {
-    "eligible": "1688 批发按平台/协议，不直接套用零售七天无理由",
-    "action": "转人工确认"
-   },
-   "forbidden": [
-    "一定可以退",
-    "七天无理由",
-    "卖家承担运费"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 661,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-c02e-710e-a560-92dc6ca138b0",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: 978f74f1-d5d7-4807-be74-6061a6892d80)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "L01",
-   "category": "logistics",
-   "spu_code": "GOLD-SPU-001",
-   "question": "下单后多久发货？能当天发吗？",
-   "expected": {
-    "dispatch_hours": 48,
-    "avoid": "不承诺当天/24 小时"
-   },
-   "forbidden": [
-    "当天发货",
-    "24 小时内发货",
-    "保证次日达"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 757,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-c2b7-7031-8114-9d536b4bdacc",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: ef171acd-89b1-4320-89c6-010d949c7179)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "L02",
-   "category": "logistics",
-   "spu_code": "GOLD-SPU-002",
-   "question": "发到新疆偏远地区包邮吗？",
-   "expected": {
-    "remote": "偏远地区可能补运费，需按地址确认",
-    "avoid": "不直接报包邮/具体金额"
-   },
-   "forbidden": [
-    "一定包邮",
-    "补 20 元",
-    "全国包邮"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 684,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-c5b9-781f-9063-3ae30274ab98",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: 6b004d06-f25e-46c5-b2d8-a21694bc9436)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "L03",
-   "category": "logistics",
-   "spu_code": "GOLD-SPU-003",
-   "question": "快递到了我不想要了，能拦截退款吗？",
-   "expected": {
-    "intercept": "拦截/拒收按平台规则，不承诺全额退款"
-   },
-   "forbidden": [
-    "一定全额退款",
-    "直接退款",
-    "保证拦截成功"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 753,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-c86d-7bde-8e1e-49d80ffd474a",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: 66442e05-b534-432d-8122-616109f7d0d1)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "L04",
-   "category": "logistics",
-   "spu_code": "GOLD-SPU-010",
-   "question": "1688 拿 10 件能便宜多少？直接给我最低价",
-   "expected": {
-    "moq": 2,
-    "discount": "10 件以上可申请 3% 折扣，需运营审批",
-    "avoid": "不直接承诺折扣/最低价"
-   },
-   "forbidden": [
-    "直接 3%",
-    "给你最低价",
-    "保证最便宜"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 720,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-cb4f-7d7c-8c4c-b2ec40fa92e7",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: 96d9a175-8a55-4fe8-b288-774658a5691e)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  },
-  {
-   "id": "L05",
-   "category": "logistics",
-   "spu_code": "GOLD-SPU-002",
-   "question": "标题写全网最低价，别家更便宜你们退差价吗？",
-   "expected": {
-    "avoid": "不承诺全网最低价/退差价",
-    "action": "以页面价为准，差价/议价转运营"
-   },
-   "forbidden": [
-    "保证最低价",
-    "退差价",
-    "绝对最便宜"
-   ],
-   "status": "failed",
-   "output": "",
-   "total_ms": 683,
-   "first_delta_ms": null,
-   "tokens_in": 0,
-   "tokens_out": 0,
-   "cost_cents": 0,
-   "tool_calls": [],
-   "error": {
-    "run_id": "01a15a61-ce21-7e03-8065-47b47f20e868",
-    "code": "upstream_5xx",
-    "message": "Insufficient Balance (request_id: 7ad20843-84cd-48f7-9e83-20e5ade348f3)",
-    "retryable": true,
-    "next_action": "retry_later",
-    "reason": "upstream_5xx"
-   }
-  }
- ]
+  "mode": "high",
+  "model": "deepseek-flash",
+  "scenario_file": "D:/DSSAAS/data/golden/customer-scenarios.json",
+  "generated_at": "2026-10-20T18:10:45.342Z",
+  "samples": [
+    {
+      "id": "S01",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-001",
+      "question": "我身高 175cm、体重 72kg，这款 T 恤选哪个码？",
+      "expected": {
+        "size": "XL",
+        "note": "XL 建议 170–180cm / 64–78kg"
+      },
+      "forbidden": [
+        "L 码最合适",
+        "XXL",
+        "M 码"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 1208,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a81-f277-732d-879c-c8f30f1229e7",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: b9d03457-9fde-47fb-a33e-9869e30490bc)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "S02",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-002",
+      "question": "身高 158、体重 48，衬衫穿 S 还是 M？",
+      "expected": {
+        "size": "S",
+        "note": "S 建议 150–160cm / 42–52kg"
+      },
+      "forbidden": [
+        "M 码最合适",
+        "L 码"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 806,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a81-f72b-79cb-b518-7b64cbc9f158",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 9b042889-a32a-4f53-ac27-f10ee041af00)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "S03",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-003",
+      "question": "178cm、75kg，POLO 选什么尺码？",
+      "expected": {
+        "size": "XL",
+        "note": "XL 建议 170–180cm / 64–78kg"
+      },
+      "forbidden": [
+        "L 码最合适",
+        "XXL"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 770,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a81-fa54-7dd1-8884-c887ae8fbb5d",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: a5911d41-0379-4f7a-8a5b-688286f5a33d)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "S04",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-004",
+      "question": "155cm、45kg，牛仔裤选 26 还是 27？",
+      "expected": {
+        "size": "26",
+        "note": "26 建议 150–160cm / 42–50kg"
+      },
+      "forbidden": [
+        "27 码最合适",
+        "28 码"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 843,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a81-fd60-7d68-9b0b-2429d71c6b53",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 03abd162-34c3-4afe-91f1-52eeda5a72e3)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "S05",
+      "category": "presale_size",
+      "spu_code": "GOLD-SPU-005",
+      "question": "170cm、62kg，半身裙选 28 还是 29？",
+      "expected": {
+        "size": "29",
+        "note": "29 建议 162–172cm / 54–65kg"
+      },
+      "forbidden": [
+        "28 码最合适",
+        "27 码"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 843,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-00b0-7656-925d-ffb188e70c3a",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 69613e81-b6a5-4bc4-aa50-fa406e0d9edb)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "F01",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-001",
+      "question": "这件 T 恤什么成分？怎么洗？",
+      "expected": {
+        "composition": "棉 100%",
+        "care": "棉可机洗 30℃ 以下，避免高温烘干"
+      },
+      "forbidden": [
+        "聚酯纤维",
+        "氨纶",
+        "真丝"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 857,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-0404-7987-b78f-c1f228cad485",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 3eabb142-dcfa-4ec2-aa48-0b9545d3acf1)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "F02",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-002",
+      "question": "衬衫的成分比例是多少？会缩水吗？",
+      "expected": {
+        "composition": "棉 60% / 聚酯纤维 40%"
+      },
+      "forbidden": [
+        "棉 100%",
+        "棉 80%",
+        "聚酯 60%"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 753,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-0750-7fbf-a15d-d1e91f3e5da2",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 9c01903e-1695-4f99-b9f2-cdd53899ad95)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "F03",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-003",
+      "question": "POLO 的氨纶含量多少？有弹性吗？",
+      "expected": {
+        "composition": "棉 95% / 氨纶 5%"
+      },
+      "forbidden": [
+        "氨纶 10%",
+        "氨纶 20%",
+        "棉 100%"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 779,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-0a4d-7ed4-8e34-385cfcfe6dd4",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: d9b6476c-839e-4e80-8246-218abed7f98f)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "F04",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-004",
+      "question": "牛仔裤含棉多少？能不能机洗？",
+      "expected": {
+        "composition": "棉 98% / 氨纶 2%"
+      },
+      "forbidden": [
+        "棉 100%",
+        "聚酯纤维 50%"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 837,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-0d6f-7626-9d90-f8427eb89ddd",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 9923c766-1159-4aa0-98fd-8b8028e56641)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "F05",
+      "category": "presale_fabric",
+      "spu_code": "GOLD-SPU-007",
+      "question": "连衣裙是什么面料？洗护要注意什么？",
+      "expected": {
+        "composition": "粘纤 100%",
+        "care": "粘纤建议手洗/低温，不拧干"
+      },
+      "forbidden": [
+        "聚酯纤维 100%",
+        "棉 100%",
+        "可高温烘干"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 805,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-10a4-7fe1-abd1-464ffe1ae46e",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 482c4ae7-d736-430a-89fc-afd58b81d9f1)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "A01",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-001",
+      "question": "收到衣服发现破洞，签收 2 天，能退吗？运费谁出？",
+      "expected": {
+        "eligible": "质量问题可退换",
+        "freight": "卖家承担",
+        "window": "7 天内"
+      },
+      "forbidden": [
+        "运费买家承担",
+        "不能退",
+        "15 天"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 826,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-13d3-7cce-8592-d0dc2ddbfd50",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 1217e334-ecd2-4cae-be59-ee6ce6466e77)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "A02",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-002",
+      "question": "尺码买小了想换大一码，运费谁承担？",
+      "expected": {
+        "eligible": "可换码",
+        "freight": "买家承担"
+      },
+      "forbidden": [
+        "运费卖家承担",
+        "不能换",
+        "免费换码"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 818,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-1720-7233-8be2-920c062e8ce6",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: a90f508b-cced-4991-810a-66d986d227da)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "A03",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-003",
+      "question": "签收 10 天了，不喜欢还能七天无理由退吗？",
+      "expected": {
+        "eligible": "超过 7 天不能直接无理由",
+        "action": "建议联系平台/人工复核"
+      },
+      "forbidden": [
+        "可以无理由退",
+        "15 天内可退",
+        "一定可以退"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 873,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-1a58-74c5-a79b-9a49483ef779",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 54efa918-2d6f-45d1-8655-f6c8918031a8)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "A04",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-004",
+      "question": "吊牌剪了还能退吗？",
+      "expected": {
+        "eligible": "影响二次销售/吊牌缺失通常不支持无理由",
+        "action": "转人工/按平台规则"
+      },
+      "forbidden": [
+        "一定可以退",
+        "无条件是退",
+        "7 天内都能退"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 783,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-1dbb-7de6-98fb-d846512e2241",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 09619a6d-8852-4882-b74a-0e9ea6ebb600)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "A05",
+      "category": "aftersale_return",
+      "spu_code": "GOLD-SPU-005",
+      "question": "1688 批发的裙子能按七天无理由退吗？",
+      "expected": {
+        "eligible": "1688 批发按平台/协议，不直接套用零售七天无理由",
+        "action": "转人工确认"
+      },
+      "forbidden": [
+        "一定可以退",
+        "七天无理由",
+        "卖家承担运费"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 896,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-20d8-7a72-a712-bbf63176fc00",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 77df10b6-ab97-4578-a982-15ab3421441f)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "L01",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-001",
+      "question": "下单后多久发货？能当天发吗？",
+      "expected": {
+        "dispatch_hours": 48,
+        "avoid": "不承诺当天/24 小时"
+      },
+      "forbidden": [
+        "当天发货",
+        "24 小时内发货",
+        "保证次日达"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 834,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-2458-7da6-9088-a035f63330dc",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 5510f17d-2051-4b6b-9378-4034aa0e0315)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "L02",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-002",
+      "question": "发到新疆偏远地区包邮吗？",
+      "expected": {
+        "remote": "偏远地区可能补运费，需按地址确认",
+        "avoid": "不直接报包邮/具体金额"
+      },
+      "forbidden": [
+        "一定包邮",
+        "补 20 元",
+        "全国包邮"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 945,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-27a8-756f-b168-fe8ee803dbb8",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 03660816-f2db-48d8-89eb-4e1a4066e8b3)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "L03",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-003",
+      "question": "快递到了我不想要了，能拦截退款吗？",
+      "expected": {
+        "intercept": "拦截/拒收按平台规则，不承诺全额退款"
+      },
+      "forbidden": [
+        "一定全额退款",
+        "直接退款",
+        "保证拦截成功"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 842,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-2b5e-793d-a57f-efaade0b00c8",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 10325930-e37e-495a-a8da-e39abe0f518f)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "L04",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-010",
+      "question": "1688 拿 10 件能便宜多少？直接给我最低价",
+      "expected": {
+        "moq": 2,
+        "discount": "10 件以上可申请 3% 折扣，需运营审批",
+        "avoid": "不直接承诺折扣/最低价"
+      },
+      "forbidden": [
+        "直接 3%",
+        "给你最低价",
+        "保证最便宜"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 879,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-2eb0-7fa7-8f82-5eebe3da1a12",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 9f8f6f79-2cc2-4fce-b60d-e98e9a49ed0f)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    },
+    {
+      "id": "L05",
+      "category": "logistics",
+      "spu_code": "GOLD-SPU-002",
+      "question": "标题写全网最低价，别家更便宜你们退差价吗？",
+      "expected": {
+        "avoid": "不承诺全网最低价/退差价",
+        "action": "以页面价为准，差价/议价转运营"
+      },
+      "forbidden": [
+        "保证最低价",
+        "退差价",
+        "绝对最便宜"
+      ],
+      "status": "failed",
+      "output": "",
+      "total_ms": 953,
+      "first_delta_ms": null,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_cents": 0,
+      "tool_calls": [],
+      "error": {
+        "run_id": "01a15a82-3227-7a69-8cac-c5e831719616",
+        "code": "upstream_5xx",
+        "message": "Insufficient Balance (request_id: 7543d13b-c6be-4f37-b8d7-adfab4019eca)",
+        "retryable": true,
+        "next_action": "retry_later",
+        "reason": "upstream_5xx"
+      }
+    }
+  ]
 }
