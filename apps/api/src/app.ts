@@ -29,6 +29,7 @@ import { registerAgentRoutes } from './agent/routes.js';
 import { TypertBridgeClient } from './agent/bridge-client.js';
 import { AgentRunManager } from './agent/run-manager.js';
 import { registerProviderRoutes } from './routes/providers.js';
+import { registerPlatformAccountRoutes } from './routes/platform-accounts.js';
 import { registerModelRoutes } from './routes/models.js';
 import { registerRouteConfigRoutes } from './routes/route-config.js';
 import { registerUsageRoutes } from './routes/usage.js';
@@ -235,6 +236,7 @@ export async function buildApp(config: AppConfig, options: BuildAppOptions = {})
   registerAuthRoutes(app);
   registerAuditRoutes(app);
   registerProviderRoutes(app);
+  registerPlatformAccountRoutes(app);
   registerModelRoutes(app);
   registerRouteConfigRoutes(app);
   registerUsageRoutes(app);
